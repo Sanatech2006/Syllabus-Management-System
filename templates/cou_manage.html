@@ -1,0 +1,74 @@
+{% extends "base_layout.html" %}
+{% load static %}
+
+{% block title %}Course Management{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Course Management </h2>
+
+    <div class="filter-box">
+        <div class="filter-item">
+            <label>Year</label>
+            <select>
+                <option value="">Select Year</option>
+                <option>2024-2025</option>
+                <option>2025-2026</option>
+            </select>
+        </div>
+
+        <div class="filter-item">
+            <label>Programme Type</label>
+            <select>
+                <option value="">UG / PG</option>
+                <option>UG</option>
+                <option>PG</option>
+            </select>
+        </div>
+
+        <div class="filter-item">
+            <label>Programme Category</label>
+            <select>
+                <option value="">Aided / SFM / SFW</option>
+                <option>Aided</option>
+                <option>SFM</option>
+                <option>SFW</option>
+            </select>
+        </div>
+
+        <div class="filter-item">
+            <label>Programme Name</label>
+            <select>
+                <option>Select Programme</option>
+            </select>
+        </div>
+
+        <div class="filter-item">
+            <label>Branch</label>
+            <select>
+                <option>Select Branch</option>
+            </select>
+        </div>
+
+        <div class="filter-item">
+            <label>Semester</label>
+            <select>
+                <option>Select Semester</option>
+                <option>I</option>
+                <option>II</option>
+                <option>III</option>
+                <option>IV</option>
+                <option>V</option>
+                <option>VI</option>
+            </select>
+        </div>
+
+        <div class="filter-item">
+            <label>Course Code with Title</label>
+            <select>
+                <option>Select Course</option>
+            </select>
+        </div>
+    </div>
+</div>
+{% endblock %}

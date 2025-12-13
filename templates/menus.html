@@ -1,0 +1,105 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Syllabus Dashboard</title>
+
+  <link rel="stylesheet" href="{% static 'assets/css/menus.css' %}">
+
+</head>
+
+<body>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="brand">
+      <img src="assets/images/logo.png" class="college-logo" alt="logo">
+      <div class="text">
+        <div class="college">JAMAL MOHAMED COLLEGE</div>
+        <div class="campus">(Autonomous) TIRUCHIRAPPALLI</div>
+      </div>
+    </div>
+
+    <nav class="menu">
+
+      <a href="#" class="menu-item active" data-page="dashboard">
+        <span class="icon">🏠</span>
+        <span class="menu-text">Dashboard</span>
+      </a>
+
+      <a href="{% url 'course_management' %}" class="menu-item">
+
+        <span class="icon">📚</span>
+        <span class="menu-text">Course Management</span>
+      </a>
+
+      <a href="#" class="menu-item" data-page="program">
+        <span class="icon">🎓</span>
+        <span class="menu-text">Program Management</span>
+      </a>
+
+      <a href="#" class="menu-item" data-page="upload">
+        <span class="icon">⏫</span>
+        <span class="menu-text">Upload Center</span>
+      </a>
+
+      <a href="#" class="menu-item" data-page="reports">
+        <span class="icon">📊</span>
+        <span class="menu-text">Reports</span>
+      </a>
+
+      <a href="#" class="menu-item" data-page="users">
+        <span class="icon">👥</span>
+        <span class="menu-text">User Management</span>
+      </a>
+
+      <a href="#" class="menu-item" data-page="settings">
+        <span class="icon">⚙️</span>
+        <span class="menu-text">Settings</span>
+      </a>
+
+      <a href="#" class="menu-item" data-page="help">
+        <span class="icon">❓</span>
+        <span class="menu-text">Help & Support</span>
+      </a>
+
+    </nav>
+  </div>
+
+  <!-- HEADER -->
+  <!-- <header class="top-header">
+    <h3 class="header-title">Syllabus Management System</h3>
+    <button class="upload-btn">Upload</button>
+  </header> -->
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+
+    <!-- Course Management Page Only -->
+    <div id="coursePage" style="display:none;" class="page-body-vertical">
+
+      <div class="top-box">
+        <h3>Filters</h3>
+        <p class="placeholder">Filters will be added here.</p>
+      </div>
+
+      <div class="bottom-box">
+        <h3>Output</h3>
+        <p class="placeholder">Output table will be added here.</p>
+      </div>
+
+    </div>
+
+  </main>
+
+</div>
+
+<script src="assets/js/sidebar.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Syllabus Dashboard{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'assets/css/menus.css' %}">
+  <link rel="stylesheet" href="{% static 'assets/css/cou_manage.css' %}">
+</head>
+<body>
+<div class="layout">
+
+  <!-- sidebar + header -->
+  {% include "menus.html" %}
+
+  <!-- page body -->
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+
+</div>
+</body>
+</html>
