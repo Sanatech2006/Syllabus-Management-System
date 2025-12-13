@@ -6,6 +6,7 @@
   <title>{% block title %}Syllabus Dashboard{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'assets/css/menus.css' %}">
   <link rel="stylesheet" href="{% static 'assets/css/cou_manage.css' %}">
+  {% block extra_css %}{% endblock %}
 </head>
 <body>
 <div class="layout">
@@ -15,6 +16,15 @@
 
   <!-- page body -->
   <main class="content">
+
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
     {% block content %}{% endblock %}
   </main>
 

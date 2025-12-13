@@ -1,0 +1,117 @@
+{% extends "base_layout.html" %}
+{% load static %}
+
+{% block title %}Upload Center{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'assets/css/upload_center.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+    
+
+    <!-- Top bar with Add Course button -->
+    <div class="upload-center-header">
+        <h1 class="upload-center-title">Upload Center</h1>
+
+        <!-- Add Course upload form -->
+        <form class="add-course-form"
+              method="post"
+              action="{% url 'add_course' %}"
+              enctype="multipart/form-data">
+            {% csrf_token %}
+            <label for="course_file" class="btn-add-course">
+                Add Course
+            </label>
+            <input
+                type="file"
+                id="course_file"
+                name="course_file"
+                class="file-input-hidden"
+                onchange="this.form.submit()"
+            />
+        </form>
+    </div>
+
+    <div class="upload-center-form-card">
+    <h2 class="form-title">Course Details</h2>
+
+    <form class="course-details-form">
+        <div class="form-grid">
+
+            <!-- Year -->
+            <div class="form-field">
+                <label for="year">Year</label>
+                <input type="text" id="year" name="year" placeholder="2024-2025">
+            </div>
+
+            <!-- Programme Type -->
+            <div class="form-field">
+                <label for="programme_type">Programme Type</label>
+                <select id="programme_type" name="programme_type">
+                    <option value="">Select</option>
+                    <option value="UG">UG</option>
+                    <option value="PG">PG</option>
+                </select>
+            </div>
+
+            <!-- Programme Category -->
+            <div class="form-field">
+                <label for="programme_category">Programme Category</label>
+                <select id="programme_category" name="programme_category">
+                    <option value="">Select</option>
+                    <option value="Aided">Aided</option>
+                    <option value="SFM">SFM</option>
+                    <option value="SFW">SFW</option>
+                </select>
+            </div>
+
+            <!-- Programme Name -->
+            <div class="form-field">
+                <label for="programme_name">Programme Name</label>
+                <select id="programme_name" name="programme_name">
+                    <option value="">Select</option>
+                    <option value="BA">BA</option>
+                    <option value="BBA">BBA</option>
+                    <option value="BSc">B.Sc</option>
+                </select>
+            </div>
+
+            <!-- Branch -->
+            <div class="form-field">
+                <label for="branch">Branch</label>
+                <select id="branch" name="branch">
+                    <option value="">Select</option>
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="Arabic">Arabic</option>
+                    <option value="Mathematics">Mathematics</option>
+                </select>
+            </div>
+
+            <!-- Semester -->
+            <div class="form-field">
+                <label for="semester">Semester</label>
+                <input type="text" id="semester" name="semester" placeholder="I / II / III ...">
+            </div>
+
+            <!-- Course Code with Title (full-width row) -->
+            <div class="form-field form-field-full">
+                <label for="course_code_title">Course Code with Title</label>
+                <input type="text" id="course_code_title" name="course_code_title"
+                       placeholder="CS101 - Programming Fundamentals">
+            </div>
+
+        </div>
+    </form>
+</div>
+
+
+    <!-- You can put rest of the upload-center content below -->
+    <div class="upload-center-content">
+        <!-- empty for now -->
+    </div>
+
+</div>
+{% endblock %}
