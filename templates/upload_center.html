@@ -5,113 +5,240 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'assets/css/upload_center.css' %}">
+<script src="{% static 'assets/js/upload_center.js' %}"></script>
 {% endblock %}
 
 {% block content %}
 <div class="page-wrapper">
-
     
-
-    <!-- Top bar with Add Course button -->
-    <div class="upload-center-header">
-        <h1 class="upload-center-title">Upload Center</h1>
-
+    <!-- Top bar with Upload Files button -->
+    <!-- <div class="upload-center-header"> -->
         <!-- Add Course upload form -->
-        <form class="add-course-form"
+        <!-- <form class="add-course-form"
               method="post"
               action="{% url 'add_course' %}"
               enctype="multipart/form-data">
-            {% csrf_token %}
-            <label for="course_file" class="btn-add-course">
-                Add Course
-            </label>
-            <input
-                type="file"
-                id="course_file"
-                name="course_file"
-                class="file-input-hidden"
-                onchange="this.form.submit()"
-            />
+          {% csrf_token %}
+          <label for="course_file" class="btn-add-course">
+              Upload Files
+          </label>
+          <input
+              type="file"
+              id="course_file"
+              name="course_file"
+              class="file-input-hidden"
+              onchange="this.form.submit()"
+          />
         </form>
-    </div>
+    </div> -->
 
     <div class="upload-center-form-card">
-    <h2 class="form-title">Course Details</h2>
+        <h2 class="form-title">Course Details</h2>
 
-    <form class="course-details-form">
-        <div class="form-grid">
+        <!-- Main form that saves to database -->
+        <form class="course-details-form" method="post" action="{% url 'add_course' %}" id="courseForm">
 
-            <!-- Year -->
-            <div class="form-field">
-                <label for="year">Year</label>
-                <input type="text" id="year" name="year" placeholder="2024-2025">
+            {% csrf_token %}
+            <div class="form-grid">
+                <!-- ROW 1 (4 fields) -->
+                <div class="form-field">
+                    <label for="prog_code">Programme Code</label>
+                    <input type="text" id="prog_code" name="prog_code" placeholder="e.g., BA101">
+                </div>
+
+                <div class="form-field">
+                    <label for="year">Year</label>
+                    <select id="year" name="year">
+                        <option value="">Select</option>
+                        <option value="2023-2024">2023-2024</option>
+                        <option value="2024-2025">2024-2025</option>
+                        <option value="2025-2026">2025-2026</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="prog_type">Programme Type</label>
+                    <select id="prog_type" name="prog_type">
+                        <option value="">Select</option>
+                        <option value="UG">UG</option>
+                        <option value="PG">PG</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="sem">Semester</label>
+                    <select id="sem" name="sem">
+                        <option value="">Select</option>
+                        <option value="I">I</option>
+                        <option value="II">II</option>
+                        <option value="III">III</option>
+                        <option value="IV">IV</option>
+                        <option value="V">V</option>
+                        <option value="VI">VI</option>
+                    </select>
+                </div>
+
+                <!-- ROW 2 (4 fields) -->
+                <div class="form-field">
+                    <label for="course_code">Course Code</label>
+                    <input type="text" id="course_code" name="course_code" placeholder="CS101">
+                </div>
+
+                <div class="form-field">
+                    <label for="part">Part</label>
+                    <select id="part" name="part">
+                        <option value="">Select</option>
+                        <option value="I">Part I</option>
+                        <option value="II">Part II</option>
+                        <option value="III">Part III</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="course_category">Course Category</label>
+                    <select id="course_category" name="course_category">
+                        <option value="">Select</option>
+                        <option value="Core">Core</option>
+                        <option value="Elective">Elective</option>
+                        <option value="Allied">Allied</option>
+                        <option value="Skill">Skill Enhancement</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="course_title">Course Title</label>
+                    <input type="text" id="course_title" name="course_title" placeholder="Programming Fundamentals">
+                </div>
+
+                <!-- ROW 3 (5 fields) -->
+                <div class="form-field">
+                    <label for="hrs_per_week">Hrs/Week</label>
+                    <select id="hrs_per_week" name="hrs_per_week">
+                        <option value="">Select</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="credit">Credit</label>
+                    <select id="credit" name="credit">
+                        <option value="">Select</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="marks_cia">CIA Marks</label>
+                    <select id="marks_cia" name="marks_cia">
+                        <option value="">Select</option>
+                        <option value="25">25</option>
+                        <option value="40">40</option>
+                        <option value="50">50</option>
+                        <option value="75">75</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="marks_ese">ESE Marks</label>
+                    <select id="marks_ese" name="marks_ese">
+                        <option value="">Select</option>
+                        <option value="75">75</option>
+                        <option value="60">60</option>
+                        <option value="50">50</option>
+                        <option value="25">25</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="total_marks">Total Marks</label>
+                    <select id="total_marks" name="total_marks">
+                        <option value="">Select</option>
+                        <option value="100">100</option>
+                        <option value="75">75</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
             </div>
+            
+            <!-- Submit button -->
+            <!-- Submit button with confirmation -->
+<!-- Submit button -->
+<div class="form-actions">
+    <button type="submit" class="btn-submit" id="saveBtn">Save Course Structure</button>
+</div>
 
-            <!-- Programme Type -->
-            <div class="form-field">
-                <label for="programme_type">Programme Type</label>
-                <select id="programme_type" name="programme_type">
-                    <option value="">Select</option>
-                    <option value="UG">UG</option>
-                    <option value="PG">PG</option>
-                </select>
-            </div>
-
-            <!-- Programme Category -->
-            <div class="form-field">
-                <label for="programme_category">Programme Category</label>
-                <select id="programme_category" name="programme_category">
-                    <option value="">Select</option>
-                    <option value="Aided">Aided</option>
-                    <option value="SFM">SFM</option>
-                    <option value="SFW">SFW</option>
-                </select>
-            </div>
-
-            <!-- Programme Name -->
-            <div class="form-field">
-                <label for="programme_name">Programme Name</label>
-                <select id="programme_name" name="programme_name">
-                    <option value="">Select</option>
-                    <option value="BA">BA</option>
-                    <option value="BBA">BBA</option>
-                    <option value="BSc">B.Sc</option>
-                </select>
-            </div>
-
-            <!-- Branch -->
-            <div class="form-field">
-                <label for="branch">Branch</label>
-                <select id="branch" name="branch">
-                    <option value="">Select</option>
-                    <option value="Computer Science">Computer Science</option>
-                    <option value="Arabic">Arabic</option>
-                    <option value="Mathematics">Mathematics</option>
-                </select>
-            </div>
-
-            <!-- Semester -->
-            <div class="form-field">
-                <label for="semester">Semester</label>
-                <input type="text" id="semester" name="semester" placeholder="I / II / III ...">
-            </div>
-
-            <!-- Course Code with Title (full-width row) -->
-            <div class="form-field form-field-full">
-                <label for="course_code_title">Course Code with Title</label>
-                <input type="text" id="course_code_title" name="course_code_title"
-                       placeholder="CS101 - Programming Fundamentals">
-            </div>
-
+<!-- Confirmation Dialog - HIDDEN BY DEFAULT -->
+<div class="dialog-overlay" id="confirmDialog">
+    <div class="confirm-dialog">
+        <h3 class="dialog-title">Confirm Save</h3>
+        <p class="dialog-message">Are you sure you want to save this course structure?</p>
+        <div class="dialog-buttons">
+            <button type="button" class="btn-dialog btn-cancel" id="cancelBtn">Cancel</button>
+            <button type="submit" class="btn-dialog btn-confirm" form="courseForm" id="confirmBtn">Save</button>
         </div>
-    </form>
+    </div>
 </div>
 
 
-    <!-- You can put rest of the upload-center content below -->
-    <div class="upload-center-content">
-        <!-- empty for now -->
-    </div>
 
+    <div class="upload-center-content">
+    {% if courses %}
+    <div class="table-container">
+        <div class="table-header">
+            <h3 class="table-title">Saved Courses</h3>
+            <span class="table-count">{{ courses|length }} courses</span>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="courses-table">
+                <thead>
+                    <tr>
+                        <th>Programme Code</th>
+                        <th>Year</th>
+                        <th>Programme Type</th>
+                        <th>Semester</th>
+                        <th>Course Code</th>
+                        <th>Course Category</th>
+                        <th>Course Title</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for course in courses %}
+                    <tr>
+                        <td>{{ course.prog_code|default:"—" }}</td>
+                        <td>{{ course.year|default:"—" }}</td>
+                        <td>{{ course.prog_type|default:"—" }}</td>
+                        <td>{{ course.sem|default:"—" }}</td>
+                        <td>{{ course.course_code|default:"—" }}</td>
+                        <td>{{ course.course_category|default:"—" }}</td>
+                        <td>{{ course.course_title|default:"—" }}</td>
+                        <td>
+                            <button class="action-btn">
+                                <span class="upload-icon">📤</span>
+                                Upload
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="no-data">No courses saved yet</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
 </div>
 {% endblock %}
