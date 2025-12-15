@@ -6,6 +6,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'assets/css/upload_center.css' %}">
 <script src="{% static 'assets/js/upload_center.js' %}"></script>
+<script src="{% static 'assets/js/upload_content.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -175,6 +176,7 @@
 <div class="form-actions">
     <button type="submit" class="btn-submit" id="saveBtn">Save Course Structure</button>
 </div>
+</form>
 
 <!-- Confirmation Dialog - HIDDEN BY DEFAULT -->
 <div class="dialog-overlay" id="confirmDialog">
@@ -223,11 +225,12 @@
                         <td>{{ course.course_category|default:"—" }}</td>
                         <td>{{ course.course_title|default:"—" }}</td>
                         <td>
-                            <button class="action-btn">
-                                <span class="upload-icon">📤</span>
-                                Upload
-                            </button>
-                        </td>
+    <button class="action-btn" data-course-code="{{ course.course_code }}">
+        <span class="upload-icon">📤</span>
+        Upload
+    </button>
+</td>
+
                     </tr>
                     {% empty %}
                     <tr>

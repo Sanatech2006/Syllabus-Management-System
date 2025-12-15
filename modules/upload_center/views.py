@@ -1,6 +1,11 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import HttpResponse
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .models import CourseStr, CourseContent
 
 def upload_center(request):
     # FETCH DATA FOR TABLE DISPLAY
@@ -45,3 +50,33 @@ def add_course(request):
     return redirect('upload_center')
 
 
+@csrf_exempt
+@require_http_methods(["POST"])
+def upload_course_content(request):
+    try:
+        data = json.loads(request.body)
+        course_code = data.get('course_code')
+        file_content = data.get('file_content', '')
+        
+        if not course_code:
+            return JsonResponse({'error': 'Missing course_code'}, status=400)
+        
+        # CLEAN NUL CHARACTERS - FIXES POSTGRES ERROR
+        clean_content = file_content.replace('\x00', '').replace('\0', '')
+        
+        # Save or update course content
+        content_obj, created = CourseContent.objects.update_or_create(
+            course_code=course_code,
+            defaults={'course_content': clean_content}
+        )
+        
+        return JsonResponse({
+            'success': True, 
+            'message': f'Content {"saved" if created else "updated"} for {course_code}',
+            'course_code': course_code
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+# Your existing views...

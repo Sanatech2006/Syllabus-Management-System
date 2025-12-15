@@ -26,3 +26,20 @@ class CourseStr(models.Model):
 
     def __str__(self):
         return f"{self.course_code} - {self.course_title}"
+
+class CourseContent(models.Model):
+    course_code = models.CharField(max_length=20, blank=False, null=False)
+    course_content = models.TextField(blank=True, null=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'course_content'  # Exact table name
+        verbose_name = 'Course Content'
+        verbose_name_plural = 'Course Contents'
+        ordering = ['-created_at']
+        unique_together = ['course_code']  # One content per course code
+
+    def __str__(self):
+        return f"{self.course_code} - Course Content"

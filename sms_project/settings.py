@@ -54,7 +54,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'sms_db',
         'USER': 'postgres',
-        'PASSWORD': '',
+        'PASSWORD': 'saq123',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -75,3 +75,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Media files (User uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Increase file upload limits
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB (default is 2.5MB)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000  
