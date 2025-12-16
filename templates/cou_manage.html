@@ -3,71 +3,192 @@
 
 {% block title %}Course Management{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'assets/css/cou_manage.css' %}">
+<script src="{% static 'assets/js/course_management.js' %}"></script>
+{% endblock %}
+
 {% block content %}
-<div class="container">
-    <h2>Course Management </h2>
+<div class="page-wrapper">
+    <div class="management-header">
+        <!-- <h1 class="page-title">Course Management</h1> -->
+        <button class="btn-clear-filters" id="clearFilters">Clear All Filters</button>
+    </div>
 
-    <div class="filter-box">
-        <div class="filter-item">
-            <label>Year</label>
-            <select>
-                <option value="">Select Year</option>
-                <option>2024-2025</option>
-                <option>2025-2026</option>
+    <!-- Filter Form - REPLACES your filter-box -->
+    <div class="filters-card">
+    <h2 class="filters-title">Filter Courses</h2>
+    <form method="get" id="filterForm" class="filters-grid">
+        {% csrf_token %}
+        
+        <!-- ROW 1: 3 filters -->
+        <div class="filter-group">
+            <label for="year">Year</label>
+            <select name="year" id="year">
+                <option value="">All Years</option>
+                {% for year in years %}
+                    <option value="{{ year }}" {% if request.GET.year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                {% empty %}
+                    <option>2024-2025</option>
+                    <option>2025-2026</option>
+                {% endfor %}
             </select>
         </div>
 
-        <div class="filter-item">
-            <label>Programme Type</label>
-            <select>
-                <option value="">UG / PG</option>
-                <option>UG</option>
-                <option>PG</option>
+        <div class="filter-group">
+            <label for="prog_type">Programme Type</label>
+            <select name="prog_type" id="prog_type">
+                <option value="">All Types</option>
+                {% for type in prog_types %}
+                    <option value="{{ type }}" {% if request.GET.prog_type == type|stringformat:"s" %}selected{% endif %}>{{ type|upper }}</option>
+                {% empty %}
+                    <option>UG</option>
+                    <option>PG</option>
+                {% endfor %}
             </select>
         </div>
 
-        <div class="filter-item">
-            <label>Programme Category</label>
-            <select>
-                <option value="">Aided / SFM / SFW</option>
-                <option>Aided</option>
-                <option>SFM</option>
-                <option>SFW</option>
+        <div class="filter-group">
+            <label for="course_category">Programme Category</label>
+            <select name="course_category" id="course_category">
+                <option value="">All Categories</option>
+                {% for cat in course_categories %}
+                    <option value="{{ cat }}" {% if request.GET.course_category == cat|stringformat:"s" %}selected{% endif %}>{{ cat }}</option>
+                {% empty %}
+                    <option>Aided</option>
+                    <option>SFM</option>
+                    <option>SFW</option>
+                {% endfor %}
             </select>
         </div>
 
-        <div class="filter-item">
-            <label>Programme Name</label>
-            <select>
-                <option>Select Programme</option>
+        <!-- ROW 2: 3 filters (NO Branch) -->
+        <div class="filter-group">
+            <label for="prog_code">Programme Name</label>
+            <select name="prog_code" id="prog_code">
+                <option value="">All Programmes</option>
+                {% for prog in prog_codes %}
+                    <option value="{{ prog }}" {% if request.GET.prog_code == prog|stringformat:"s" %}selected{% endif %}>{{ prog }}</option>
+                {% empty %}
+                    <option>BA101</option>
+                    <option>BSC101</option>
+                {% endfor %}
             </select>
         </div>
 
-        <div class="filter-item">
-            <label>Branch</label>
-            <select>
-                <option>Select Branch</option>
+        <div class="filter-group">
+            <label for="sem">Semester</label>
+            <select name="sem" id="sem">
+                <option value="">All Semesters</option>
+                {% for semester in semesters %}
+                    <option value="{{ semester }}" {% if request.GET.sem == semester|stringformat:"s" %}selected{% endif %}>{{ semester }}</option>
+                {% empty %}
+                    <option>I</option><option>II</option><option>III</option><option>IV</option><option>V</option><option>VI</option>
+                {% endfor %}
             </select>
         </div>
 
-        <div class="filter-item">
-            <label>Semester</label>
-            <select>
-                <option>Select Semester</option>
-                <option>I</option>
-                <option>II</option>
-                <option>III</option>
-                <option>IV</option>
-                <option>V</option>
-                <option>VI</option>
+        <!-- NEW: Separate Course Code filter -->
+        <div class="filter-group">
+            <label for="course_code">Course Code</label>
+            <select name="course_code" id="course_code">
+                <option value="">All Codes</option>
+                {% for course in course_code_titles %}
+                    <option value="{{ course.course_code }}" {% if request.GET.course_code == course.course_code|stringformat:"s" %}selected{% endif %}>{{ course.course_code }}</option>
+                {% empty %}
+                    <option>CS101</option>
+                    <option>CS201</option>
+                {% endfor %}
             </select>
         </div>
 
-        <div class="filter-item">
-            <label>Course Code with Title</label>
-            <select>
-                <option>Select Course</option>
+        <!-- NEW: Separate Course Title filter -->
+        <div class="filter-group">
+            <label for="course_title">Course Title</label>
+            <select name="course_title" id="course_title">
+                <option value="">All Titles</option>
+                {% for course in course_code_titles %}
+                    <option value="{{ course.course_title }}" {% if request.GET.course_title == course.course_title|stringformat:"s" %}selected{% endif %}>{{ course.course_title }}</option>
+                {% empty %}
+                    <option>Programming Fundamentals</option>
+                    <option>Data Structures</option>
+                {% endfor %}
             </select>
+        </div>
+
+        <div class="filter-actions">
+            <button type="submit" class="btn-apply">Apply Filters</button>
+        </div>
+    </form>
+</div>
+
+
+    <!-- Results Table -->
+    {% if courses %}
+    <div class="results-section">
+        <div class="results-header">
+            <h3 class="results-title">{{ courses|length }} Courses Found</h3>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="management-table">
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Programme Type</th>
+                        <th>Programme Category</th>
+                        <th>Programme Name</th>
+                        <th>Branch</th>
+                        <th>Semester</th>
+                        <th>Course Code with Title</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for course in courses %}
+                    <tr>
+                        <td>{{ course.year|default:"—" }}</td>
+                        <td>{{ course.prog_type|default:"—" }}</td>
+                        <td>{{ course.course_category|default:"—" }}</td>
+                        <td>{{ course.prog_code|default:"—" }}</td>
+                        <td>{{ course.part|default:"—" }}</td>
+                        <td>{{ course.sem|default:"—" }}</td>
+                        <td>
+                            <strong>{{ course.course_code|default:"—" }}</strong><br>
+                            <small>{{ course.course_title|default:"—" }}</small>
+                        </td>
+                        <!-- REPLACE your current View button -->
+<td>
+    <a href="{% url 'view_course_pdf' course_code=course.course_code %}" 
+       class="view-btn" target="_blank">
+        <span class="view-icon">👁️</span> View
+    </a>
+</td>
+
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="no-results">
+        <div class="no-results-icon">📚</div>
+        <h3>No Courses Found</h3>
+        <p>Apply filters or add courses from <a href="{% url 'upload_center' %}">Upload Center</a></p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- PDF Viewer Modal -->
+<div class="pdf-modal" id="pdfModal">
+    <div class="pdf-modal-content">
+        <div class="pdf-header">
+            <h3 id="pdfTitle">Loading Course Content...</h3>
+            <button class="close-pdf" id="closePdf">&times;</button>
+        </div>
+        <div class="pdf-container">
+            <iframe id="pdfFrame" src="" width="100%" height="600px"></iframe>
         </div>
     </div>
 </div>
