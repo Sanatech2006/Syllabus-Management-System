@@ -42,20 +42,31 @@ def course_management(request):
     return render(request, 'cou_manage.html', context)
 
 def view_course_pdf(request, course_code):
-    """View PDF from course_content table (TEXT path field)"""
     course_content = get_object_or_404(CourseContent, course_code=course_code)
+    stored_path = course_content.course_content  # "course_pdfs/CS501.pdf"
     
-    # course_content.course_content is a STRING PATH
-    pdf_path = course_content.course_content  # e.g., "course_pdfs/23UCA2CC6P.pdf"
+    # Always save to static/ but store relative path
+    full_path = os.path.join(settings.BASE_DIR, 'static', stored_path)
     
-    # Full file path
-    full_path = os.path.join(settings.MEDIA_ROOT, pdf_path)
-    
-    # Check if file exists
     if not os.path.exists(full_path):
-        return HttpResponse("PDF file not found!", status=404)
+        return HttpResponse(f"PDF not found at: {full_path}", status=404)
     
-    # Serve PDF file
-    response = FileResponse(open(full_path, 'rb'), content_type='application/pdf')
+    with open(full_path, 'rb') as f:
+        response = HttpResponse(f.read(), content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="{course_code}.pdf"'
     return response
+
+
+def debug_pdf_path(request, course_code):
+    course_content = get_object_or_404(CourseContent, course_code=course_code)
+    path_in_db = course_content.course_content  # What string is stored?
+    
+    full_path = os.path.join(settings.MEDIA_ROOT, path_in_db)
+    
+    return HttpResponse(f"""
+    <h2>DEBUG INFO for {course_code}</h2>
+    <p>DB Path: <strong>{path_in_db}</strong></p>
+    <p>MEDIA_ROOT: <strong>{settings.MEDIA_ROOT}</strong></p>
+    <p>Full Path: <strong>{full_path}</strong></p>
+    <p>File Exists: <strong>{os.path.exists(full_path)}</strong></p>
+    """)

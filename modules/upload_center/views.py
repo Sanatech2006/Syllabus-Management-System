@@ -4,14 +4,15 @@ from django.http import HttpResponse
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
-import json
+import json, os
 from .models import CourseStr, CourseContent
+from django.conf import settings
+from django.http import HttpResponseRedirect
 
 def upload_center(request):
     # FETCH DATA FOR TABLE DISPLAY
     courses = CourseStr.objects.all().order_by('-created_at')[:20]
     return render(request, 'upload_center.html', {'courses': courses})
-
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -50,33 +51,33 @@ def add_course(request):
     return redirect('upload_center')
 
 
-@csrf_exempt
-@require_http_methods(["POST"])
 def upload_course_content(request):
-    try:
-        data = json.loads(request.body)
-        course_code = data.get('course_code')
-        file_content = data.get('file_content', '')
-        
+    if request.method == 'POST' and request.FILES.get('pdf_file'):
+        course_code = request.POST.get('course_code')
+        pdf_file = request.FILES['pdf_file']
+
         if not course_code:
-            return JsonResponse({'error': 'Missing course_code'}, status=400)
-        
-        # CLEAN NUL CHARACTERS - FIXES POSTGRES ERROR
-        clean_content = file_content.replace('\x00', '').replace('\0', '')
-        
-        # Save or update course content
-        content_obj, created = CourseContent.objects.update_or_create(
+            messages.error(request, 'Missing course code.')
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+        # Build relative and absolute paths
+        filename = f"{course_code}.pdf"
+        relative_path = os.path.join('course_pdfs', filename)
+        full_path = os.path.join(settings.BASE_DIR, 'static', relative_path)
+
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+        with open(full_path, 'wb') as destination:
+            for chunk in pdf_file.chunks():
+                destination.write(chunk)
+
+        CourseContent.objects.update_or_create(
             course_code=course_code,
-            defaults={'course_content': clean_content}
+            defaults={'course_content': relative_path},
         )
-        
-        return JsonResponse({
-            'success': True, 
-            'message': f'Content {"saved" if created else "updated"} for {course_code}',
-            'course_code': course_code
-        })
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
 
+        messages.success(request, f'PDF uploaded successfully for {course_code}.')
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
-# Your existing views...
+    messages.error(request, 'No file uploaded.')
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))

@@ -804,3 +804,14 @@ main.content {
     width: 100vw !important;
 }
 
+.messages {
+    margin-bottom: 16px;
+}
+.alert-success {
+    background: #ecfdf3;
+    border: 1px solid #22c55e;
+    color: #166534;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+}

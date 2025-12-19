@@ -11,6 +11,14 @@
 
 {% block content %}
 <div class="page-wrapper">
+    {% if messages %}
+  <div class="messages">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+{% endif %}
+
     
     <!-- Top bar with Upload Files button -->
     <!-- <div class="upload-center-header"> -->
@@ -225,10 +233,17 @@
                         <td>{{ course.course_category|default:"—" }}</td>
                         <td>{{ course.course_title|default:"—" }}</td>
                         <td>
-    <button class="action-btn" data-course-code="{{ course.course_code }}">
-        <span class="upload-icon">📤</span>
-        Upload
-    </button>
+    <!-- Simple form instead of JS drag-drop -->
+<form method="post"
+      enctype="multipart/form-data"
+      action="{% url 'upload_course_content' %}">
+    {% csrf_token %}
+    <input type="hidden" name="course_code" value="{{ course.course_code }}">
+    <input type="file" name="pdf_file" accept=".pdf" required>
+    <button type="submit">Upload PDF</button>
+</form>
+
+
 </td>
 
                     </tr>
