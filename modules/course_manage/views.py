@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from modules.upload_center.models import CourseStr  # CORRECT import
 from django.shortcuts import get_object_or_404
 from modules.upload_center.models import CourseStr, CourseContent
@@ -7,7 +7,7 @@ import os
 from django.conf import settings
 
 def home(request):
-    return render(request, 'menus.html') 
+    return redirect('course_management')   # or render('some_home.html')
 
 def course_management(request):
     year = request.GET.get('year')

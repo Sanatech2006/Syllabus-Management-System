@@ -1,0 +1,27 @@
+{
+  "name": "syllabus-management-system",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "watch:css": "npx tailwindcss@3 -i ./static/assets/css/tailwind_input.css -o ./static/assets/css/tailwind.css --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sanatech2006/Syllabus-Management-System.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Sanatech2006/Syllabus-Management-System/issues"
+  },
+  "homepage": "https://github.com/Sanatech2006/Syllabus-Management-System#readme",
+  "devDependencies": {
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19"
+  }
+}

@@ -159,11 +159,15 @@
                         </td>
                         <!-- REPLACE your current View button -->
 <td>
-    <a href="{% url 'view_course_pdf' course_code=course.course_code %}" 
-       class="view-btn" target="_blank">
-        <span class="view-icon">👁️</span> View
-    </a>
+    {% if course.course_code %}
+        <a href="{% url 'view_course_pdf' course.course_code %}" class="view-btn">
+            View
+        </a>
+    {% else %}
+        <button class="view-btn" disabled>View</button>
+    {% endif %}
 </td>
+
 
                     </tr>
                     {% endfor %}

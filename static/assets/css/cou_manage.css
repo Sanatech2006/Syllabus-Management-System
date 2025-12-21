@@ -11,7 +11,8 @@
 .management-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: sp
+    ace-between;
     margin-bottom: 32px;
     padding-bottom: 20px;
     border-bottom: 2px solid #e2e8f0;
