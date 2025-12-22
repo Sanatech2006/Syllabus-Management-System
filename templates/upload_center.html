@@ -12,31 +12,23 @@
 {% block content %}
 <div class="page-wrapper">
 
-    {% if messages %}
-    <div class="messages">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-    </div>
-    {% endif %}
+  <!-- Upload Center title + Tailwind button -->
+  <div class="mb-4 flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-slate-900">Upload Center</h1>
 
-    <!-- Top header: title + (future) Add Course button -->
-    <div class="upload-center-header flex items-center justify-between mb-6 border-b border-slate-200 pb-4">
-        <h1 class="upload-center-title text-4xl font-extrabold text-red-600 underline">
-    Upload Center
-</h1>
+    <button
+      type="button"
+      id="openAddCourse"
+      class="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
+      <span class="text-lg leading-none">+</span>
+      <span>Add Course</span>
+    </button>
+  </div>
 
-
-        <!-- You can style this as needed or keep it for future navigation -->
-        <button type="button"
-                class="btn-add-course inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
-                id="openAddCourse">
-            + Add Course
-        </button>
-    </div>
 
     <!-- Course details form card -->
-    <div class="upload-center-form-card">
+    <div class="w-full rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+
         <h2 class="form-title">Course Details</h2>
 
         <!-- Main form that saves to database -->
