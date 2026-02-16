@@ -9,11 +9,58 @@ from .models import CourseStr, CourseContent
 from django.conf import settings
 from django.http import HttpResponseRedirect
 
+from django.contrib import messages
+
 def upload_center(request):
-    # FETCH DATA FOR TABLE DISPLAY
-    courses = CourseStr.objects.all().order_by('-created_at')[:20]
+    courses = CourseStr.objects.all().order_by('-created_at')
+
+    prog_code = request.GET.get("prog_code")
+    year = request.GET.get("year")
+    prog_type = request.GET.get("prog_type")
+    sem = request.GET.get("sem")
+    course_code = request.GET.get("course_code")
+    category = request.GET.get("course_category")
+    title = request.GET.get("course_title")
+
+    filters_used = any([prog_code, year, prog_type, sem, course_code, category, title])
+
+    # --- COURSE CODE IS PRIMARY UNIQUE FILTER ---
+    if course_code:
+        filtered = courses.filter(course_code__iexact=course_code.strip())
+
+        if not filtered.exists():
+            messages.error(request, "Please give the correct subject code.")
+            courses = CourseStr.objects.none()
+        else:
+            courses = filtered
+            messages.success(request, "Course filtered successfully.")
+
+    # --- OTHER FILTERS ONLY IF NO COURSE CODE ---
+    elif filters_used:
+        if prog_code:
+            courses = courses.filter(prog_code=prog_code)
+        if year:
+            courses = courses.filter(year=year)
+        if prog_type:
+            courses = courses.filter(prog_type=prog_type)
+        if sem:
+            courses = courses.filter(sem=sem)
+        if category:
+            courses = courses.filter(course_category=category)
+        if title:
+            courses = courses.filter(course_title__icontains=title)
+
+        if not courses.exists():
+            messages.warning(request, "No such course available.")
+        else:
+            messages.success(request, "Course filtered successfully.")
+
     finalized = request.session.get('courses_finalized', False)
-    return render(request, 'upload_center.html', {'courses': courses, 'finalized': finalized})
+
+    return render(request, 'upload_center.html', {
+        'courses': courses,
+        'finalized': finalized
+    })
 
 def upload_course_content(request):
     if request.method == 'POST' and request.FILES.get('pdf_file'):

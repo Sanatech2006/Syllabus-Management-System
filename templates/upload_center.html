@@ -13,7 +13,7 @@
 {% block content %}
 <div class="container-fluid px-4">
   <div class="row g-0">
-    
+    <form method="get" class="card p-4 mb-4">
     <!-- Filter Courses Card -->
     <div class="col-12 mb-5">
       <div class="card shadow-lg border-0 rounded-4">
@@ -27,9 +27,6 @@
         </div>
         
         <div class="card-body p-5">
-          <form class="course-details-form" method="post" action="{% url 'add_course' %}" id="courseForm">
-            {% csrf_token %}
-            
             <div class="row g-4">
               <!-- Programme Code -->
               <div class="col-md-6">
@@ -160,7 +157,6 @@
         </div>
       </div>
     </div>
-
     <!-- Saved Courses Section -->
     {% if courses %}
     <div class="col-12">
@@ -215,6 +211,7 @@
         Delete
       </button>
     </form>
+
 
   {% else %}
     <!-- Upload -->
