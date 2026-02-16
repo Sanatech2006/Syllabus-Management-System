@@ -4,21 +4,23 @@
 <head>
   <meta charset="UTF-8">
   <title>{% block title %}Syllabus Dashboard{% endblock %}</title>
-   <!-- Tailwind build -->
-  <link rel="stylesheet" href="{% static 'assets/css/tailwind.css' %}">
+  <!--bootstrap CSS-->
+<link href="{% static 'assets/css/bootstrap.min.css' %}" rel="stylesheet">
+  <!-- Custom CSS ONLY -->
   <link rel="stylesheet" href="{% static 'assets/css/menus.css' %}">
   <link rel="stylesheet" href="{% static 'assets/css/cou_manage.css' %}">
-  
+
   {% block extra_css %}{% endblock %}
 </head>
 <body>
+
 <div class="layout">
 
-  <!-- sidebar + header -->
+  <!-- Sidebar + header -->
   {% include "menus.html" %}
 
-  <!-- page body -->
-  <main class="page-wrapper w-full px-8">
+  <!-- Page body -->
+  <main class="page-wrapper">
     {% if messages %}
       <div class="messages">
         {% for message in messages %}
@@ -31,5 +33,6 @@
   </main>
 
 </div>
+ <script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>
 </body>
 </html>

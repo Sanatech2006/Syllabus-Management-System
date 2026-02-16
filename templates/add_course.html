@@ -1,0 +1,105 @@
+{% extends "base_layout.html" %}
+{% load static %}
+
+{% block title %}Add Courses{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+
+  <div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-4 p-lg-5">
+
+      <h4 class="fw-bold mb-4">Course Details</h4>
+
+      <form method="post">
+        {% csrf_token %}
+
+        <!-- Top Section : 2-column -->
+        <div class="row g-4 mb-4">
+
+          <div class="col-md-6">
+            <label class="form-label">Programme Code</label>
+            <input type="text" name="prog_code" class="form-control"
+                   value="{{ prog_code|default:'' }}">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Year</label>
+            <input type="text" name="year" class="form-control"
+                   value="{{ year|default:'' }}">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Programme Type</label>
+            <input type="text" name="prog_type" class="form-control"
+                   value="{{ prog_type|default:'' }}">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Semester</label>
+            <input type="text" name="sem" class="form-control"
+                   value="{{ sem|default:'' }}">
+          </div>
+        </div>
+
+        <!-- Full width fields -->
+        <div class="mb-3">
+          <label class="form-label">Course Code</label>
+          <input type="text" name="course_code" class="form-control">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Part</label>
+          <input type="text" name="part" class="form-control">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Course Category</label>
+          <input type="text" name="course_category" class="form-control">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Course Title</label>
+          <input type="text" name="course_title" class="form-control">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Hrs / Week</label>
+          <input type="number" name="hrs_per_week" class="form-control">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Credit</label>
+          <input type="number" name="credit" class="form-control">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">CIA Marks</label>
+          <input type="number" name="marks_cia" class="form-control">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">ESE Marks</label>
+          <input type="number" name="marks_ese" class="form-control">
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label">Total Marks</label>
+          <input type="number" name="total_marks" class="form-control">
+        </div>
+
+        <!-- Buttons -->
+        <div class="d-flex justify-content-end gap-3">
+          <button type="submit" name="add_next" class="btn btn-light px-4">
+            + Add next course
+          </button>
+          <button type="submit" name="add_finish" class="btn btn-primary px-4">
+            save & confirm
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+ {% endblock %}
+

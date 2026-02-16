@@ -1,20 +1,4 @@
 /* Page base layout - Enhanced */
-/* Page base layout - Enhanced */
-.page-wrapper {
-    min-height: 100vh;
-    padding: 24px;
-    box-sizing: border-box;
-    background: linear-gradient(135deg, #f6f8ff 0%, #f9fafb 100%);
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 16px;
-    line-height: 1.6;
-    display: block;
-    
-    /* CENTER IN CONTENT AREA (after sidebar offset) */
-    max-width: 1000px;
-    width: 100%;
-    margin: 0 auto;
-}
 
 /* Header: title left, button right - Enhanced */
 .upload-center-header {
@@ -39,62 +23,6 @@
     background-clip: text;
 }
 
-/* "Add Course" button - Premium style */
-.btn-add-course {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px 28px;
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    color: #ffffff;
-    font-size: 16px;
-    font-weight: 600;
-    border-radius: 10px;
-    cursor: pointer;
-    border: none;
-    text-decoration: none;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-    position: relative;
-    overflow: hidden;
-}
-
-.btn-add-course::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s ease;
-}
-
-.btn-add-course:hover::before {
-    left: 100%;
-}
-
-.btn-add-course:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
-}
-
-.btn-add-course:active {
-    transform: translateY(0);
-}
-
-.btn-add-course:focus {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
-}
-
-.btn-add-course::after {
-    content: '+';
-    font-size: 20px;
-    font-weight: 700;
-}
-
 /* Main content area - Glassmorphism effect */
 .upload-center-content {
     /* Existing styles... */
@@ -103,15 +31,16 @@
     margin-top: 0; /* Remove top margin on content block as centering handles it */
     margin-bottom: 40px;
     
-    /* Keep existing glassmorphism: */
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
+    /* Use transparent background so the global dark background stays uniform
+       Keep a subtle glass layer for contrast on top of dark background */
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(6px);
     border-radius: 16px;
     padding: 40px;
     box-shadow: 
-        0 4px 24px rgba(15, 23, 42, 0.1),
-        0 1px 2px rgba(15, 23, 42, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+        0 4px 24px rgba(0, 0, 0, 0.25),
+        0 1px 2px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 /* Messages styling - Enhanced */
@@ -314,14 +243,6 @@
 }
 
 @media (max-width: 768px) {
-    .page-wrapper {
-        /* On mobile, remove vertical centering to allow scrolling naturally */
-        justify-content: flex-start;
-        padding-top: 24px; 
-        padding-bottom: 24px;
-        padding-left: 24px;
-        padding-right: 24px;
-    }
     /* Rest of the mobile styles remain the same */
 }
     
@@ -364,9 +285,6 @@
 
 
 @media (max-width: 480px) {
-    .page-wrapper {
-        padding: 16px;
-    }
     
     .upload-center-content,
     .upload-center-form-card {
@@ -641,39 +559,6 @@ html {
 }
 
 
-/* FIXED SIDEBAR - PRESERVE ORIGINAL COLORS */
-.layout {
-    display: flex;
-    min-height: 100vh;
-}
-
-.sidebar {
-    position: fixed !important;
-    top: 0;
-    left: 0;
-    width: 280px;  /* Adjust if needed */
-    height: 100vh;
-    z-index: 1000;
-    overflow-y: auto;
-    
-    /* KEEP YOUR ORIGINAL BACKGROUND & COLORS */
-    /* These match your original design */
-    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
-    /* OR if you had a solid color: background: #1f2937 !important; */
-    
-    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
-}
-
-/* Content offset */
-/* Ensure content area supports centering */
-.content {
-    flex: 1;
-    margin-left: 280px;
-    padding: 0 24px 24px 24px;  /* Remove top padding, keep sides */
-    overflow-y: auto;
-    max-width: calc(100vw - 280px);  /* Full available width minus sidebar */
-}
-
 
 /* Menu items preserve original styling */
 .menu {
@@ -783,23 +668,6 @@ html {
     transform: translateY(-1px);
 }
 
-/* CENTER PAGE WRAPPER - OVERRIDE SIDEBAR OFFSET */
-.page-wrapper {
-    max-width: 1100px !important;
-    width: calc(100vw - 320px) !important;  /* Full width minus sidebar */
-    margin: 0 auto !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    position: relative !important;
-}
-
-/* Reset content padding for centering */
-main.content {
-    margin-left: 0 !important;  /* Remove sidebar offset */
-    padding: 0 !important;
-    width: 100vw !important;
-}
-
 .messages {
     margin-bottom: 16px;
 }
@@ -810,4 +678,58 @@ main.content {
     padding: 8px 12px;
     border-radius: 6px;
     font-size: 14px;
+}
+
+/* Make the course card the positioning context for the button */
+.course-card {
+    position: relative;
+    overflow: visible;   /* 🔥 REQUIRED */
+}
+
+
+/* Green pill + Add Course button at top-right */
+.add-course-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+
+    padding: 12px 32px;
+    border: none;
+    border-radius: 999px;
+    background: #10b981;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 12px 24px rgba(16, 185, 129, 0.35);
+    transition: background 0.15s ease,
+                box-shadow 0.15s ease,
+                transform 0.15s ease;
+}
+
+.add-course-btn:hover {
+    background: #0f9f6e;
+    box-shadow: 0 16px 32px rgba(16, 185, 129, 0.45);
+    transform: translateY(-1px);
+}
+
+.add-course-btn:active {
+    background: #0b7f58;
+    box-shadow: 0 8px 16px rgba(16, 185, 129, 0.35);
+    transform: translateY(0);
+}
+
+/* Ensure outline-style badges show dark text (semester/category values) */
+.badge.bg-outline-primary,
+.badge.bg-outline-success {
+    --bs-badge-color: #111827 !important;
+    color: #111827 !important;
+    opacity: 1 !important;
+    background-color: transparent !important;
+}
+
+/* Also ensure any child elements inherit the dark color */
+.badge.bg-outline-primary *,
+.badge.bg-outline-success * {
+    color: inherit !important;
 }

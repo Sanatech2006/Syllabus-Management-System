@@ -1,0 +1,102 @@
+.add-course-wrapper {
+    /* Make the add course area span the full content column width
+       so there is no gap on left/right between sidebar and page */
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    /* add a small horizontal gap so content isn't flush against edges */
+    padding: 24px;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.page-wrapper {
+    max-width: none !important;
+    margin: 0 !important;
+    padding-top: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    width: 100% !important;
+}
+
+.batch-box {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 12px 28px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    border: 1px solid #e5e7eb;
+    margin: 0; /* ensure it fills the wrapper without added gaps */
+    width: 100%;
+}
+
+.batch-box h2 {
+    margin: 0 0 16px 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.batch-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.course-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.field label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.field input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+}
+
+.buttons-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.btn-secondary,
+.btn-primary {
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-secondary {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.btn-secondary:hover {
+    background: #d1d5db;
+}
+
+.btn-primary {
+    background: #10b981;
+    color: #ffffff;
+    box-shadow: 0 10px 20px rgba(16, 185, 129, 0.35);
+}
+
+.btn-primary:hover {
+    background: #0f9f6e;
+}

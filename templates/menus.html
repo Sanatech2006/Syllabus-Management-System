@@ -1,68 +1,59 @@
 {% load static %}
 
-<!-- SIDEBAR ONLY: included inside base_layout.html -->
-<aside class="sidebar flex h-screen w-72 flex-col bg-slate-900 text-slate-100">
-    <div class="brand flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-3 shadow-sm">
-        <img src="{% static 'assets/images/logo.png' %}"
-             class="college-logo h-12 w-12 rounded-lg border border-indigo-400 bg-slate-800 object-contain p-1"
-             alt="logo">
-        <div class="text flex flex-col leading-tight">
-            <div class="college text-xs font-semibold tracking-[0.2em] text-slate-50">
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <div class="brand">
+        <img src="{% static 'assets/images/logo.png' %}" class="college-logo" alt="logo">
+
+        <div class="brand-text">
+            <div class="college-name">
                 JAMAL MOHAMED COLLEGE
             </div>
-            <div class="campus text-[11px] font-medium text-slate-400">
+            <div class="college-campus">
                 (Autonomous) TIRUCHIRAPPALLI
             </div>
         </div>
     </div>
 
-    <nav class="menu mt-4 flex flex-1 flex-col gap-1 text-sm">
-        <a href="#"
-           class="menu-item flex items-center gap-3 rounded-lg px-3 py-2 text-slate-200 hover:bg-slate-800">
-            <span class="icon w-5 text-lg">🏠</span>
-            <span class="menu-text flex-1">Dashboard</span>
+    <nav class="menu">
+        <a href="#" class="menu-item">
+            <span class="icon">🏠</span>
+            <span>Dashboard</span>
         </a>
 
-        <a href="{% url 'course_management' %}"
-           class="menu-item flex items-center gap-3 rounded-lg px-3 py-2 text-slate-200 hover:bg-slate-800">
-            <span class="icon w-5 text-lg">📚</span>
-            <span class="menu-text flex-1">Course Management</span>
+        <a href="{% url 'course_management' %}" class="menu-item">
+            <span class="icon">📚</span>
+            <span>Course Management</span>
         </a>
 
-        <a href="#"
-           class="menu-item flex items-center gap-3 rounded-lg px-3 py-2 text-slate-200 hover:bg-slate-800">
-            <span class="icon w-5 text-lg">🎓</span>
-            <span class="menu-text flex-1">Program Management</span>
+        <a href="#" class="menu-item">
+            <span class="icon">🎓</span>
+            <span>Program Management</span>
         </a>
 
-        <a href="{% url 'upload_center' %}"
-           class="menu-item flex items-center gap-3 rounded-lg px-3 py-2 text-slate-200 hover:bg-slate-800">
-            <span class="icon w-5 text-lg">⏫</span>
-            <span class="menu-text flex-1">Upload Center</span>
+        <a href="{% url 'upload_center' %}" class="menu-item">
+            <span class="icon">⏫</span>
+            <span>Upload Center</span>
         </a>
 
-        <a href="#"
-           class="menu-item flex items-center gap-3 rounded-lg px-3 py-2 text-slate-200 hover:bg-slate-800">
-            <span class="icon w-5 text-lg">📊</span>
-            <span class="menu-text flex-1">Reports</span>
+        <a href="#" class="menu-item">
+            <span class="icon">📊</span>
+            <span>Reports</span>
         </a>
 
-        <a href="#"
-           class="menu-item flex items-center gap-3 rounded-lg px-3 py-2 text-slate-200 hover:bg-slate-800">
-            <span class="icon w-5 text-lg">👥</span>
-            <span class="menu-text flex-1">User Management</span>
+        <a href="#" class="menu-item">
+            <span class="icon">👥</span>
+            <span>User Management</span>
         </a>
 
-        <a href="#"
-           class="menu-item flex items-center gap-3 rounded-lg px-3 py-2 text-slate-200 hover:bg-slate-800">
-            <span class="icon w-5 text-lg">⚙️</span>
-            <span class="menu-text flex-1">Settings</span>
+        <a href="#" class="menu-item">
+            <span class="icon">⚙️</span>
+            <span>Settings</span>
         </a>
 
-        <a href="#"
-           class="menu-item flex items-center gap-3 rounded-lg px-3 py-2 text-slate-200 hover:bg-slate-800">
-            <span class="icon w-5 text-lg">❓</span>
-            <span class="menu-text flex-1">Help &amp; Support</span>
+        <a href="#" class="menu-item">
+            <span class="icon">❓</span>
+            <span>Help & Support</span>
         </a>
     </nav>
 </aside>

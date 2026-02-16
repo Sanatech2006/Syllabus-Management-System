@@ -4,248 +4,276 @@
 {% block title %}Upload Center{% endblock %}
 
 {% block extra_css %}
+<!-- Keep for now - remove upload_center.css later when fully converted -->
 <link rel="stylesheet" href="{% static 'assets/css/upload_center.css' %}">
 <script src="{% static 'assets/js/upload_center.js' %}"></script>
 <script src="{% static 'assets/js/upload_content.js' %}"></script>
 {% endblock %}
 
 {% block content %}
-<div class="page-wrapper">
-
-  <!-- Upload Center title + Tailwind button -->
-  <div class="mb-4 flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-slate-900">Upload Center</h1>
-
-    <button
-      type="button"
-      id="openAddCourse"
-      class="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
-      <span class="text-lg leading-none">+</span>
-      <span>Add Course</span>
-    </button>
-  </div>
-
-
-    <!-- Course details form card -->
-    <div class="w-full rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-
-        <h2 class="form-title">Course Details</h2>
-
-        <!-- Main form that saves to database -->
-        <form class="course-details-form" method="post" action="{% url 'add_course' %}" id="courseForm">
+<div class="container-fluid px-4">
+  <div class="row g-0">
+    
+    <!-- Filter Courses Card -->
+    <div class="col-12 mb-5">
+      <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-header bg-gradient-primary text-white p-4 rounded-top-4">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <h2 class="mb-0 fw-bold fs-3 lh-sm text-dark">🔍 Filter uploaded courses</h2>
+            <a href="{% url 'add_course' %}" class="btn btn-info btn-lg text-white px-4 py-2 shadow-sm">
+              <i class="bi bi-plus-circle me-2"></i>+ Add Course
+            </a>
+          </div>
+        </div>
+        
+        <div class="card-body p-5">
+          <form class="course-details-form" method="post" action="{% url 'add_course' %}" id="courseForm">
             {% csrf_token %}
+            
+            <div class="row g-4">
+              <!-- Programme Code -->
+              <div class="col-md-6">
+                <label for="prog_code" class="form-label fw-semibold fs-6 mb-2">Programme Code</label>
+                <input type="text" class="form-control form-control-lg" id="prog_code" name="prog_code">
+              </div>
 
-            <div class="form-grid">
-                <!-- ROW 1 -->
-                <div class="form-field">
-                    <label for="prog_code">Programme Code</label>
-                    <input type="text" id="prog_code" name="prog_code" placeholder="e.g., BA101">
-                </div>
+              <!-- Year -->
+              <div class="col-md-6">
+                <label for="year" class="form-label fw-semibold fs-6 mb-2">Year</label>
+                <select class="form-select form-select-lg" id="year" name="year">
+                  <option value="">Select</option>
+                  <option>2023-2024</option>
+                  <option>2024-2025</option>
+                  <option>2025-2026</option>
+                </select>
+              </div>
 
-                <div class="form-field">
-                    <label for="year">Year</label>
-                    <select id="year" name="year">
-                        <option value="">Select</option>
-                        <option value="2023-2024">2023-2024</option>
-                        <option value="2024-2025">2024-2025</option>
-                        <option value="2025-2026">2025-2026</option>
-                    </select>
-                </div>
+              <!-- Programme Type -->
+              <div class="col-md-6">
+                <label for="prog_type" class="form-label fw-semibold fs-6 mb-2">Programme Type</label>
+                <select class="form-select form-select-lg" id="prog_type" name="prog_type">
+                  <option value="">Select</option>
+                  <option>UG</option>
+                  <option>PG</option>
+                </select>
+              </div>
 
-                <div class="form-field">
-                    <label for="prog_type">Programme Type</label>
-                    <select id="prog_type" name="prog_type">
-                        <option value="">Select</option>
-                        <option value="UG">UG</option>
-                        <option value="PG">PG</option>
-                    </select>
-                </div>
+              <!-- Semester -->
+              <div class="col-md-6">
+                <label for="sem" class="form-label fw-semibold fs-6 mb-2">Semester</label>
+                <select class="form-select form-select-lg" id="sem" name="sem">
+                  <option value="">Select</option>
+                  <option>I</option><option>II</option><option>III</option>
+                  <option>IV</option><option>V</option><option>VI</option>
+                </select>
+              </div>
 
-                <div class="form-field">
-                    <label for="sem">Semester</label>
-                    <select id="sem" name="sem">
-                        <option value="">Select</option>
-                        <option value="I">I</option>
-                        <option value="II">II</option>
-                        <option value="III">III</option>
-                        <option value="IV">IV</option>
-                        <option value="V">V</option>
-                        <option value="VI">VI</option>
-                    </select>
-                </div>
+              <!-- Course Code -->
+              <div class="col-md-6">
+                <label for="course_code" class="form-label fw-semibold fs-6 mb-2">Course Code</label>
+                <input type="text" class="form-control form-control-lg" id="course_code" name="course_code">
+              </div>
 
-                <!-- ROW 2 -->
-                <div class="form-field">
-                    <label for="course_code">Course Code</label>
-                    <input type="text" id="course_code" name="course_code" placeholder="CS101">
-                </div>
+              <!-- Part -->
+              <div class="col-md-6">
+                <label for="part" class="form-label fw-semibold fs-6 mb-2">Part</label>
+                <select class="form-select form-select-lg" id="part" name="part">
+                  <option value="">Select</option>
+                  <option>I</option><option>II</option><option>III</option>
+                </select>
+              </div>
 
-                <div class="form-field">
-                    <label for="part">Part</label>
-                    <select id="part" name="part">
-                        <option value="">Select</option>
-                        <option value="I">Part I</option>
-                        <option value="II">Part II</option>
-                        <option value="III">Part III</option>
-                    </select>
-                </div>
+              <!-- Course Category -->
+              <div class="col-md-6">
+                <label for="course_category" class="form-label fw-semibold fs-6 mb-2">Course Category</label>
+                <select class="form-select form-select-lg" id="course_category" name="course_category">
+                  <option value="">Select</option>
+                  <option>Core</option>
+                  <option>Elective</option>
+                  <option>Allied</option>
+                  <option>Skill Enhancement</option>
+                </select>
+              </div>
 
-                <div class="form-field">
-                    <label for="course_category">Course Category</label>
-                    <select id="course_category" name="course_category">
-                        <option value="">Select</option>
-                        <option value="Core">Core</option>
-                        <option value="Elective">Elective</option>
-                        <option value="Allied">Allied</option>
-                        <option value="Skill">Skill Enhancement</option>
-                    </select>
-                </div>
+              <!-- Course Title -->
+              <div class="col-md-6">
+                <label for="course_title" class="form-label fw-semibold fs-6 mb-2">Course Title</label>
+                <input type="text" class="form-control form-control-lg" id="course_title" name="course_title">
+              </div>
 
-                <div class="form-field">
-                    <label for="course_title">Course Title</label>
-                    <input type="text" id="course_title" name="course_title" placeholder="Programming Fundamentals">
-                </div>
+              <!-- Hrs/Week -->
+              <div class="col-md-4">
+                <label for="hrs_per_week" class="form-label fw-semibold fs-6 mb-2">Hrs/Week</label>
+                <select class="form-select form-select-lg" id="hrs_per_week" name="hrs_per_week">
+                  <option value="">Select</option>
+                  <option>1</option><option>2</option><option>3</option>
+                  <option>4</option><option>5</option><option>6</option>
+                </select>
+              </div>
 
-                <!-- ROW 3 -->
-                <div class="form-field">
-                    <label for="hrs_per_week">Hrs/Week</label>
-                    <select id="hrs_per_week" name="hrs_per_week">
-                        <option value="">Select</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                    </select>
-                </div>
+              <!-- Credit -->
+              <div class="col-md-4">
+                <label for="credit" class="form-label fw-semibold fs-6 mb-2">Credit</label>
+                <select class="form-select form-select-lg" id="credit" name="credit">
+                  <option value="">Select</option>
+                  <option>1</option><option>2</option><option>3</option>
+                  <option>4</option><option>5</option>
+                </select>
+              </div>
 
-                <div class="form-field">
-                    <label for="credit">Credit</label>
-                    <select id="credit" name="credit">
-                        <option value="">Select</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                    </select>
-                </div>
+              <!-- CIA Marks -->
+              <div class="col-md-4">
+                <label for="marks_cia" class="form-label fw-semibold fs-6 mb-2">CIA Marks</label>
+                <select class="form-select form-select-lg" id="marks_cia" name="marks_cia">
+                  <option value="">Select</option>
+                  <option>25</option><option>40</option>
+                  <option>50</option><option>75</option>
+                </select>
+              </div>
 
-                <div class="form-field">
-                    <label for="marks_cia">CIA Marks</label>
-                    <select id="marks_cia" name="marks_cia">
-                        <option value="">Select</option>
-                        <option value="25">25</option>
-                        <option value="40">40</option>
-                        <option value="50">50</option>
-                        <option value="75">75</option>
-                    </select>
-                </div>
+              <!-- ESE Marks -->
+              <div class="col-md-6">
+                <label for="marks_ese" class="form-label fw-semibold fs-6 mb-2">ESE Marks</label>
+                <select class="form-select form-select-lg" id="marks_ese" name="marks_ese">
+                  <option value="">Select</option>
+                  <option>75</option><option>60</option>
+                  <option>50</option><option>25</option>
+                </select>
+              </div>
 
-                <div class="form-field">
-                    <label for="marks_ese">ESE Marks</label>
-                    <select id="marks_ese" name="marks_ese">
-                        <option value="">Select</option>
-                        <option value="75">75</option>
-                        <option value="60">60</option>
-                        <option value="50">50</option>
-                        <option value="25">25</option>
-                    </select>
-                </div>
-
-                <div class="form-field">
-                    <label for="total_marks">Total Marks</label>
-                    <select id="total_marks" name="total_marks">
-                        <option value="">Select</option>
-                        <option value="100">100</option>
-                        <option value="75">75</option>
-                        <option value="50">50</option>
-                    </select>
-                </div>
+              <!-- Total Marks -->
+              <div class="col-md-6">
+                <label for="total_marks" class="form-label fw-semibold fs-6 mb-2">Total Marks</label>
+                <select class="form-select form-select-lg" id="total_marks" name="total_marks">
+                  <option value="">Select</option>
+                  <option>100</option><option>75</option><option>50</option>
+                </select>
+              </div>
             </div>
 
-            <!-- Submit button -->
-            <div class="form-actions">
-                <button type="submit" class="btn-submit" id="saveBtn">
-                    Save Course Structure
-                </button>
+            <div class="text-center mt-5">
+              <button type="submit" class="btn btn-primary btn-lg px-5 py-3 fs-5 shadow-lg">
+                <i class="bi bi-funnel me-2"></i>Filter Now
+              </button>
             </div>
-        </form>
-
-        <!-- Confirmation Dialog -->
-        <div class="dialog-overlay" id="confirmDialog">
-            <div class="confirm-dialog">
-                <h3 class="dialog-title">Confirm Save</h3>
-                <p class="dialog-message">
-                    Are you sure you want to save this course structure?
-                </p>
-                <div class="dialog-buttons">
-                    <button type="button" class="btn-dialog btn-cancel" id="cancelBtn">
-                        Cancel
-                    </button>
-                    <button type="submit" class="btn-dialog btn-confirm" form="courseForm" id="confirmBtn">
-                        Save
-                    </button>
-                </div>
-            </div>
+          </form>
         </div>
+      </div>
     </div>
 
-    <!-- Saved courses table -->
-    <div class="upload-center-content">
-        {% if courses %}
-        <div class="table-container">
-            <div class="table-header">
-                <h3 class="table-title">Saved Courses</h3>
-                <span class="table-count">{{ courses|length }} courses</span>
-            </div>
-
-            <div class="table-responsive">
-                <table class="courses-table">
-                    <thead>
-                        <tr>
-                            <th>Programme Code</th>
-                            <th>Year</th>
-                            <th>Programme Type</th>
-                            <th>Semester</th>
-                            <th>Course Code</th>
-                            <th>Course Category</th>
-                            <th>Course Title</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for course in courses %}
-                        <tr>
-                            <td>{{ course.prog_code|default:"—" }}</td>
-                            <td>{{ course.year|default:"—" }}</td>
-                            <td>{{ course.prog_type|default:"—" }}</td>
-                            <td>{{ course.sem|default:"—" }}</td>
-                            <td>{{ course.course_code|default:"—" }}</td>
-                            <td>{{ course.course_category|default:"—" }}</td>
-                            <td>{{ course.course_title|default:"—" }}</td>
-                            <td>
-                                <form method="post"
-                                      enctype="multipart/form-data"
-                                      action="{% url 'upload_course_content' %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="course_code" value="{{ course.course_code }}">
-                                    <input type="file" name="pdf_file" accept=".pdf" required>
-                                    <button type="submit">Upload PDF</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" class="no-data">No courses saved yet</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <!-- Saved Courses Section -->
+    {% if courses %}
+    <div class="col-12">
+      <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-header bg-success text-white p-4 rounded-top-4">
+          <h3 class="mb-0 fw-bold fs-2 lh-sm">
+            📚 Saved Courses ({{ courses|length }})
+          </h3>
         </div>
-        {% endif %}
+        
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th class="border-0 py-4 fw-bold fs-6">Programme Code</th>
+                  <th class="border-0 py-4 fw-bold fs-6">Year</th>
+                  <th class="border-0 py-4 fw-bold fs-6">Prog Type</th>
+                  <th class="border-0 py-4 fw-bold fs-6">Semester</th>
+                  <th class="border-0 py-4 fw-bold fs-6">Course Code</th>
+                  <th class="border-0 py-4 fw-bold fs-6">Category</th>
+                  <th class="border-0 py-4 fw-bold fs-6">Title</th>
+                  <th class="border-0 py-4 fw-bold fs-6 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody class="table-group-divider">
+                {% for course in courses %}
+                <tr class="align-middle">
+                  <td class="fw-semibold">{{ course.prog_code }}</td>
+                  <td>{{ course.year }}</td>
+                  <td><span class="badge bg-light text-dark px-2 py-1">{{ course.prog_type }}</span></td>
+                  <td><span class="badge bg-outline-primary px-2 py-1">{{ course.sem }}</span></td>
+                  <td class="fw-bold text-primary">{{ course.course_code }}</td>
+                  <td><span class="badge bg-outline-success px-2 py-1">{{ course.course_category }}</span></td>
+                  <td class="text-wrap" style="max-width: 250px;">{{ course.course_title }}</td>
+                  <td>
+                    <div class="d-flex gap-2 justify-content-center">
+
+  {% if course.is_finalized %}
+    <button class="btn btn-secondary btn-sm px-3" disabled>
+      ✔ Uploaded
+    </button>
+
+  {% elif course.is_saved %}
+    <button class="btn btn-secondary btn-sm px-3" disabled>
+      ✔ Saved
+    </button>
+
+    <form method="post" action="{% url 'delete_course' course.id %}">
+      {% csrf_token %}
+      <button class="btn btn-outline-danger btn-sm px-3">
+        Delete
+      </button>
+    </form>
+
+  {% else %}
+    <!-- Upload -->
+    <form method="post" enctype="multipart/form-data"
+          action="{% url 'upload_course_content' %}">
+      {% csrf_token %}
+      <input type="hidden" name="course_code" value="{{ course.course_code }}">
+      <input type="file" name="pdf_file" accept=".pdf"
+             id="pdf{{ course.id }}" class="d-none"
+             onchange="this.form.submit();" required>
+      <label for="pdf{{ course.id }}"
+             class="btn btn-outline-success btn-sm px-3">
+        Upload
+      </label>
+    </form>
+
+    <!-- Delete -->
+    <form method="post" action="{% url 'delete_course' course.id %}">
+      {% csrf_token %}
+      <button class="btn btn-outline-danger btn-sm px-3">
+        Delete
+      </button>
+    </form>
+  {% endif %}
+
+</div>
+
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Final Save Button -->
+          <div class="card-footer bg-light border-0 py-4">
+             <div class="d-flex justify-content-between">
+
+               <!-- Save -->
+    <form method="post" action="{% url 'save_courses' %}">
+      {% csrf_token %}
+      <button class="btn btn-primary btn-lg px-5 py-3 fs-5 shadow-lg">
+        💾 Save
+      </button>
+    </form>
+    <!-- Save & Confirm -->
+    <form method="post" action="{% url 'finalize_courses' %}">
+      {% csrf_token %}
+      <button class="btn btn-success btn-lg px-5 py-3 fs-5 shadow-lg">
+        <i class="bi bi-check-circle me-2"></i>Save & Confirm All
+      </button>
+    </form>
+
+  </div>
+</div>
+        </div>
+      </div>
     </div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

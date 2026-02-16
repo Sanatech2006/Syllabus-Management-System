@@ -1,10 +1,13 @@
 from django.db import models
 
+
 class CourseStr(models.Model):
     prog_code = models.CharField(max_length=20, blank=True, null=True)
     year = models.CharField(max_length=10, blank=True, null=True)
     prog_type = models.CharField(max_length=5, blank=True, null=True)  # UG/PG
     sem = models.CharField(max_length=10, blank=True, null=True)       # Semester
+
+    
     course_code = models.CharField(max_length=20, blank=True, null=True)
     part = models.CharField(max_length=10, blank=True, null=True)      # Part I/II/etc.
     course_category = models.CharField(max_length=20, blank=True, null=True)
@@ -14,7 +17,9 @@ class CourseStr(models.Model):
     marks_cia = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)  # Continuous Internal Assessment
     marks_ese = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)  # End Semester Exam
     total_marks = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
-    
+    is_saved = models.BooleanField(default=False)
+    is_finalized = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -26,11 +31,19 @@ class CourseStr(models.Model):
 
     def __str__(self):
         return f"{self.course_code} - {self.course_title}"
+    
+def course_pdf_upload_path(instance, filename):
+    return f"course_pdfs/{instance.course_code}.pdf"
 
 class CourseContent(models.Model):
     course_code = models.CharField(max_length=20, blank=False, null=False)
     course_content = models.TextField(blank=True, null=True)
     
+    pdf = models.FileField(
+    upload_to=course_pdf_upload_path,
+    null=True,
+    blank=True
+)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
