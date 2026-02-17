@@ -160,9 +160,14 @@ def save_courses(request):
 def finalize_courses(request):
     if request.method == "POST":
         request.session['courses_finalized'] = True
-        try:
-            CourseStr.objects.filter(is_saved=True, is_finalized=False).update(is_finalized=True)
-        except Exception:
-            pass
-        messages.success(request, "Courses finalized and ready in Course Management.")
-    return redirect("course_management")  # Show confirmed courses!
+        
+        # Update ALL courses that are not yet finalized
+        # This will include both saved and unsaved courses
+        updated_count = CourseStr.objects.filter(is_finalized=False).update(is_finalized=True)
+        
+        if updated_count > 0:
+            messages.success(request, f"{updated_count} courses have been finalized and are now visible in Course Management.")
+        else:
+            messages.info(request, "All courses are already finalized.")
+            
+    return redirect("course_management")

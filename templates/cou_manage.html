@@ -4,13 +4,16 @@
 {% block title %}Course Management{% endblock %}
 
 {% block content %}
+
+
     <div class="management-header">
         <!-- <h1 class="page-title">Course Management</h1> -->
         <button class="btn-clear-filters" id="clearFilters">Clear All Filters</button>
     </div>
 
     <!-- Filter Form - REPLACES your filter-box -->
-    <div class="filters-card">
+    <!-- Filter Form -->
+<div class="filters-card">
     <h2 class="filters-title">Filter Courses</h2>
     <form method="get" id="filterForm" class="filters-grid">
         {% csrf_token %}
@@ -22,9 +25,6 @@
                 <option value="">All Years</option>
                 {% for year in years %}
                     <option value="{{ year }}" {% if request.GET.year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
-                {% empty %}
-                    <option>2024-2025</option>
-                    <option>2025-2026</option>
                 {% endfor %}
             </select>
         </div>
@@ -35,9 +35,6 @@
                 <option value="">All Types</option>
                 {% for type in prog_types %}
                     <option value="{{ type }}" {% if request.GET.prog_type == type|stringformat:"s" %}selected{% endif %}>{{ type|upper }}</option>
-                {% empty %}
-                    <option>UG</option>
-                    <option>PG</option>
                 {% endfor %}
             </select>
         </div>
@@ -48,24 +45,27 @@
                 <option value="">All Categories</option>
                 {% for cat in course_categories %}
                     <option value="{{ cat }}" {% if request.GET.course_category == cat|stringformat:"s" %}selected{% endif %}>{{ cat }}</option>
-                {% empty %}
-                    <option>Aided</option>
-                    <option>SFM</option>
-                    <option>SFW</option>
                 {% endfor %}
             </select>
         </div>
 
-        <!-- ROW 2: 3 filters (NO Branch) -->
+        <!-- ROW 2: 3 filters -->
         <div class="filter-group">
             <label for="prog_code">Programme Name</label>
             <select name="prog_code" id="prog_code">
                 <option value="">All Programmes</option>
                 {% for prog in prog_codes %}
                     <option value="{{ prog }}" {% if request.GET.prog_code == prog|stringformat:"s" %}selected{% endif %}>{{ prog }}</option>
-                {% empty %}
-                    <option>BA101</option>
-                    <option>BSC101</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="part">Part/Branch</label>
+            <select name="part" id="part">
+                <option value="">All Parts</option>
+                {% for p in parts %}
+                    <option value="{{ p }}" {% if request.GET.part == p|stringformat:"s" %}selected{% endif %}>{{ p }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -76,38 +76,33 @@
                 <option value="">All Semesters</option>
                 {% for semester in semesters %}
                     <option value="{{ semester }}" {% if request.GET.sem == semester|stringformat:"s" %}selected{% endif %}>{{ semester }}</option>
-                {% empty %}
-                    <option>I</option><option>II</option><option>III</option><option>IV</option><option>V</option><option>VI</option>
                 {% endfor %}
             </select>
         </div>
 
-        <!-- NEW: Separate Course Code filter -->
+        <!-- ROW 3: Course Code and Title filters -->
         <div class="filter-group">
             <label for="course_code">Course Code</label>
             <select name="course_code" id="course_code">
                 <option value="">All Codes</option>
-                {% for course in course_code_titles %}
-                    <option value="{{ course.course_code }}" {% if request.GET.course_code == course.course_code|stringformat:"s" %}selected{% endif %}>{{ course.course_code }}</option>
-                {% empty %}
-                    <option>CS101</option>
-                    <option>CS201</option>
+                {% for code in course_codes %}
+                    <option value="{{ code }}" {% if request.GET.course_code == code|stringformat:"s" %}selected{% endif %}>{{ code }}</option>
                 {% endfor %}
             </select>
         </div>
 
-        <!-- NEW: Separate Course Title filter -->
         <div class="filter-group">
             <label for="course_title">Course Title</label>
             <select name="course_title" id="course_title">
                 <option value="">All Titles</option>
-                {% for course in course_code_titles %}
-                    <option value="{{ course.course_title }}" {% if request.GET.course_title == course.course_title|stringformat:"s" %}selected{% endif %}>{{ course.course_title }}</option>
-                {% empty %}
-                    <option>Programming Fundamentals</option>
-                    <option>Data Structures</option>
+                {% for title in course_titles %}
+                    <option value="{{ title }}" {% if request.GET.course_title == title|stringformat:"s" %}selected{% endif %}>{{ title }}</option>
                 {% endfor %}
             </select>
+        </div>
+
+        <div class="filter-group">
+            <!-- Empty for layout purposes -->
         </div>
 
         <div class="filter-actions">
@@ -216,6 +211,127 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('pdfFrame').src = '';
         }
     });
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all filter select elements
+    const filterSelects = {
+        'year': document.getElementById('year'),
+        'prog_type': document.getElementById('prog_type'),
+        'course_category': document.getElementById('course_category'),
+        'prog_code': document.getElementById('prog_code'),
+        'part': document.getElementById('part'),
+        'sem': document.getElementById('sem'),
+        'course_code': document.getElementById('course_code'),
+        'course_title': document.getElementById('course_title')
+    };
+    
+    // Store original options as data attributes
+    for (let [key, select] of Object.entries(filterSelects)) {
+        if (select) {
+            let options = [];
+            for (let option of select.options) {
+                if (option.value) {
+                    options.push({value: option.value, text: option.text});
+                }
+            }
+            select.dataset.allOptions = JSON.stringify(options);
+        }
+    }
+    
+    // Function to get current filter values
+    function getCurrentFilters() {
+        let filters = {};
+        for (let [key, select] of Object.entries(filterSelects)) {
+            if (select && select.value) {
+                filters[key] = select.value;
+            }
+        }
+        return filters;
+    }
+    
+    // Function to update a single dropdown
+    function updateDropdown(select, options, currentValue) {
+        if (!select) return;
+        
+        // Clear current options (keep the "All" option)
+        while (select.options.length > 1) {
+            select.remove(1);
+        }
+        
+        // Add new options
+        options.forEach(optValue => {
+            let option = document.createElement('option');
+            option.value = optValue;
+            option.text = optValue;
+            if (currentValue && currentValue === optValue) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+    }
+    
+    // Function to update all dropdowns based on current filters
+    function updateFilters(changedFilter = null) {
+        let filters = getCurrentFilters();
+        
+        // Build URL with current filters
+        let url = '/get-filter-options/?' + new URLSearchParams(filters);
+        
+        // Fetch new options
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                // Update each dropdown with new options
+                for (let [key, select] of Object.entries(filterSelects)) {
+                    if (select && key !== changedFilter) { // Don't update the filter that just changed
+                        updateDropdown(select, data[key] || [], filters[key]);
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+    
+    // Add event listeners to all filters
+    for (let [key, select] of Object.entries(filterSelects)) {
+        if (select) {
+            select.addEventListener('change', function() {
+                updateFilters(key);
+            });
+        }
+    }
+    
+    // Clear filters button
+    const clearBtn = document.getElementById('clearFilters');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            // Reset all selects to "All" option
+            for (let [key, select] of Object.entries(filterSelects)) {
+                if (select) {
+                    select.value = '';
+                    
+                    // Restore all original options
+                    while (select.options.length > 1) {
+                        select.remove(1);
+                    }
+                    
+                    if (select.dataset.allOptions) {
+                        let allOptions = JSON.parse(select.dataset.allOptions);
+                        allOptions.forEach(opt => {
+                            let option = document.createElement('option');
+                            option.value = opt.value;
+                            option.text = opt.text;
+                            select.appendChild(option);
+                        });
+                    }
+                }
+            }
+            
+            // Submit the form to clear all filters
+            document.getElementById('filterForm').submit();
+        });
+    }
 });
 </script>
 {% endblock %}
