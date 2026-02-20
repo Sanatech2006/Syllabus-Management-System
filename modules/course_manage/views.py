@@ -4,9 +4,42 @@ from modules.upload_center.models import CourseStr, CourseContent
 from django.http import HttpResponse, FileResponse, Http404
 import os
 from django.conf import settings
+from django.http import JsonResponse
+from django.contrib import messages
+import pandas as pd
 
 def home(request):
     return redirect('course_management')   # or render('some_home.html')
+
+def bulk_upload(request):
+    if request.method == 'POST':
+        excel_file = request.FILES.get('excel_file')
+
+        if not excel_file:
+            messages.error(request, "Please upload a file.")
+            return redirect('bulk_upload')
+
+        try:
+            df = pd.read_excel(excel_file)
+
+            for _, row in df.iterrows():
+                CourseStr.objects.create(
+                    year=row['year'],
+                    prog_type=row['prog_type'],
+                    prog_code=row['prog_code'],
+                    course_category=row['course_category'],
+                    course_title=row['course_title'],
+                    course_code=row['course_code'],
+                )
+
+            messages.success(request, "Bulk upload successful!")
+            return redirect('course_management')
+
+        except Exception as e:
+            messages.error(request, f"Error: {str(e)}")
+            return redirect('bulk_upload')
+
+    return render(request, 'bulk_upload.html')
 
 def course_management(request):
     year = request.GET.get('year')
@@ -142,5 +175,4 @@ def get_filter_options(request):
         'course_codes': list(queryset.exclude(course_code__isnull=True).exclude(course_code='').values_list('course_code', flat=True).distinct().order_by('course_code')),
         'course_titles': list(queryset.exclude(course_title__isnull=True).exclude(course_title='').values_list('course_title', flat=True).distinct().order_by('course_title')),
     }
-    
     return JsonResponse(options)

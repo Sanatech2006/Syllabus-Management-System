@@ -1,0 +1,24 @@
+{% extends "base_layout.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    <h3>Bulk Upload Syllabus (Excel)</h3>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <input type="file" name="excel_file" class="form-control" accept=".xlsx,.xls" required>
+        </div>
+
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-upload me-2"></i> Upload
+        </button>
+
+        <a href="{% url 'course_management' %}" class="btn btn-secondary ms-2">
+            Cancel
+        </a>
+    </form>
+</div>
+
+{% endblock %}

@@ -24,7 +24,13 @@
           </div>
 
           <div class="col-md-6">
-            <label class="form-label">Year</label>
+            <label class="form-label">Branch</label>
+            <input type="text" name="branch" class="form-control"
+                   value="{{ branch|default:'' }}">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Year of syllabus</label>
             <input type="text" name="year" class="form-control"
                    value="{{ year|default:'' }}">
           </div>
