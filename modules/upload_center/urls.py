@@ -8,4 +8,5 @@ urlpatterns = [
     path('upload-center/upload-pdf/', views.upload_course_content, name='upload_course_content'),
     path('upload-center/finalize/', views.finalize_courses, name='finalize_courses'),
     path("upload-center/save/", views.save_courses, name="save_courses"),
+    path('download-template/', views.download_template, name='download_template'),
 ]

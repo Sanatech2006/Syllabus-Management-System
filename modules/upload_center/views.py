@@ -1,6 +1,8 @@
+import openpyxl
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import HttpResponse
+from openpyxl.styles import Font, PatternFill
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
@@ -8,6 +10,7 @@ import json, os
 from .models import CourseStr, CourseContent
 from django.conf import settings
 from django.http import HttpResponseRedirect
+from django.contrib.auth.decorators import login_required
 
 from django.contrib import messages
 
@@ -171,3 +174,163 @@ def finalize_courses(request):
             messages.info(request, "All courses are already finalized.")
             
     return redirect("course_management")
+
+
+def download_template(request):
+    """
+    Download an Excel template with the required column headings
+    for bulk course uploads.
+    """
+    # Create a new workbook and select the active sheet
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Course Template"
+    
+    # Define the column headings
+    headings = [
+        'prog_code',
+        'year',
+        'prog_type',
+        'sem',
+        'course_code',
+        'part',
+        'course_category',
+        'course_title',
+        'hrs_per_week',
+        'credit',
+        'marks_cia',
+        'marks_ese',
+        'total_marks'
+    ]
+    
+    # Add headings to the first row
+    for col_num, heading in enumerate(headings, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = heading
+        # Make the heading bold
+        cell.font = Font(bold=True)
+        # Add a light yellow background to headings
+        cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    
+    # Add a note row with instructions (optional)
+    instruction_row = 2
+    ws.cell(row=instruction_row, column=1, value="INSTRUCTIONS:")
+    ws.cell(row=instruction_row, column=2, value="Fill in your data below. Delete this row before uploading.")
+    # Merge cells for instruction
+    ws.merge_cells(start_row=instruction_row, start_column=1, end_row=instruction_row, end_column=13)
+    
+    # Add sample data starting from row 4
+    sample_row = 4
+    
+    # Sample 1
+    sample_data_1 = [
+        'CS101',           # prog_code
+        '2024-2025',       # year
+        'UG',              # prog_type
+        'I',               # sem
+        'CS101',           # course_code
+        'I',               # part
+        'Core',            # course_category
+        'Introduction to Computer Science',  # course_title
+        '4',               # hrs_per_week
+        '4',               # credit
+        '25',              # marks_cia
+        '75',              # marks_ese
+        '100'              # total_marks
+    ]
+    
+    for col_num, value in enumerate(sample_data_1, 1):
+        ws.cell(row=sample_row, column=col_num, value=value)
+    
+    # Sample 2
+    sample_data_2 = [
+        'MAT201',          # prog_code
+        '2024-2025',       # year
+        'UG',              # prog_type
+        'III',             # sem
+        'MAT201',          # course_code
+        'II',              # part
+        'Allied',          # course_category
+        'Calculus and Linear Algebra',  # course_title
+        '5',               # hrs_per_week
+        '4',               # credit
+        '25',              # marks_cia
+        '75',              # marks_ese
+        '100'              # total_marks
+    ]
+    
+    for col_num, value in enumerate(sample_data_2, 1):
+        ws.cell(row=sample_row + 1, column=col_num, value=value)
+    
+    # Add data validation for better user experience
+    # Year validation dropdown
+    year_validation = openpyxl.worksheet.datavalidation.DataValidation(
+        type="list",
+        formula1='"2023-2024,2024-2025,2025-2026"',
+        allow_blank=True
+    )
+    ws.add_data_validation(year_validation)
+    year_validation.add(f"B5:B1048576")  # Apply from row 5 onwards
+    
+    # Programme Type validation
+    prog_type_validation = openpyxl.worksheet.datavalidation.DataValidation(
+        type="list",
+        formula1='"UG,PG"',
+        allow_blank=True
+    )
+    ws.add_data_validation(prog_type_validation)
+    prog_type_validation.add(f"C5:C1048576")
+    
+    # Semester validation
+    sem_validation = openpyxl.worksheet.datavalidation.DataValidation(
+        type="list",
+        formula1='"I,II,III,IV,V,VI"',
+        allow_blank=True
+    )
+    ws.add_data_validation(sem_validation)
+    sem_validation.add(f"D5:D1048576")
+    
+    # Part validation
+    part_validation = openpyxl.worksheet.datavalidation.DataValidation(
+        type="list",
+        formula1='"I,II,III"',
+        allow_blank=True
+    )
+    ws.add_data_validation(part_validation)
+    part_validation.add(f"F5:F1048576")
+    
+    # Course Category validation
+    category_validation = openpyxl.worksheet.datavalidation.DataValidation(
+        type="list",
+        formula1='"Core,Elective,Allied,Skill Enhancement"',
+        allow_blank=True
+    )
+    ws.add_data_validation(category_validation)
+    category_validation.add(f"G5:G1048576")
+    
+    # Adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if cell.value and len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 40)  # Cap at 40 characters for better visibility
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    # Freeze the header row
+    ws.freeze_panes = 'A5'  # Freeze after the instruction row
+    
+    # Create the HTTP response
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="course_upload_template.xlsx"'
+    
+    # Save the workbook to the response
+    wb.save(response)
+    
+    return response
