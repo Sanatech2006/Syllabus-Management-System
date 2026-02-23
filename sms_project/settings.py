@@ -16,6 +16,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'modules.upload_center',
     'modules.course_manage', 
+    'modules.dashboard',
     
 ]
 
