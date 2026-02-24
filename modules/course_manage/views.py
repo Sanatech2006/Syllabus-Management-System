@@ -26,10 +26,14 @@ def bulk_upload(request):
                 CourseStr.objects.create(
                     year=row['year'],
                     prog_type=row['prog_type'],
-                    prog_code=row['prog_code'],
+                    prog_code=(row['prog_code']).strip(),
+                    branch=row['branch'],
+                    prog_category=row['prog_category'],
+                    sem=row['sem'],
+                    part=row['part'],
                     course_category=row['course_category'],
-                    course_title=row['course_title'],
-                    course_code=row['course_code'],
+                    course_title=row['course_title'].strip(),
+                    course_code=(row['course_code']).strip().upper(),
                 )
 
             messages.success(request, "Bulk upload successful!")

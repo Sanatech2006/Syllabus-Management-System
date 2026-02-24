@@ -3,14 +3,16 @@ from django.db import models
 
 class CourseStr(models.Model):
     prog_code = models.CharField(max_length=20, blank=True, null=True)
+    branch = models.CharField(max_length=20, blank=True, null=True)     # Branch/Department
     year = models.CharField(max_length=10, blank=True, null=True)
     prog_type = models.CharField(max_length=5, blank=True, null=True)  # UG/PG
+    prog_category=models.CharField(max_length=20, blank=True, null=True)  # Arts/Science.   
     sem = models.CharField(max_length=10, blank=True, null=True)       # Semester
 
     
-    course_code = models.CharField(max_length=20, blank=True, null=True)
-    part = models.CharField(max_length=10, blank=True, null=True)      # Part I/II/etc.
+    course_code = models.CharField(max_length=20, blank=True, null=True)  # Primary unique filter
     course_category = models.CharField(max_length=20, blank=True, null=True)
+    part = models.CharField(max_length=10, blank=True, null=True)      # Part I/II/etc.
     course_title = models.CharField(max_length=200, blank=True, null=True)
     hrs_per_week = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     credit = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)

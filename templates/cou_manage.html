@@ -31,19 +31,20 @@
         <div class="filter-group">
             <label for="prog_type">Programme Type</label>
             <select name="prog_type" id="prog_type">
-                <option value="">All Types</option>
-                {% for type in prog_types %}
-                    <option value="{{ type }}" {% if request.GET.prog_type == type|stringformat:"s" %}selected{% endif %}>{{ type|upper }}</option>
-                {% endfor %}
+                <option value="" {% if not request.GET.prog_type %}selected{% endif %}>All Types</option>
+                <option value="UG" {% if request.GET.prog_type == "UG" %}selected{% endif %}>UG</option>
+                <option value="PG" {% if request.GET.prog_type == "PG" %}selected{% endif %}>PG</option>
             </select>
         </div>
 
         <div class="filter-group">
-            <label for="course_category">Programme Category</label>
-            <select name="course_category" id="course_category">
-                <option value="">All Categories</option>
-                {% for cat in course_categories %}
-                    <option value="{{ cat }}" {% if request.GET.course_category == cat|stringformat:"s" %}selected{% endif %}>{{ cat }}</option>
+            <label for="prog_category">Programme Category</label>
+            <select name="prog_category" id="prog_category">
+                <option value="" {% if not request.GET.prog_category %}selected{% endif %}>All Categories</option>
+                <option value="arts" {% if request.GET.prog_category == "arts" %}selected{% endif %}>Arts</option>
+                <option value="science" {% if request.GET.prog_category == "science" %}selected{% endif %}>Science</option>
+                {% for cat in prog_categories %}
+                    <option value="{{ cat }}" {% if request.GET.prog_category == cat|stringformat:"s" %}selected{% endif %}>{{ cat }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -63,6 +64,7 @@
             <label for="part">Branch</label>
             <select name="branch" id="branch">
                 <option value="">All Branches</option>
+                <option value="general" {% if request.GET.branch == "general" %}selected{% endif %}>General</option>
                 {% for b in branch %}
                     <option value="{{ b }}" {% if request.GET.branch == b|stringformat:"s" %}selected{% endif %}>{{ b }}</option>
                 {% endfor %}
@@ -91,11 +93,14 @@
 
         <!-- ROW 3: Course Code and Title filters -->
         <div class="filter-group">
-            <label for="course_code">Course Code with title</label>
+    <label for="course_code">Course Code with Title</label>
             <select name="course_code" id="course_code">
-                <option value="">All Codes</option>
-                {% for code in course_codes %}
-                    <option value="{{ code }}" {% if request.GET.course_code == code|stringformat:"s" %}selected{% endif %}>{{ code }}</option>
+                <option value="">All Courses</option>
+                {% for course in courses %}
+                    <option value="{{ course.course_code }}" 
+                        {% if request.GET.course_code == course.course_code %}selected{% endif %}>
+                        {{ course.course_code }} - {{ course.course_title }}
+                    </option>
                 {% endfor %}
             </select>
         </div>
@@ -130,7 +135,6 @@
                         <th>Course Category</th>
                         <th>Course Code with Title</th>
                         <th>Credit</th>
-                        <th>Maximum marks</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -148,7 +152,6 @@
                             <small>{{ course.course_title|default:"—" }}</small>
                         </td>
                         <td>{{course.credit|default:"-"}}</td>
-                        <td>{{course.total_marks|default:"-"}}</td>
                         <!-- REPLACE your current View button -->
 <td>
     {% if course.course_code %}

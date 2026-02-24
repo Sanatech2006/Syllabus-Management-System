@@ -42,6 +42,15 @@
           </div>
 
           <div class="col-md-6">
+          <label class="form-label">Programme Category</label>
+          <select name="prog_category" class="form-control">
+            <option value="" {% if not prog_category %}selected{% endif %}>Select category</option>
+            <option value="arts" {% if prog_category == "arts" %}selected{% endif %}>Arts</option>
+            <option value="science" {% if prog_category == "science" %}selected{% endif %}>Science</option>
+          </select>
+        </div>
+
+          <div class="col-md-6">
             <label class="form-label">Semester</label>
             <input type="text" name="sem" class="form-control"
                    value="{{ sem|default:'' }}">

@@ -37,6 +37,11 @@
                 <label for="prog_code" class="form-label fw-semibold fs-6 mb-2">Programme Code</label>
                 <input type="text" class="form-control form-control-lg" id="prog_code" name="prog_code">
               </div>
+              <!-- Branch -->
+              <div class="col-md-6">
+                <label for="branch" class="form-label fw-semibold fs-6 mb-2">Branch</label>
+                <input type="text" class="form-control form-control-lg" id="branch" name="branch">
+              </div>
 
               <!-- Year -->
               <div class="col-md-6">
@@ -66,6 +71,16 @@
                   <option value="">Select</option>
                   <option>I</option><option>II</option><option>III</option>
                   <option>IV</option><option>V</option><option>VI</option>
+                </select>
+              </div>
+
+              <!-- Programme Category -->
+              <div class="col-md-6">
+                <label for="prog_category" class="form-label fw-semibold fs-6 mb-2">Programme Category</label>
+                <select class="form-select form-select-lg" id="prog_category" name="prog_category">
+                  <option value="">Select</option>
+                  <option>Arts</option>
+                  <option>Science</option>
                 </select>
               </div>
 
@@ -198,57 +213,42 @@
                   <td class="text-wrap" style="max-width: 250px;">{{ course.course_title }}</td>
                   <td>
                     <div class="d-flex gap-2 justify-content-center">
-
-  {% if course.is_finalized %}
-    <button class="btn btn-secondary btn-sm px-3" disabled>
-      ✔ Uploaded
-    </button>
-
-  {% elif course.is_saved %}
-    <button class="btn btn-secondary btn-sm px-3" disabled>
-      ✔ Saved
-    </button>
-
-    <form method="post" action="{% url 'delete_course' course.id %}">
-      {% csrf_token %}
-      <button class="btn btn-outline-danger btn-sm px-3">
-        Delete
-      </button>
-    </form>
-
-
-  {% else %}
-    <!-- Upload -->
-    <form method="post" enctype="multipart/form-data"
-          action="{% url 'upload_course_content' %}">
-      {% csrf_token %}
-      <input type="hidden" name="course_code" value="{{ course.course_code }}">
-      <input type="file" name="pdf_file" accept=".pdf"
-             id="pdf{{ course.id }}" class="d-none"
-             onchange="this.form.submit();" required>
-      <label for="pdf{{ course.id }}"
-             class="btn btn-outline-success btn-sm px-3">
-        Upload
-      </label>
-    </form>
-
-    <!-- Delete -->
-    <form method="post" action="{% url 'delete_course' course.id %}">
-      {% csrf_token %}
-      <button class="btn btn-outline-danger btn-sm px-3">
-        Delete
-      </button>
-    </form>
-  {% endif %}
-
-</div>
-
+              {% if course.is_finalized %}
+                <button class="btn btn-secondary btn-sm px-3" disabled>
+                  ✔ Uploaded
+                </button>
+              {% elif course.is_saved %}
+                <button class="btn btn-secondary btn-sm px-3" disabled>
+                  ✔ Saved
+                </button>
+              {% else %}
+                <!-- Upload -->
+                <form method="post" enctype="multipart/form-data"
+                      action="{% url 'upload_course_content' %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="course_code" value="{{ course.course_code }}">
+                  <input type="file" name="pdf_file" accept=".pdf"
+                        id="pdf{{ course.id }}" class="d-none"
+                        onchange="this.form.submit();" required>
+                  <label for="pdf{{ course.id }}"
+                        class="btn btn-outline-success btn-sm px-3">
+                    Upload
+                  </label>
+                </form>
+              {% endif %}
+                  <!-- Delete button always visible -->
+                  <form method="post" action="{% url 'delete_course' course.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-outline-danger btn-sm px-3">
+                      Delete
+                    </button>
+                  </form>
+                </div>
                   </td>
                 </tr>
                 {% endfor %}
               </tbody>
-            </table>
-          </div>
+            </table>    
           
           <!-- Final Save Button -->
           <div class="card-footer bg-light border-0 py-4">

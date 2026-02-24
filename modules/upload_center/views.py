@@ -15,14 +15,16 @@ def upload_center(request):
     courses = CourseStr.objects.all().order_by('-created_at')
 
     prog_code = request.GET.get("prog_code")
+    branch = request.GET.get("branch")
     year = request.GET.get("year")
     prog_type = request.GET.get("prog_type")
+    prog_category = request.GET.get("prog_category")
     sem = request.GET.get("sem")
     course_code = request.GET.get("course_code")
     category = request.GET.get("course_category")
     title = request.GET.get("course_title")
 
-    filters_used = any([prog_code, year, prog_type, sem, course_code, category, title])
+    filters_used = any([prog_code, branch, year, prog_type, prog_category, sem, course_code, category, title])
 
     # --- COURSE CODE IS PRIMARY UNIQUE FILTER ---
     if course_code:
@@ -39,10 +41,14 @@ def upload_center(request):
     elif filters_used:
         if prog_code:
             courses = courses.filter(prog_code=prog_code)
+        if branch:
+            courses = courses.filter(branch=branch)
         if year:
             courses = courses.filter(year=year)
         if prog_type:
             courses = courses.filter(prog_type=prog_type)
+        if prog_category:
+            courses = courses.filter(prog_category=prog_category)
         if sem:
             courses = courses.filter(sem=sem)
         if category:
@@ -118,9 +124,9 @@ def add_course(request):
 
         # Save one Course record
         CourseStr.objects.create(
-            prog_code=prog_code,
             year=year,
             prog_type=prog_type,
+            prog_code=prog_code,
             sem=sem,
             course_code=course_code,
             part=part,
@@ -171,3 +177,28 @@ def finalize_courses(request):
             messages.info(request, "All courses are already finalized.")
             
     return redirect("course_management")
+def dashboard(request):
+
+    total_courses = CourseStr.objects.count()
+    ug_count = CourseStr.objects.filter(prog_type__iexact='UG').count()
+    pg_count = CourseStr.objects.filter(prog_type__iexact='PG').count()
+
+    branch_data = (
+        CourseStr.objects
+        .values('branch')
+        .annotate(count=Count('id'))
+        .order_by('branch')
+    )
+
+    branch_labels = [item['branch'] for item in branch_data if item['branch']]
+    branch_counts = [item['count'] for item in branch_data if item['branch']]
+
+    context = {
+        'total_courses': total_courses,
+        'ug_count': ug_count,
+        'pg_count': pg_count,
+        'branch_labels': branch_labels,
+        'branch_counts': branch_counts,
+    }
+
+    return render(request, 'dashboard.html', context)
