@@ -601,4 +601,25 @@ html {
         background-clip: text;
     }
 }
+/* ===== FIX SIDEBAR LINK CONSISTENCY ===== */
 
+/* Force all sidebar links to behave like menu items */
+.sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sidebar nav a {
+    text-decoration: none !important;
+    color: #cbd5e1 !important;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Remove any default blue/underline behavior */
+.sidebar nav a:visited,
+.sidebar nav a:active,
+.sidebar nav a:focus {
+    text-decoration: none !important;
+    color: #cbd5e1 !important;
+}

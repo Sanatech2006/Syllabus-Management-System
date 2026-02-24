@@ -14,13 +14,12 @@
             </div>
         </div>
     </div>
-
-    <nav class="menu">
-        <a href="#" class="menu-item">
-            <span class="icon">🏠</span>
-            <span>Dashboard</span>
-        </a>
-
+<nav class="menu">
+        <a href="{% url 'dashboard' %}" class="menu-item">
+        <span class="icon">🏠</span>
+        <span class="menu-text">Dashboard</span>
+    </a>
+    
         <a href="{% url 'course_management' %}" class="menu-item">
             <span class="icon">📚</span>
             <span>Course Management</span>
