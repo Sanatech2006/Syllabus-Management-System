@@ -16,6 +16,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'modules.upload_center',
     'modules.course_manage', 
+    'modules.dashboard',
     
 ]
 
@@ -54,9 +55,9 @@ WSGI_APPLICATION = 'sms_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'sms_db',
+        'NAME': 'sms',
         'USER': 'postgres',
-        'PASSWORD': 'postgre',
+        'PASSWORD': 'sana@466',
         'HOST': 'localhost',
         'PORT': '5432',
     }
