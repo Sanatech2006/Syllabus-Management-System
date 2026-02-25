@@ -35,5 +35,16 @@
 
 </div>
  <script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>
+ <script>
+function toggleLoginMenu() {
+    const submenu = document.getElementById("login-submenu");
+    const arrow = document.getElementById("login-arrow");
+
+    submenu.style.display =
+        submenu.style.display === "block" ? "none" : "block";
+
+    arrow.classList.toggle("rotate");
+}
+</script>
 </body>
 </html>

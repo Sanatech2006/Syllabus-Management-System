@@ -1,0 +1,241 @@
+{% extends "base_layout.html" %}
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <!-- Page Title -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold">User Management</h3>
+            <nav>
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item active">User Management</li>
+                </ol>
+            </nav>
+        </div>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+            + Add User
+        </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center p-3">
+                <h6>Total Users</h6>
+                <h4>{{ total_users }}</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center p-3 bg-danger text-white">
+                <h6>Admins</h6>
+                <h4>{{ admin_count }}</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center p-3 bg-warning">
+                <h6>HODs</h6>
+                <h4>{{ hod_count }}</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center p-3 bg-success text-white">
+                <h6>Staff & Students</h6>
+                <h4>{{ staff_student_count }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                        <th width="150">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.get_full_name }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            <td>
+                            {% if user.role == "ADMIN" %}
+                                <span class="badge bg-danger">Admin</span>
+                            {% elif user.role == "HOD" %}
+                                <span class="badge bg-warning text-dark">HOD</span>
+                            {% elif user.role == "STAFF" %}
+                                <span class="badge bg-info">Staff</span>
+                            {% else %}
+                                <span class="badge bg-success">Student</span>
+                            {% endif %}
+                        </td>
+                        </td>
+                        <td>{{ user.department }}</td>
+                        <td>
+                            {% if user.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editUserModal{{ user.id }}">
+                             Edit
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger">Delete</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'user_manage:add_user' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="full_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Username</label>
+                            <input type="text" name="username" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Role</label>
+                            <select name="role" class="form-select" required>
+                                <option value="">Select Role</option>
+                                <option value="ADMIN">Admin</option>
+                                <option value="HOD">HOD</option>
+                                <option value="STAFF">Staff</option>
+                                <option value="STUDENT">Student</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Department</label>
+                            <input type="text" name="department" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Password</label>
+                            <input type="password" name="password" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Save User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% for user in users %}
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal{{ user.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'user_manage:edit_user' user.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label class="form-label">Full Name</label>
+                            <input type="text"
+                                   name="full_name"
+                                   class="form-control"
+                                   value="{{ user.first_name }} {{ user.last_name }}"
+                                   required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email"
+                                   name="email"
+                                   class="form-control"
+                                   value="{{ user.email }}"
+                                   required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Username</label>
+                            <input type="text"
+                                   name="username"
+                                   class="form-control"
+                                   value="{{ user.username }}"
+                                   required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Role</label>
+                            <select name="role" class="form-select">
+                                <option value="ADMIN" {% if user.role == "ADMIN" %}selected{% endif %}>Admin</option>
+                                <option value="HOD" {% if user.role == "HOD" %}selected{% endif %}>HOD</option>
+                                <option value="STAFF" {% if user.role == "STAFF" %}selected{% endif %}>Staff</option>
+                                <option value="STUDENT" {% if user.role == "STUDENT" %}selected{% endif %}>Student</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Department</label>
+                            <input type="text"
+                                   name="department"
+                                   class="form-control"
+                                   value="{{ user.department }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                New Password (Leave blank to keep current)
+                            </label>
+                            <input type="password"
+                                   name="password"
+                                   class="form-control">
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Update User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}

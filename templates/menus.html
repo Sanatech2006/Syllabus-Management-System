@@ -19,6 +19,21 @@
         <span class="icon">🏠</span>
         <span class="menu-text">Dashboard</span>
     </a>
+
+    <li class="menu-item">
+    <div class="menu-toggle" onclick="toggleLoginMenu()">
+        <span>
+            <i class="icon">↪</i>
+            Login
+        </span>
+        <span id="login-arrow">▼</span>
+    </div>
+
+    <ul class="submenu" id="login-submenu">
+        <li><a href="#">ADMIN</a></li>
+        <li><a href="#">HOD</a></li>
+    </ul>
+</li>
     
         <a href="{% url 'course_management' %}" class="menu-item">
             <span class="icon">📚</span>
@@ -40,10 +55,12 @@
             <span>Reports</span>
         </a>
 
-        <a href="#" class="menu-item">
+        <li class="nav-item">
+       <a href="{% url 'user_manage:user_management' %}" class="menu-item">
             <span class="icon">👥</span>
             <span>User Management</span>
         </a>
+        </li>
 
         <a href="#" class="menu-item">
             <span class="icon">⚙️</span>
