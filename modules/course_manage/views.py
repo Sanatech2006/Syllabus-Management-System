@@ -50,6 +50,7 @@ def course_management(request):
     prog_type = request.GET.get('prog_type')
     course_category = request.GET.get('course_category')
     prog_code = request.GET.get('prog_code')
+    branch = request.GET.get('branch')
     part = request.GET.get('part')
     sem = request.GET.get('sem')
     # Fix 1: Change to match template filter names
@@ -63,6 +64,7 @@ def course_management(request):
     if prog_type: courses = courses.filter(prog_type=prog_type)
     if course_category: courses = courses.filter(course_category=course_category)
     if prog_code: courses = courses.filter(prog_code=prog_code)
+    if branch: courses = courses.filter(branch=branch)
     if part: courses = courses.filter(part=part)
     if sem: courses = courses.filter(sem=sem)
     # Fix 2: Use the new filter variables
@@ -71,20 +73,49 @@ def course_management(request):
     
     # Get unique values, excluding empty/null ones
     context = {
-        'courses': courses,
-        # Add exclude empty to avoid blank options showing up
-        'years': list(CourseStr.objects.filter(is_finalized=True).exclude(year__isnull=True).exclude(year='').values_list('year', flat=True).distinct().order_by('year')),
-        'prog_types': list(CourseStr.objects.filter(is_finalized=True).exclude(prog_type__isnull=True).exclude(prog_type='').values_list('prog_type', flat=True).distinct().order_by('prog_type')),
-        'course_categories': list(CourseStr.objects.filter(is_finalized=True).exclude(course_category__isnull=True).exclude(course_category='').values_list('course_category', flat=True).distinct().order_by('course_category')),
-        'prog_codes': list(CourseStr.objects.filter(is_finalized=True).exclude(prog_code__isnull=True).exclude(prog_code='').values_list('prog_code', flat=True).distinct().order_by('prog_code')),
-        'parts': list(CourseStr.objects.filter(is_finalized=True).exclude(part__isnull=True).exclude(part='').values_list('part', flat=True).distinct().order_by('part')),
-        'semesters': list(CourseStr.objects.filter(is_finalized=True).exclude(sem__isnull=True).exclude(sem='').values_list('sem', flat=True).distinct().order_by('sem')),
-        # Fix 3: Add separate querysets for course_code and course_title
-        'course_codes': list(CourseStr.objects.filter(is_finalized=True).exclude(course_code__isnull=True).exclude(course_code='').values_list('course_code', flat=True).distinct().order_by('course_code')),
-        'course_titles': list(CourseStr.objects.filter(is_finalized=True).exclude(course_title__isnull=True).exclude(course_title='').values_list('course_title', flat=True).distinct().order_by('course_title')),
-        # Keep this for backward compatibility if needed elsewhere
-        'course_code_titles': list(CourseStr.objects.filter(is_finalized=True).exclude(course_code__isnull=True).exclude(course_code='').values('course_code', 'course_title').distinct().order_by('course_code'))
-    }
+    'courses': courses,
+
+    'years': list(CourseStr.objects.filter(is_finalized=True)
+        .exclude(year__isnull=True).exclude(year='')
+        .values_list('year', flat=True).distinct().order_by('year')),
+
+    'prog_types': list(CourseStr.objects.filter(is_finalized=True)
+        .exclude(prog_type__isnull=True).exclude(prog_type='')
+        .values_list('prog_type', flat=True).distinct().order_by('prog_type')),
+
+    'course_categories': list(CourseStr.objects.filter(is_finalized=True)
+        .exclude(course_category__isnull=True).exclude(course_category='')
+        .values_list('course_category', flat=True).distinct().order_by('course_category')),
+
+    'prog_codes': list(CourseStr.objects.filter(is_finalized=True)
+        .exclude(prog_code__isnull=True).exclude(prog_code='')
+        .values_list('prog_code', flat=True).distinct().order_by('prog_code')),
+
+    'branches': list(CourseStr.objects.filter(is_finalized=True)
+        .exclude(branch__isnull=True).exclude(branch='')
+        .values_list('branch', flat=True).distinct().order_by('branch')),
+
+    'parts': list(CourseStr.objects.filter(is_finalized=True)
+        .exclude(part__isnull=True).exclude(part='')
+        .values_list('part', flat=True).distinct().order_by('part')),
+
+    'semesters': list(CourseStr.objects.filter(is_finalized=True)
+        .exclude(sem__isnull=True).exclude(sem='')
+        .values_list('sem', flat=True).distinct().order_by('sem')),
+
+    'course_codes': list(CourseStr.objects.filter(is_finalized=True)
+        .exclude(course_code__isnull=True).exclude(course_code='')
+        .values_list('course_code', flat=True).distinct().order_by('course_code')),
+
+    'course_titles': list(CourseStr.objects.filter(is_finalized=True)
+        .exclude(course_title__isnull=True).exclude(course_title='')
+        .values_list('course_title', flat=True).distinct().order_by('course_title')),
+
+    'course_code_titles': list(CourseStr.objects.filter(is_finalized=True)
+        .exclude(course_code__isnull=True).exclude(course_code='')
+        .values('course_code', 'course_title')
+        .distinct().order_by('course_code'))
+}
     
     print("=== DEBUG: Filter Values ===")
     print("Years:", list(CourseStr.objects.filter(is_finalized=True).values_list('year', flat=True).distinct()))
@@ -142,6 +173,7 @@ def get_filter_options(request):
     prog_type = request.GET.get('prog_type')
     course_category = request.GET.get('course_category')
     prog_code = request.GET.get('prog_code')
+    branch = request.GET.get('branch')
     part = request.GET.get('part')
     sem = request.GET.get('sem')
     course_code = request.GET.get('course_code')
@@ -159,6 +191,8 @@ def get_filter_options(request):
         queryset = queryset.filter(course_category=course_category)
     if prog_code:
         queryset = queryset.filter(prog_code=prog_code)
+    if branch:
+        queryset = queryset.filter(branch=branch)
     if part:
         queryset = queryset.filter(part=part)
     if sem:
@@ -174,6 +208,7 @@ def get_filter_options(request):
         'prog_types': list(queryset.exclude(prog_type__isnull=True).exclude(prog_type='').values_list('prog_type', flat=True).distinct().order_by('prog_type')),
         'course_categories': list(queryset.exclude(course_category__isnull=True).exclude(course_category='').values_list('course_category', flat=True).distinct().order_by('course_category')),
         'prog_codes': list(queryset.exclude(prog_code__isnull=True).exclude(prog_code='').values_list('prog_code', flat=True).distinct().order_by('prog_code')),
+        'branches': list(queryset.exclude(branch__isnull=True).exclude(branch='').values_list('branch', flat=True).distinct().order_by('branch')),
         'parts': list(queryset.exclude(part__isnull=True).exclude(part='').values_list('part', flat=True).distinct().order_by('part')),
         'semesters': list(queryset.exclude(sem__isnull=True).exclude(sem='').values_list('sem', flat=True).distinct().order_by('sem')),
         'course_codes': list(queryset.exclude(course_code__isnull=True).exclude(course_code='').values_list('course_code', flat=True).distinct().order_by('course_code')),

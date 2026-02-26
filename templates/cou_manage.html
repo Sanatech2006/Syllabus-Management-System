@@ -64,8 +64,7 @@
             <label for="part">Branch</label>
             <select name="branch" id="branch">
                 <option value="">All Branches</option>
-                <option value="general" {% if request.GET.branch == "general" %}selected{% endif %}>General</option>
-                {% for b in branch %}
+                {% for b in branches %}
                     <option value="{{ b }}" {% if request.GET.branch == b|stringformat:"s" %}selected{% endif %}>{{ b }}</option>
                 {% endfor %}
             </select>

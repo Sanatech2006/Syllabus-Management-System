@@ -19,7 +19,7 @@ def login_page(request):
 
         if user is not None:
             login(request, user)
-            return redirect("program_management")
+            return redirect("dashboard")  # Redirect to dashboard after login
         else:
             error = "Invalid username or password"
 

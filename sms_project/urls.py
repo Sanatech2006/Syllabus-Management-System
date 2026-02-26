@@ -10,9 +10,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', login_page, name='login'),
     path('logout/', logout_view, name='logout'),
+    path('dashboard/', include('modules.dashboard.urls')), 
+    path('courses/', include('modules.course_manage.urls')), 
     path('programs/', include('modules.program_manage.urls')),
-    path('', include('modules.dashboard.urls')),    
-    path('courses/', include('modules.course_manage.urls')),
     path('uploads/', include('modules.upload_center.urls')),
     path('users/', include('modules.user_manage.urls')), 
 ]

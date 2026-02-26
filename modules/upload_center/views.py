@@ -11,11 +11,16 @@ from .models import CourseStr, CourseContent
 from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
-
+from modules.upload_center.models import CourseContent
 from django.contrib import messages
 
 def upload_center(request):
     courses = CourseStr.objects.all().order_by('-created_at')
+    for course in courses:
+     course.has_pdf = CourseContent.objects.filter(
+        course_code=course.course_code,
+        pdf__isnull=False
+    ).exists()
 
     prog_code = request.GET.get("prog_code")
     branch = request.GET.get("branch")
@@ -65,10 +70,16 @@ def upload_center(request):
             messages.success(request, "Course filtered successfully.")
 
     finalized = request.session.get('courses_finalized', False)
+    branches = CourseStr.objects.exclude(branch__isnull=True)\
+    .exclude(branch='')\
+    .values_list('branch', flat=True)\
+    .distinct()\
+    .order_by('branch')
 
     return render(request, 'upload_center.html', {
         'courses': courses,
-        'finalized': finalized
+        'finalized': finalized,
+        'branches': branches
     })
 
 def upload_course_content(request):
@@ -106,10 +117,12 @@ def delete_course(request, course_id):
     else:
         messages.error(request, 'Invalid request method.')
     return redirect('upload_center')
+
 def add_course(request):
     if request.method == "POST":
         # Shared 4 fields
         prog_code = (request.POST.get("prog_code") or '').strip()
+        branch = (request.POST.get("branch") or '').strip()
         year = (request.POST.get("year") or '').strip()
         prog_type = (request.POST.get("prog_type") or '').strip()
         sem = (request.POST.get("sem") or '').strip()
@@ -130,6 +143,7 @@ def add_course(request):
             year=year,
             prog_type=prog_type,
             prog_code=prog_code,
+            branch=branch,
             sem=sem,
             course_code=course_code,
             part=part,
@@ -140,6 +154,7 @@ def add_course(request):
             marks_cia=marks_cia or 0,
             marks_ese=marks_ese or 0,
             total_marks=total_marks or 0,
+            is_finalized=True,
         )
 
         # Check which button was clicked
