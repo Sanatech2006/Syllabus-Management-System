@@ -17,6 +17,7 @@ INSTALLED_APPS = [
     'modules.upload_center',
     'modules.course_manage', 
     'modules.dashboard',
+    'modules.program_manage',
     
 ]
 

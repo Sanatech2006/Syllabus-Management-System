@@ -1,0 +1,135 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SMS Login</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+   <style>
+body {
+    background-color: #ffffff;
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.login-card {
+    width: 1000px;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+/* LEFT SIDE */
+.left-section {
+    padding: 50px 40px;
+}
+
+.logo-text {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.subtitle {
+    font-size: 12px;
+    color: gray;
+    margin-bottom: 30px;
+}
+
+.form-control {
+    background: #eef2f7;
+    border: none;
+    height: 45px;
+}
+
+.btn-login {
+    background: #0d1b3d;
+    color: white;
+    width: 120px;
+}
+
+.btn-login:hover {
+    background: #162a63;
+}
+
+/* RIGHT SIDE */
+.right-section {
+    background: #f7f9fc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+}
+
+.illustration {
+    width: 100%;
+    max-width: 550px;
+}
+
+.pride-text {
+    margin-top: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: black;
+    letter-spacing: 1px;
+    text-align: center;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="login-card row g-0">
+
+    <!-- LEFT SIDE -->
+    <div class="col-md-5 left-section">
+
+        <div class="logo-text">JAMAL MOHAMED COLLEGE</div>
+        
+
+        <h6 class="mb-3">Login to your account</h6>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <input type="text" name="username" class="form-control mb-3" placeholder="Username or Email">
+
+            <input type="password" name="password" class="form-control mb-2" placeholder="Password">
+
+            {% if error %}
+                <div class="text-danger small mb-2">{{ error }}</div>
+            {% endif %}
+
+            <div class="mb-3">
+                <a href="#" class="small text-decoration-none">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="btn btn-login">Login</button>
+        </form>
+
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="col-md-7 right-section">
+       <img src="{% static 'assets/images/education.png' %}" class="illustration" alt="Education Image">
+
+       <div class="pride-text">
+        MY JAMAL...! MY PRIDE...!
+    </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
