@@ -1,66 +1,52 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import get_user_model
+from django.contrib.auth import update_session_auth_hash
 
 User = get_user_model()
 
 def user_management(request):
+    """Display user management table with stats."""
+    users = User.objects.all()
 
+    context = {
+        "users": users,
+        "total_users": users.count(),
+        "admin_count": users.filter(is_superuser=True).count(),
+        "hod_count": users.filter(is_staff=True, is_superuser=False).count(),
+        "staff_student_count": users.filter(is_staff=False, is_superuser=False).count(),
+    }
+    return render(request, "user_mgt.html", context)
+
+def add_user(request):
+    """Handle creation of a new user from the modal."""
     if request.method == "POST":
-        full_name = request.POST.get("full_name")
+        full_name = request.POST.get("full_name", "").strip()
         email = request.POST.get("email")
         username = request.POST.get("username")
         password = request.POST.get("password")
+        role = request.POST.get("role", "HOD")  # default HOD
 
-        # Split full name into first & last
-        first_name = full_name.split()[0]
-        last_name = " ".join(full_name.split()[1:])
+        # Split full name safely
+        parts = full_name.split()
+        first_name = parts[0] if parts else ""
+        last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
 
-        # IMPORTANT: use create_user (hashes password)
+        # Role mapping
+        is_superuser = role == "ADMIN"
+        is_staff = role in ["ADMIN", "HOD"]
+
+        # Create user with proper flags
         User.objects.create_user(
             username=username,
             email=email,
             password=password,
             first_name=first_name,
             last_name=last_name,
+            is_superuser=is_superuser,
+            is_staff=is_staff
         )
 
-        return redirect("user_manage:user_management")
-
-    users = User.objects.all()
-
-    return render(request, "user_mgt.html", {
-        "users": users,
-        "total_users": users.count(),
-    })
-
-def add_user(request):
-    if request.method == "POST":
-        User = get_user_model()
-
-        username = request.POST.get("username")
-        email = request.POST.get("email")
-        password = request.POST.get("password")
-        role = request.POST.get("role")
-
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password
-        )
-
-        # 🔐 Role mapping using Django fields
-        if role == "ADMIN":
-            user.is_superuser = True
-            user.is_staff = True
-        elif role == "HOD":
-            user.is_staff = True
-        else:
-            user.is_staff = False
-            user.is_superuser = False
-
-        user.save()
-
-        return redirect("user_manage:user_management")
+    return redirect("user_manage:user_management")
 
 def edit_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
@@ -69,13 +55,25 @@ def edit_user(request, user_id):
         user.username = request.POST.get("username")
         user.email = request.POST.get("email")
 
-        new_password = request.POST.get("password")
+        full_name = request.POST.get("full_name", "").strip()
+        parts = full_name.split()
+        user.first_name = parts[0] if parts else ""
+        user.last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
 
-        # Only change password if filled
+        # Password update
+        new_password = request.POST.get("password")
         if new_password:
             user.set_password(new_password)
 
-        user.save()
-        return redirect("user_manage:user_management")
+            # Prevent logout if editing own account
+            if request.user == user:
+                update_session_auth_hash(request, user)
 
-    return render(request, "edit_user.html", {"user": user})
+        # Role logic
+        role = request.POST.get("role", "HOD")
+        user.is_superuser = role == "ADMIN"
+        user.is_staff = role in ["ADMIN", "HOD"]
+
+        user.save()
+
+    return redirect("user_manage:user_management")

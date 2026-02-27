@@ -55,7 +55,6 @@
                         <th>Name</th>
                         <th>Email</th>
                         <th>Role</th>
-                        <th>Department</th>
                         <th>Status</th>
                         <th width="150">Actions</th>
                     </tr>
@@ -65,20 +64,19 @@
                     <tr>
                         <td>{{ user.get_full_name }}</td>
                         <td>{{ user.email }}</td>
+                        
+                        <!-- Role Badge -->
                         <td>
-                            <td>
-                            {% if user.role == "ADMIN" %}
-                                <span class="badge bg-danger">Admin</span>
-                            {% elif user.role == "HOD" %}
+                            {% if user.is_superuser %}
+                                <span class="badge bg-danger">ADMIN</span>
+                            {% elif user.is_staff %}
                                 <span class="badge bg-warning text-dark">HOD</span>
-                            {% elif user.role == "STAFF" %}
-                                <span class="badge bg-info">Staff</span>
                             {% else %}
-                                <span class="badge bg-success">Student</span>
+                                <span class="text-muted">—</span>
                             {% endif %}
                         </td>
-                        </td>
-                        <td>{{ user.department }}</td>
+
+                        <!-- Status Badge -->
                         <td>
                             {% if user.is_active %}
                                 <span class="badge bg-success">Active</span>
@@ -86,11 +84,13 @@
                                 <span class="badge bg-secondary">Inactive</span>
                             {% endif %}
                         </td>
+
+                        <!-- Action Buttons -->
                         <td>
                             <button class="btn btn-sm btn-outline-primary"
-                            data-bs-toggle="modal"
-                            data-bs-target="#editUserModal{{ user.id }}">
-                             Edit
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editUserModal{{ user.id }}">
+                                Edit
                             </button>
                             <button class="btn btn-sm btn-outline-danger">Delete</button>
                         </td>
@@ -134,13 +134,7 @@
                                 <option value="">Select Role</option>
                                 <option value="ADMIN">Admin</option>
                                 <option value="HOD">HOD</option>
-                                <option value="STAFF">Staff</option>
-                                <option value="STUDENT">Student</option>
                             </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Department</label>
-                            <input type="text" name="department" class="form-control">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Password</label>
@@ -202,19 +196,9 @@
                         <div class="col-md-6">
                             <label class="form-label">Role</label>
                             <select name="role" class="form-select">
-                                <option value="ADMIN" {% if user.role == "ADMIN" %}selected{% endif %}>Admin</option>
-                                <option value="HOD" {% if user.role == "HOD" %}selected{% endif %}>HOD</option>
-                                <option value="STAFF" {% if user.role == "STAFF" %}selected{% endif %}>Staff</option>
-                                <option value="STUDENT" {% if user.role == "STUDENT" %}selected{% endif %}>Student</option>
+                                <option value="ADMIN" {% if user.is_superuser %}selected{% endif %}>Admin</option>
+                                <option value="HOD" {% if user.is_staff and not user.is_superuser %}selected{% endif %}>HOD</option>
                             </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Department</label>
-                            <input type="text"
-                                   name="department"
-                                   class="form-control"
-                                   value="{{ user.department }}">
                         </div>
 
                         <div class="col-md-6">
