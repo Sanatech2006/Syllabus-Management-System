@@ -1,5 +1,3 @@
-prgram_management(add_program.html)
-
 {% extends "base_layout.html" %}
 {% load static %}
 
@@ -10,31 +8,34 @@ prgram_management(add_program.html)
 
   <!-- PAGE HEADER -->
   <div class="mb-4">
-    <h1 class="page-title">Add Program</h1>
+    <h1 class="page-title">
+      {% if edit_program %}Edit Program{% else %}Add Program{% endif %}
+    </h1>
   </div>
 
-  <!-- FORM CARD -->
   <div class="card shadow-sm border-0 rounded-4">
     <div class="card-body p-4">
 
       <h4 class="fw-semibold mb-4">Program Details</h4>
 
-      <!-- SINGLE FORM ONLY -->
-      <form method="post">
+      <!-- MAIN FORM -->
+      <form method="post"
+            action="{% if edit_program %}
+                    {% url 'edit_program' edit_program.id %}
+                    {% else %}
+                    {% url 'add_program' %}
+                    {% endif %}">
         {% csrf_token %}
 
         {% if edit_index is not None %}
-<input type="hidden" name="edit_index" value="{{ edit_index }}">
-{% endif %}
+          <input type="hidden" name="edit_index" value="{{ edit_index }}">
+        {% endif %}
 
         <!-- Year -->
         <div class="mb-3">
           <label class="form-label">Year</label>
-          <select name="year" class="form-select">
-            <option value="">Select Year</option>
-            <option>2023-2024</option>
-            <option>2024-2025</option>
-          </select>
+          <input type="text" name="year" class="form-control"
+                 value="{% if edit_program %}{{ edit_program.year }}{% endif %}">
         </div>
 
         <!-- Programme Type -->
@@ -42,8 +43,14 @@ prgram_management(add_program.html)
           <label class="form-label">Programme Type</label>
           <select name="prog_type" class="form-select">
             <option value="">Select Type</option>
-            <option>UG</option>
-            <option>PG</option>
+            <option value="UG"
+              {% if edit_program and edit_program.prog_type == "UG" %}selected{% endif %}>
+              UG
+            </option>
+            <option value="PG"
+              {% if edit_program and edit_program.prog_type == "PG" %}selected{% endif %}>
+              PG
+            </option>
           </select>
         </div>
 
@@ -52,45 +59,49 @@ prgram_management(add_program.html)
           <label class="form-label">Programme Category</label>
           <select name="prog_category" class="form-select">
             <option value="">Select Category</option>
-            <option>Aided</option>
-            <option>SFM</option>
-            <option>SFW</option>
+            <option value="Arts"
+              {% if edit_program and edit_program.prog_category == "Arts" %}selected{% endif %}>
+              Arts
+            </option>
+            <option value="Science"
+              {% if edit_program and edit_program.prog_category == "Science" %}selected{% endif %}>
+              Science
+            </option>
           </select>
+        </div>
+
+        <!-- Programme Code -->
+        <div class="mb-3">
+          <label class="form-label">Programme Code</label>
+          <input type="text" name="prog_code" class="form-control"
+                 value="{% if edit_program %}{{ edit_program.prog_code }}{% endif %}">
         </div>
 
         <!-- Branch -->
         <div class="mb-3">
           <label class="form-label">Branch</label>
-          <input type="text" name="branch" class="form-control">
-        </div>
-
-        <!-- Semester -->
-        <div class="mb-3">
-          <label class="form-label">Semester</label>
-          <select name="semester" class="form-select">
-            <option value="">Select Semester</option>
-            <option>I</option>
-            <option>II</option>
-            <option>III</option>
-            <option>IV</option>
-            <option>V</option>
-            <option>VI</option>
-          </select>
+          <input type="text" name="branch" class="form-control"
+                 value="{% if edit_program %}{{ edit_program.branch }}{% endif %}">
         </div>
 
         <!-- Buttons -->
         <div class="text-center mt-4">
-          <button type="submit" name="action" value="add" class="btn btn-primary px-4">
-            Add Program
-          </button>
-
-          
+          {% if edit_program %}
+            <button type="submit" class="btn btn-warning px-4">
+              Update Program
+            </button>
+          {% else %}
+            <button type="submit" name="action" value="add"
+                    class="btn btn-primary px-4">
+              Add Program
+            </button>
+          {% endif %}
         </div>
 
       </form>
 
-      <!-- SAVED PROGRAM LIST -->
-     {% if preview_programs %}
+      <!-- PREVIEW GRID -->
+      {% if preview_programs %}
       <hr>
       <h5 class="mt-4">Program List</h5>
 
@@ -98,18 +109,17 @@ prgram_management(add_program.html)
         <table class="table table-bordered mt-3">
           <thead class="table-light">
             <tr>
-               <th>S.No</th>
+              <th>S.No</th>
               <th>Year</th>
               <th>Type</th>
               <th>Category</th>
+              <th>Code</th>
               <th>Branch</th>
-              <th>Semester</th>
               <th>Actions</th>
-             
-             
             </tr>
           </thead>
           <tbody>
+
 {% for p in preview_programs %}
 
 {% if edit_index == forloop.counter0 %}
@@ -120,51 +130,35 @@ prgram_management(add_program.html)
 <tr>
 <td>{{ forloop.counter }}</td>
 
-<td>
-<input type="text" name="year" value="{{ p.year }}" class="form-control form-control-sm">
-</td>
+<td><input type="text" name="year" value="{{ p.year }}"
+class="form-control form-control-sm"></td>
 
 <td>
 <select name="prog_type" class="form-select form-select-sm">
-<option {% if p.prog_type == "UG" %}selected{% endif %}>UG</option>
-<option {% if p.prog_type == "PG" %}selected{% endif %}>PG</option>
+<option value="UG" {% if p.prog_type == "UG" %}selected{% endif %}>UG</option>
+<option value="PG" {% if p.prog_type == "PG" %}selected{% endif %}>PG</option>
 </select>
 </td>
 
 <td>
 <select name="prog_category" class="form-select form-select-sm">
-<option {% if p.prog_category == "Aided" %}selected{% endif %}>Aided</option>
-<option {% if p.prog_category == "SFM" %}selected{% endif %}>SFM</option>
-<option {% if p.prog_category == "SFW" %}selected{% endif %}>SFW</option>
+<option value="Arts" {% if p.prog_category == "Arts" %}selected{% endif %}>Arts</option>
+<option value="Science" {% if p.prog_category == "Science" %}selected{% endif %}>Science</option>
 </select>
 </td>
 
-<td>
-<input type="text" name="branch" value="{{ p.branch }}"
-class="form-control form-control-sm">
-</td>
+<td><input type="text" name="prog_code" value="{{ p.prog_code }}"
+class="form-control form-control-sm"></td>
 
-<td>
-<select name="semester" class="form-select form-select-sm">
-<option {% if p.semester == "I" %}selected{% endif %}>I</option>
-<option {% if p.semester == "II" %}selected{% endif %}>II</option>
-<option {% if p.semester == "III" %}selected{% endif %}>III</option>
-<option {% if p.semester == "IV" %}selected{% endif %}>IV</option>
-<option {% if p.semester == "V" %}selected{% endif %}>V</option>
-<option {% if p.semester == "VI" %}selected{% endif %}>VI</option>
-</select>
-</td>
+<td><input type="text" name="branch" value="{{ p.branch }}"
+class="form-control form-control-sm"></td>
 
 <td>
 <button name="action" value="update"
-class="btn btn-success btn-sm">
-<i class="bi bi-check-lg"></i>
-</button>
+class="btn btn-success btn-sm">✔</button>
 
 <button name="action" value="cancel"
-class="btn btn-secondary btn-sm">
-<i class="bi bi-x-lg"></i>
-</button>
+class="btn btn-secondary btn-sm">✖</button>
 </td>
 
 </tr>
@@ -176,8 +170,8 @@ class="btn btn-secondary btn-sm">
 <td>{{ p.year }}</td>
 <td>{{ p.prog_type }}</td>
 <td>{{ p.prog_category }}</td>
+<td>{{ p.prog_code }}</td>
 <td>{{ p.branch }}</td>
-<td>{{ p.semester }}</td>
 
 <td>
 
@@ -185,18 +179,14 @@ class="btn btn-secondary btn-sm">
 {% csrf_token %}
 <input type="hidden" name="index" value="{{ forloop.counter0 }}">
 <button name="action" value="edit"
-class="btn btn-warning btn-sm">
-<i class="bi bi-pencil"></i>
-</button>
+class="btn btn-warning btn-sm">✏</button>
 </form>
 
 <form method="post" style="display:inline;">
 {% csrf_token %}
 <input type="hidden" name="index" value="{{ forloop.counter0 }}">
 <button name="action" value="delete"
-class="btn btn-danger btn-sm">
-<i class="bi bi-trash"></i>
-</button>
+class="btn btn-danger btn-sm">🗑</button>
 </form>
 
 </td>
@@ -204,26 +194,21 @@ class="btn btn-danger btn-sm">
 {% endif %}
 
 {% endfor %}
+
 </tbody>
         </table>
       </div>
-      {% endif %}
 
-      <!-- PREVIEW TABLE -->
-      {% if preview_programs %}
-      <hr class="my-4">
-
-      
-
-
+      <!-- SAVE BUTTON -->
       <div class="text-end mt-3">
-    <form method="post">
-        {% csrf_token %}
-        <button type="submit" name="action" value="save" class="btn btn-success px-4">
+        <form method="post">
+          {% csrf_token %}
+          <button type="submit" name="action" value="save"
+                  class="btn btn-success px-4">
             Save Program
-        </button>
-    </form>
-</div>
+          </button>
+        </form>
+      </div>
 
       {% endif %}
 

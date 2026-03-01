@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     'modules.course_manage', 
     'modules.dashboard',
     'modules.program_manage',
+    'modules.login.apps.LoginConfig',  
     
 ]
 

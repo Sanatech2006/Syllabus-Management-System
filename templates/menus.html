@@ -28,27 +28,26 @@
         </span>
         <span id="login-arrow">▼</span>
     </div>
-
-    <ul class="submenu" id="login-submenu">
-        <li><a href="{% url 'login' %}">ADMIN</a></li>
-        <li><a href="{% url 'login' %}">HOD</a></li>
-    </ul>
-</li>
     
+            <ul class="submenu" id="login-submenu">
+                <li><a href="{% url 'login' %}">ADMIN</a></li>
+                <li><a href="{% url 'login' %}">HOD</a></li>
+            </ul>
+        
         <a href="{% url 'course_management' %}" class="menu-item">
             <span class="icon">📚</span>
             <span>Course Management</span>
-        </a>
+    </a>
 
         <a href="{% url 'program_management' %}" class="menu-item">
             <span class="icon">🎓</span>
             <span>Program Management</span>
-        </a>
+    </a>
 
         <a href="{% url 'upload_center' %}" class="menu-item">
             <span class="icon">⏫</span>
             <span>Upload Center</span>
-        </a>
+    </a>
 
         <a href="#" class="menu-item">
             <span class="icon">📊</span>

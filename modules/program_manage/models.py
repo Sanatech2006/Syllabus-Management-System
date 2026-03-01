@@ -12,38 +12,28 @@ class Program(models.Model):
     ]
 
     PROG_CATEGORY_CHOICES = [
-        ('Aided', 'Aided'),
-        ('SFM', 'SFM'),
-        ('SFW', 'SFW'),
-    ]
-
-    SEM_CHOICES = [
-        ('I', 'I'),
-        ('II', 'II'),
-        ('III', 'III'),
-        ('IV', 'IV'),
-        ('V', 'V'),
-        ('VI', 'VI'),
+        ('Arts', 'Arts'),
+        ('Science', 'Science'),
     ]
 
     year = models.CharField(max_length=20, choices=YEAR_CHOICES)
     prog_type = models.CharField(max_length=5, choices=PROG_TYPE_CHOICES)
     prog_category = models.CharField(max_length=10, choices=PROG_CATEGORY_CHOICES)
+    prog_code = models.CharField(max_length=20)
     branch = models.CharField(max_length=100)
-    semester = models.CharField(max_length=5, choices=SEM_CHOICES)
 
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'program_master'
+        db_table = 'program'
         unique_together = (
             'year',
             'prog_type',
             'prog_category',
+            'prog_code',
             'branch',
-            'semester',
         )
 
     def __str__(self):
-        return f"{self.branch} - {self.semester} ({self.year})"
+        return f"{self.branch} - {self.prog_code} ({self.year})"

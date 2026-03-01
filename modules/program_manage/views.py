@@ -1,13 +1,12 @@
 from .models import Program
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 
 
-
-# 🔐 LOGIN PAGE (PROJECT LEVEL)
+# 🔐 LOGIN PAGE
 def login_page(request):
     error = ""
 
@@ -19,7 +18,7 @@ def login_page(request):
 
         if user is not None:
             login(request, user)
-            return redirect("dashboard")  # Redirect to dashboard after login
+            return redirect("dashboard")
         else:
             error = "Invalid username or password"
 
@@ -32,21 +31,19 @@ def logout_view(request):
     return redirect("login")
 
 
-# 📚 PROGRAM MANAGEMENT (PROTECTED)
+# 📚 PROGRAM MANAGEMENT (LIST + FILTER + PAGINATION)
 @login_required(login_url="login")
 def program_management(request):
 
     programs = Program.objects.filter(is_active=True)
 
-    # Get filter values
+    # Filters
     year = request.GET.get("year")
     prog_type = request.GET.get("prog_type")
     prog_category = request.GET.get("prog_category")
+    prog_code = request.GET.get("prog_code")
     branch = request.GET.get("branch")
 
-    semester = request.GET.get("semester")
-   
-    # Apply filters
     if year:
         programs = programs.filter(year=year)
 
@@ -56,40 +53,38 @@ def program_management(request):
     if prog_category:
         programs = programs.filter(prog_category=prog_category)
 
+    if prog_code:
+        programs = programs.filter(prog_code__icontains=prog_code)
+
     if branch:
-        programs = programs.filter(branch=branch)    
+        programs = programs.filter(branch=branch)
 
-    if semester:
-        programs = programs.filter(semester=semester)
-
-     # PAGINATION (10 per page)
     paginator = Paginator(programs.order_by("id"), 10)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-
-    # Get distinct branches for dropdown
     branches = Program.objects.values_list("branch", flat=True).distinct()
 
     return render(
-    request,
-    "program_management.html",
-    {
-        "programs": page_obj,   # table loop
-        "page_obj": page_obj,   # pagination controls
-        "branches": branches,
-    }
-)
+        request,
+        "program_management.html",
+        {
+            "programs": page_obj,
+            "page_obj": page_obj,
+            "branches": branches,
+        },
+    )
 
-# ➕ ADD PROGRAM (PROTECTED)
+
+# ➕ ADD PROGRAM (PREVIEW SYSTEM)
 @login_required(login_url="login")
 def add_program(request):
     preview_programs = request.session.get("preview_programs", [])
-     
+
     if request.method == "POST":
         action = request.POST.get("action")
 
-         # ---------------- DELETE ----------------
+        # DELETE ROW FROM PREVIEW
         if action == "delete":
             index = int(request.POST.get("index"))
             if 0 <= index < len(preview_programs):
@@ -97,7 +92,7 @@ def add_program(request):
                 request.session["preview_programs"] = preview_programs
             return redirect("add_program")
 
-        # ---------------- EDIT CLICK ----------------
+        # EDIT CLICK (LOAD INTO FORM)
         if action == "edit":
             index = int(request.POST.get("index"))
             return render(
@@ -105,11 +100,11 @@ def add_program(request):
                 "add_program.html",
                 {
                     "preview_programs": preview_programs,
-                    "edit_index": index
-                }
+                    "edit_index": index,
+                },
             )
 
-        # ---------------- UPDATE ROW (STEP 2 GOES HERE) ----------------
+        # UPDATE ROW
         if action == "update":
             index = int(request.POST.get("index"))
 
@@ -118,33 +113,32 @@ def add_program(request):
                     "year": request.POST.get("year"),
                     "prog_type": request.POST.get("prog_type"),
                     "prog_category": request.POST.get("prog_category"),
+                    "prog_code": request.POST.get("prog_code"),
                     "branch": request.POST.get("branch"),
-                    "semester": request.POST.get("semester"),
                 }
 
                 request.session["preview_programs"] = preview_programs
 
             return redirect("add_program")
 
-        # ---------------- CANCEL EDIT ----------------
+        # CANCEL EDIT
         if action == "cancel":
             return redirect("add_program")
 
-
-        # STEP 1: Add to preview grid (NOT DB)
+        # ADD TO PREVIEW GRID
         if action == "add":
             new_program = {
                 "year": request.POST.get("year"),
                 "prog_type": request.POST.get("prog_type"),
                 "prog_category": request.POST.get("prog_category"),
+                "prog_code": request.POST.get("prog_code"),
                 "branch": request.POST.get("branch"),
-                "semester": request.POST.get("semester"),
             }
 
             preview_programs.append(new_program)
             request.session["preview_programs"] = preview_programs
 
-        # STEP 2: Save preview grid to DATABASE (SAFE SAVE)
+        # SAVE ALL TO DATABASE
         elif action == "save":
             saved_count = 0
             skipped_count = 0
@@ -157,10 +151,8 @@ def add_program(request):
                 else:
                     skipped_count += 1
 
-            # clear preview session
             request.session["preview_programs"] = []
 
-            # success + warning messages
             if saved_count:
                 messages.success(request, f"{saved_count} program(s) saved successfully!")
 
@@ -175,3 +167,37 @@ def add_program(request):
         {"preview_programs": preview_programs},
     )
 
+
+# ✏ EDIT EXISTING PROGRAM (USES SAME TEMPLATE)
+@login_required(login_url="login")
+def edit_program(request, id):
+    program = get_object_or_404(Program, id=id)
+
+    if request.method == "POST":
+        program.year = request.POST.get("year")
+        program.prog_type = request.POST.get("prog_type")
+        program.prog_category = request.POST.get("prog_category")
+        program.prog_code = request.POST.get("prog_code")
+        program.branch = request.POST.get("branch")
+        program.save()
+
+        messages.success(request, "Program updated successfully!")
+        return redirect("program_management")
+
+    return render(
+        request,
+        "programe_management.html",
+        {
+            "edit_program": program,
+            "preview_programs": [],
+        },
+    )
+
+
+# 🗑 DELETE PROGRAM
+@login_required(login_url="login")
+def delete_program(request, id):
+    program = get_object_or_404(Program, id=id)
+    program.delete()
+    messages.success(request, "Program deleted successfully!")
+    return redirect("program_management")

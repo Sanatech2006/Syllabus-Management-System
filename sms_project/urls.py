@@ -10,6 +10,7 @@ from modules.program_manage.views import login_page, logout_view
 urlpatterns = [
     path('', include('modules.dashboard.urls')),  
     path('admin/', admin.site.urls),
+    path("login/", include("modules.login.urls")),
     path('logout/', logout_view, name='logout'),
 
     path('dashboard/', include('modules.dashboard.urls')),

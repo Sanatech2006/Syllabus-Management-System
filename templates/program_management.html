@@ -50,9 +50,8 @@
             <label class="form-label">Programme Category</label>
             <select name="prog_category" class="form-select">
               <option value="">All Categories</option>
-              <option value="Aided" {% if request.GET.prog_category == "Aided" %}selected{% endif %}>Aided</option>
-              <option value="SFM" {% if request.GET.prog_category == "SFM" %}selected{% endif %}>SFM</option>
-              <option value="SFW" {% if request.GET.prog_category == "SFW" %}selected{% endif %}>SFW</option>
+              <option value="Arts" {% if request.GET.prog_category == "Arts" %}selected{% endif %}>Arts</option>
+              <option value="Science" {% if request.GET.prog_category == "Science" %}selected{% endif %}>Science</option>
             </select>
           </div>
 
@@ -70,19 +69,6 @@
 
   </select>
 </div>
-
-          <div class="col-md-3">
-            <label class="form-label">Semester</label>
-            <select name="semester" class="form-select">
-              <option value="">All Semesters</option>
-              <option value="I" {% if request.GET.semester == "I" %}selected{% endif %}>I</option>
-              <option value="II" {% if request.GET.semester == "II" %}selected{% endif %}>II</option>
-              <option value="III" {% if request.GET.semester == "III" %}selected{% endif %}>III</option>
-              <option value="IV" {% if request.GET.semester == "IV" %}selected{% endif %}>IV</option>
-              <option value="V" {% if request.GET.semester == "V" %}selected{% endif %}>V</option>
-              <option value="VI" {% if request.GET.semester == "VI" %}selected{% endif %}>VI</option>
-            </select>
-          </div>
 
         </div>
 
@@ -112,27 +98,38 @@
               <th>Year</th>
               <th>Type</th>
               <th>Category</th>
+              <th>Program Code</th>
               <th>Branch</th>
-              <th>Semester</th>
+              <th>Actions</th>
             </tr>
           </thead>
 
           <tbody>
-            {% for p in programs %}
-            <tr>
-              <td>{{ forloop.counter }}</td>
-              <td>{{ p.get_year_display }}</td>
-              <td>{{ p.get_prog_type_display }}</td>
-              <td>{{ p.get_prog_category_display }}</td>
-              <td>{{ p.branch }}</td>
-              <td>{{ p.get_semester_display }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="6" class="text-center">No programs found</td>
-            </tr>
-            {% endfor %}
-          </tbody>
+    {% for p in programs %}
+    <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ p.get_year_display }}</td>
+        <td>{{ p.get_prog_type_display }}</td>
+        <td>{{ p.get_prog_category_display }}</td>
+        <td>{{ p.prog_code }}</td>
+        <td>{{ p.branch }}</td>
+
+        <!-- ACTIONS COLUMN -->
+        <td>
+            <a href="{% url 'edit_program' p.id %}" class="btn btn-sm btn-warning">
+                Edit
+            </a>
+            <a href="{% url 'delete_program' p.id %}" class="btn btn-sm btn-danger">
+                Delete
+            </a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="7" class="text-center">No programs found</td>
+    </tr>
+    {% endfor %}
+</tbody>
 
         </table>
         <!-- PAGINATION -->
@@ -148,7 +145,7 @@
            {% if request.GET.year %}&year={{ request.GET.year }}{% endif %}
            {% if request.GET.prog_type %}&prog_type={{ request.GET.prog_type }}{% endif %}
            {% if request.GET.prog_category %}&prog_category={{ request.GET.prog_category }}{% endif %}
-           {% if request.GET.semester %}&semester={{ request.GET.semester }}{% endif %}
+           {% if request.GET.prog_code %}&prog_code={{ request.GET.prog_code }}{% endif %}
            {% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}">
           «
         </a>
@@ -168,7 +165,7 @@
              {% if request.GET.year %}&year={{ request.GET.year }}{% endif %}
              {% if request.GET.prog_type %}&prog_type={{ request.GET.prog_type }}{% endif %}
              {% if request.GET.prog_category %}&prog_category={{ request.GET.prog_category }}{% endif %}
-             {% if request.GET.semester %}&semester={{ request.GET.semester }}{% endif %}
+             {% if request.GET.prog_code %}&prog_code={{ request.GET.prog_code }}{% endif %}
              {% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}">
             {{ num }}
           </a>
@@ -184,7 +181,7 @@
            {% if request.GET.year %}&year={{ request.GET.year }}{% endif %}
            {% if request.GET.prog_type %}&prog_type={{ request.GET.prog_type }}{% endif %}
            {% if request.GET.prog_category %}&prog_category={{ request.GET.prog_category }}{% endif %}
-           {% if request.GET.semester %}&semester={{ request.GET.semester }}{% endif %}
+           {% if request.GET.prog_code %}&prog_code={{ request.GET.prog_code }}{% endif %}
            {% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}">
           »
         </a>
