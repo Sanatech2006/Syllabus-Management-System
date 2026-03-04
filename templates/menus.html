@@ -15,7 +15,7 @@
         </div>
     </div>
 <nav class="menu">
-        <a href="{% url 'dashboard' %}" class="menu-item">
+        <a href="{% url 'core:dashboard' %}" class="menu-item">
         <span class="icon">🏠</span>
         <span class="menu-text">Dashboard</span>
     </a>
@@ -24,27 +24,35 @@
     <div class="menu-toggle" onclick="toggleLoginMenu()">
         <span>
             <i class="icon">↪</i>
-            Login
+            {% if user.is_authenticated %}
+                {{ user.username }}
+            {% else %}
+                Login
+            {% endif %}
         </span>
         <span id="login-arrow">▼</span>
     </div>
     
             <ul class="submenu" id="login-submenu">
-                <li><a href="{% url 'login' %}">ADMIN</a></li>
-                <li><a href="{% url 'login' %}">HOD</a></li>
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'core:logout' %}">Logout</a></li>
+                {% else %}
+                    <li><a href="{% url 'core:login' %}">ADMIN</a></li>
+                    <li><a href="{% url 'core:login' %}">HOD</a></li>
+                {% endif %}
             </ul>
         
-        <a href="{% url 'course_management' %}" class="menu-item">
+        <a href="{% url 'course_manage:course_management' %}" class="menu-item">
             <span class="icon">📚</span>
             <span>Course Management</span>
     </a>
 
-        <a href="{% url 'program_management' %}" class="menu-item">
+        <a href="{% url 'program_manage:program_management' %}" class="menu-item">
             <span class="icon">🎓</span>
             <span>Program Management</span>
     </a>
 
-        <a href="{% url 'upload_center' %}" class="menu-item">
+        <a href="{% url 'upload_center:upload_center' %}" class="menu-item">
             <span class="icon">⏫</span>
             <span>Upload Center</span>
     </a>

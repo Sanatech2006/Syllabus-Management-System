@@ -14,7 +14,7 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="page-title">Program Management</h1>
 
-    <a href="{% url 'add_program' %}" class="btn btn-primary btn-add">
+    <a href="{% url 'program_manage:add_program' %}" class="btn btn-primary btn-add">
       + Add Program
     </a>
   </div>
@@ -116,10 +116,10 @@
 
         <!-- ACTIONS COLUMN -->
         <td>
-            <a href="{% url 'edit_program' p.id %}" class="btn btn-sm btn-warning">
+            <a href="{% url 'program_manage:edit_program' p.id %}" class="btn btn-sm btn-warning">
                 Edit
             </a>
-            <a href="{% url 'delete_program' p.id %}" class="btn btn-sm btn-danger">
+            <a href="{% url 'program_manage:delete_program' p.id %}" class="btn btn-sm btn-danger">
                 Delete
             </a>
         </td>

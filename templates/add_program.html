@@ -21,9 +21,9 @@
       <!-- MAIN FORM -->
       <form method="post"
             action="{% if edit_program %}
-                    {% url 'edit_program' edit_program.id %}
+                    {% url 'program_manage:edit_program' edit_program.id %}
                     {% else %}
-                    {% url 'add_program' %}
+                    {% url 'program_manage:add_program' %}
                     {% endif %}">
         {% csrf_token %}
 

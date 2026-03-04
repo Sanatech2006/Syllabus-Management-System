@@ -154,7 +154,7 @@
                         <!-- REPLACE your current View button -->
 <td>
     {% if course.course_code %}
-        <a href="{% url 'view_course_pdf' course.course_code %}" class="view-btn">
+        <a href="{% url 'course_manage:view_course_pdf' course.course_code %}" class="view-btn">
             View
         </a>
     {% else %}
@@ -173,7 +173,7 @@
     <div class="no-results">
         <div class="no-results-icon">📚</div>
         <h3>No Courses Found</h3>
-        <p>Apply filters or add courses from <a href="{% url 'upload_center' %}">Upload Center</a></p>
+        <p>Apply filters or add courses from <a href="{% url 'upload_center:upload_center' %}">Upload Center</a></p>
     </div>
     {% endif %}
 </div>

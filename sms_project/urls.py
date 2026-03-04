@@ -1,24 +1,16 @@
 from django.contrib import admin
 from django.urls import path, include
-from modules.dashboard.views import dashboard
-from modules.upload_center import views
 from django.conf import settings
 from django.conf.urls.static import static
-from modules.program_manage.views import login_page, logout_view
-
 
 urlpatterns = [
-    path('', include('modules.dashboard.urls')),  
+    path('', include('modules.core.urls', namespace='core')),
     path('admin/', admin.site.urls),
-    path("login/", include("modules.login.urls")),
-    path('logout/', logout_view, name='logout'),
-
     path('dashboard/', include('modules.dashboard.urls')),
-    path('courses/', include('modules.course_manage.urls')),
-    path('programs/', include('modules.program_manage.urls')),
-    path('uploads/', include('modules.upload_center.urls')),
-    path('users/', include('modules.user_manage.urls')),
+    path('courses/', include('modules.course_manage.urls', namespace='course_manage')),
+    path('programs/', include('modules.program_manage.urls', namespace='program_manage')),
+    path('uploads/', include('modules.upload_center.urls', namespace='upload_center')),
+    path('users/', include('modules.user_manage.urls', namespace='user_manage')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-

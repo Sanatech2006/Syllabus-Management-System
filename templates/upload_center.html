@@ -20,11 +20,13 @@
         <div class="card-header bg-gradient-primary text-white p-4 rounded-top-4">
           <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <h2 class="mb-0 fw-bold fs-3 lh-sm text-dark">🔍 Filter uploaded courses</h2>
-            <a href="{% url 'bulk_upload' %}" 
-   class="btn btn-success btn-lg text-white px-4 py-2 shadow-sm me-2">
-   <i class="bi bi-upload me-2"></i> Upload Files
-</a>
-            <a href="{% url 'add_course' %}" class="btn btn-info btn-lg text-white px-4 py-2 shadow-sm">
+            <!-- FIXED: Added upload_center: namespace -->
+            <a href="{% url 'course_manage:bulk_upload' %}" 
+               class="btn btn-success btn-lg text-white px-4 py-2 shadow-sm me-2">
+               <i class="bi bi-upload me-2"></i> Upload Files
+            </a>
+            <!-- FIXED: Added upload_center: namespace -->
+            <a href="{% url 'upload_center:add_course' %}" class="btn btn-info btn-lg text-white px-4 py-2 shadow-sm">
               <i class="bi bi-plus-circle me-2"></i>+ Add Course
             </a>
           </div>
@@ -222,9 +224,9 @@
                   ✔ Saved
                 </button>
               {% else %}
-                <!-- Upload -->
+                <!-- Upload - FIXED: Added upload_center: namespace -->
                 <form method="post" enctype="multipart/form-data"
-                      action="{% url 'upload_course_content' %}">
+                      action="{% url 'upload_center:upload_course_content' %}">
                   {% csrf_token %}
                   <input type="hidden" name="course_code" value="{{ course.course_code }}">
                   <input type="file" name="pdf_file" accept=".pdf"
@@ -236,8 +238,8 @@
                   </label>
                 </form>
               {% endif %}
-                  <!-- Delete button always visible -->
-                  <form method="post" action="{% url 'delete_course' course.id %}">
+                  <!-- Delete button - FIXED: Added upload_center: namespace -->
+                  <form method="post" action="{% url 'upload_center:delete_course' course.id %}">
                     {% csrf_token %}
                     <button class="btn btn-outline-danger btn-sm px-3">
                       Delete
@@ -254,15 +256,15 @@
           <div class="card-footer bg-light border-0 py-4">
              <div class="d-flex justify-content-between">
 
-               <!-- Save -->
-    <form method="post" action="{% url 'save_courses' %}">
+               <!-- Save - FIXED: Added upload_center: namespace -->
+    <form method="post" action="{% url 'upload_center:save_courses' %}">
       {% csrf_token %}
       <button class="btn btn-primary btn-lg px-5 py-3 fs-5 shadow-lg">
         💾 Save
       </button>
     </form>
-    <!-- Save & Confirm -->
-    <form method="post" action="{% url 'finalize_courses' %}">
+    <!-- Save & Confirm - FIXED: Added upload_center: namespace -->
+    <form method="post" action="{% url 'upload_center:finalize_courses' %}">
       {% csrf_token %}
       <button class="btn btn-success btn-lg px-5 py-3 fs-5 shadow-lg">
         <i class="bi bi-check-circle me-2"></i>Save & Confirm All
