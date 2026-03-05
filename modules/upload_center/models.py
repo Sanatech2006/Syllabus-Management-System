@@ -11,6 +11,8 @@ class CourseStr(models.Model):
 
     
     course_code = models.CharField(max_length=20, blank=True, null=True)  # Primary unique filter
+    def get_content(self):
+        return CourseContent.objects.filter(course_code=self.course_code).first()
     course_category = models.CharField(max_length=20, blank=True, null=True)
     part = models.CharField(max_length=10, blank=True, null=True)      # Part I/II/etc.
     course_title = models.CharField(max_length=200, blank=True, null=True)
