@@ -1,130 +1,299 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Jamal Mohamed College</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+        body { font-family: 'Inter', sans-serif; }
+        
+        .hero-gradient {
+            background: linear-gradient(145deg, #0b2a4a 0%, #1a3f5c 100%);
         }
-        .login-container {
-            background: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            width: 350px;
+
+        .floating-card {
+            animation: float 6s ease-in-out infinite;
         }
-        h2 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
         }
-        .form-group {
-            margin-bottom: 20px;
+
+        .wave-bg {
+            position: relative;
+            overflow: hidden;
         }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #555;
+
+        .wave-bg::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 120px;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%);
+            animation: wave 8s linear infinite;
         }
-        input[type="text"],
-        input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
+
+        @keyframes wave {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
         }
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .messages {
-            margin-bottom: 20px;
-        }
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
-            padding: 10px;
-            border-radius: 4px;
-        }
-        .success {
-            background-color: #d4edda;
-            color: #155724;
-            padding: 10px;
-            border-radius: 4px;
-        }
-        .info {
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-            font-size: 14px;
-        }
-        .next-info {
-            background-color: #e7f3ff;
-            color: #004085;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            text-align: center;
+
+        .input-glow:focus {
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
         }
     </style>
 </head>
-<body>
-    <div class="login-container">
-        <h2>Login</h2>
+
+<body class="min-h-screen bg-slate-50">
+    <!-- Main Container with New Layout -->
+    <div class="flex flex-col min-h-screen lg:flex-row">
         
-        {% if messages %}
-            <div class="messages">
-                {% for message in messages %}
-                    <div class="{{ message.tags }}">
+        <!-- Left Side - College Branding (Redesigned) -->
+        <div class="relative lg:w-2/5 hero-gradient p-8 lg:p-12 flex flex-col wave-bg">
+            <!-- Abstract Pattern -->
+            <div class="absolute inset-0 opacity-10">
+                <div class="absolute top-20 left-10 w-40 h-40 bg-white/20 rounded-full blur-3xl"></div>
+                <div class="absolute bottom-20 right-10 w-60 h-60 bg-sky-400/20 rounded-full blur-3xl"></div>
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 border-2 border-white/10 rounded-full"></div>
+            </div>
+
+            <!-- Logos Section - Side by Side -->
+            <div class="relative z-10 flex items-center justify-between">
+                <div class="flex items-center gap-6">
+                    <!-- JMC Main Logo -->
+                    <div class="bg-white/95 backdrop-blur p-4 rounded-2xl shadow-2xl floating-card">
+                        <img src="{% static 'images/logos.png' %}" alt="JMC Logo" class="w-auto h-16 md:h-20 object-contain">
+                    </div>
+                    
+                    <!-- 75 Years Logo with Special Badge -->
+                    <div class="relative">
+                        <div class="bg-gradient-to-br from-amber-400 to-amber-600 p-4 rounded-2xl shadow-2xl">
+                            <img src="{% static 'images/75logo.png' %}" alt="75 Years" class="w-auto h-16 md:h-20 object-contain">
+                        </div>
+                        <!-- Decorative sparkle -->
+                        <div class="absolute -top-2 -right-2 w-6 h-6 bg-yellow-300 rounded-full blur-sm animate-pulse"></div>
+                    </div>
+                </div>
+                
+                <!-- Trust Badge -->
+                <div class="hidden md:block">
+                    <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 backdrop-blur rounded-full">
+                        <i class="text-xs text-amber-400 fa-solid fa-star"></i>
+                        <span class="text-xs font-medium text-white/90">NAAC A++</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- College Info - Centered with New Style -->
+            <div class="relative z-10 flex-1 flex flex-col items-center justify-center text-center mt-8 lg:mt-0">
+                <!-- Main Title with Special Effect -->
+                <h1 class="text-4xl lg:text-5xl font-black text-white mb-4 leading-tight">
+                    <span class="inline-block bg-gradient-to-r from-amber-200 to-yellow-300 bg-clip-text text-transparent">
+                        Jamal Mohamed
+                    </span>
+                    <br />
+                    <span class="text-white/90">College</span>
+                </h1>
+
+                <!-- Address in Beautiful Card -->
+                <div class="max-w-md mx-auto mt-6 p-6 bg-white/5 backdrop-blur-sm rounded-3xl border border-white/10">
+                    <div class="flex items-start gap-4">
+                        <div class="p-3 bg-sky-500/20 rounded-xl">
+                            <i class="text-2xl text-sky-300 fa-solid fa-location-dot"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-sm font-medium text-white/80">7, Race Course Road, Kaja Nagar,</p>
+                            <p class="text-sm font-medium text-white/80">Tiruchirappalli, Tamil Nadu – 620020</p>
+                            <div class="flex gap-4 mt-3">
+                                <span class="text-xs text-sky-200"><i class="mr-1 fa-solid fa-phone"></i> 0431-2411333</span>
+                                <span class="text-xs text-sky-200"><i class="mr-1 fa-regular fa-envelope"></i> info@jmc.edu</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats with Icons -->
+                <div class="grid grid-cols-3 gap-3 mt-8 w-full max-w-md">
+                    <div class="bg-white/5 backdrop-blur-sm rounded-xl p-3">
+                        <i class="text-xl text-amber-400 fa-regular fa-calendar"></i>
+                        <p class="text-xs font-medium text-white/80 mt-1">Est. 1951</p>
+                    </div>
+                    <div class="bg-white/5 backdrop-blur-sm rounded-xl p-3">
+                        <i class="text-xl text-amber-400 fa-solid fa-medal"></i>
+                        <p class="text-xs font-medium text-white/80 mt-1">A++ Grade</p>
+                    </div>
+                    <div class="bg-white/5 backdrop-blur-sm rounded-xl p-3">
+                        <i class="text-xl text-amber-400 fa-solid fa-graduation-cap"></i>
+                        <p class="text-xs font-medium text-white/80 mt-1">Autonomous</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Watermark -->
+            <div class="relative z-10 text-center text-white/20 text-xs mt-8">
+                <i class="fa-regular fa-circle-check mr-1"></i> Trusted by 5000+ staff & students
+            </div>
+        </div>
+
+        <!-- Right Side - Login Form (Refreshed Design) -->
+        <div class="flex-1 flex items-center justify-center p-6 lg:p-12 bg-gradient-to-br from-slate-50 to-white">
+            <div class="w-full max-w-md">
+                <!-- Mobile Header (Shows only on mobile) -->
+                <div class="lg:hidden mb-8">
+                    <div class="flex justify-center gap-4 mb-4">
+                        <img src="{% static 'images/logos.png' %}" alt="JMC Logo" class="h-12">
+                        <img src="{% static 'images/75logo.png' %}" alt="75 Years" class="h-12">
+                    </div>
+                    <div class="text-center">
+                        <h3 class="text-xl font-bold text-slate-900">Jamal Mohamed College</h3>
+                        <p class="text-sm text-slate-500 mt-1">7, Race Course Road, Tiruchirappalli</p>
+                    </div>
+                </div>
+
+                <!-- Form Header with Fresh Design -->
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-slate-800">Welcome back</h2>
+                    <p class="text-slate-500 mt-2 flex items-center gap-2">
+                        <span class="w-8 h-0.5 bg-sky-400 rounded-full"></span>
+                        <span class="text-sm">Sign in to access your dashboard</span>
+                    </p>
+                </div>
+
+                <!-- Messages -->
+                {% if messages %}
+                <div class="mb-6 space-y-2">
+                    {% for message in messages %}
+                    <div class="flex items-center gap-3 p-4 text-sm border-l-4 {{ message.tags }} rounded-lg" 
+                         {% if message.tags == 'error' %}style="border-color: #dc2626; background: #fef2f2;"{% endif %}
+                         {% if message.tags == 'success' %}style="border-color: #16a34a; background: #f0fdf4;"{% endif %}>
+                        <i class="{% if message.tags == 'error' %}fa-solid fa-circle-exclamation text-red-600{% else %}fa-solid fa-circle-check text-green-600{% endif %}"></i>
                         {{ message }}
                     </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Redirect Info -->
+                {% if next and next != '/' %}
+                <div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                    <div class="flex items-center gap-3">
+                        <i class="text-amber-600 fa-solid fa-shield"></i>
+                        <p class="text-xs font-medium text-amber-800">Authentication required for: <span class="px-2 py-1 bg-white rounded-md font-mono">{{ next }}</span></p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Login Form - Fresh Styling -->
+                <form method="post" action="{% url 'core:login' %}" class="space-y-6">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next }}">
+                    
+                    <!-- Username Field -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                            <i class="text-sky-500 fa-regular fa-id-card"></i>
+                            Username
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                name="username" 
+                                required 
+                                autofocus
+                                placeholder="Enter your username"
+                                class="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-xl text-slate-700 placeholder:text-slate-400 focus:border-sky-400 focus:ring-4 focus:ring-sky-100 transition-all input-glow"
+                            />
+                            <i class="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 fa-regular fa-user"></i>
+                        </div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                <i class="text-sky-500 fa-solid fa-lock"></i>
+                                Password
+                            </label>
+                            <a href="#" class="text-xs text-sky-600 hover:text-sky-800 font-medium transition-colors">
+                                Forgot?
+                            </a>
+                        </div>
+                        <div class="relative">
+                            <input 
+                                type="password" 
+                                id="password"
+                                name="password" 
+                                required
+                                placeholder="••••••••"
+                                class="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-xl text-slate-700 placeholder:text-slate-400 focus:border-sky-400 focus:ring-4 focus:ring-sky-100 transition-all input-glow"
+                            />
+                            <button 
+                                type="button" 
+                                onclick="togglePassword()" 
+                                class="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-sky-600 transition-colors"
+                            >
+                                <i id="eyeIcon" class="fa-regular fa-eye-slash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button with Fresh Design -->
+                    <button type="submit" class="w-full bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-700 hover:to-sky-600 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg shadow-sky-200 hover:shadow-xl hover:shadow-sky-300 flex items-center justify-center gap-3 group">
+                        <span>Sign In</span>
+                        <i class="fa-solid fa-arrow-right-long group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+
+                    <!-- Security Note -->
+                    <div class="flex items-center justify-center gap-4 text-xs text-slate-400">
+                        <span><i class="mr-1 fa-solid fa-shield"></i> SSL Secure</span>
+                        <span>•</span>
+                        <span><i class="mr-1 fa-regular fa-clock"></i> 24/7 Access</span>
+                    </div>
+                </form>
+
+                <!-- Footer -->
+                <div class="mt-10 text-center border-t border-slate-100 pt-6">
+                    <p class="text-xs text-slate-400">
+                        © {% now "Y" %} Jamal Mohamed College. All rights reserved.
+                    </p>
+                    <p class="text-[10px] text-slate-300 mt-2">
+                        <i class="mr-1 fa-regular fa-circle-question"></i>
+                        Technical Support: IT Management Section
+                    </p>
+                </div>
             </div>
-        {% endif %}
-        
-        <!-- Show where you'll be redirected -->
-        {% if next and next != '/' %}
-            <div class="next-info">
-                ⚠️ You need to login to access: <strong>{{ next }}</strong>
-            </div>
-        {% endif %}
-        
-        <form method="post" action="{% url 'core:login' %}">
-            {% csrf_token %}
-            <input type="hidden" name="next" value="{{ next }}">
-            
-            <div class="form-group">
-                <label>Username:</label>
-                <input type="text" name="username" required autofocus>
-            </div>
-            <div class="form-group">
-                <label>Password:</label>
-                <input type="password" name="password" required>
-            </div>
-            <button type="submit">Login</button>
-        </form>
-        
-        <div class="info">
-            <p>Default: admin / admin123</p>
         </div>
     </div>
+
+    <!-- Password Toggle Script -->
+    <script>
+        function togglePassword() {
+            const pwd = document.getElementById("password");
+            const eye = document.getElementById("eyeIcon");
+            if (pwd.type === "password") {
+                pwd.type = "text";
+                eye.classList.replace("fa-eye-slash", "fa-eye");
+            } else {
+                pwd.type = "password";
+                eye.classList.replace("fa-eye", "fa-eye-slash");
+            }
+        }
+
+        // Form submission animation
+        document.getElementById('loginForm')?.addEventListener('submit', function(e) {
+            const btn = this.querySelector('button[type="submit"]');
+            btn.innerHTML = '<span>Signing in...</span> <i class="fa-solid fa-circle-notch animate-spin"></i>';
+            btn.disabled = true;
+            btn.classList.add('opacity-90');
+        });
+    </script>
 </body>
 </html>
