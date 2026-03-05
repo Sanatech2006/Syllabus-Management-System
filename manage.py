@@ -2,10 +2,15 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
-
+from pathlib import Path
 
 def main():
     """Run administrative tasks."""
+    # Add the project root and modules folder to Python path
+    current_dir = Path(__file__).resolve().parent
+    sys.path.insert(0, str(current_dir))  # Add project root
+    sys.path.insert(0, str(current_dir / 'modules'))  # Add modules folder
+    
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sms_project.settings')
     try:
         from django.core.management import execute_from_command_line
@@ -16,7 +21,6 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
     execute_from_command_line(sys.argv)
-
 
 if __name__ == '__main__':
     main()

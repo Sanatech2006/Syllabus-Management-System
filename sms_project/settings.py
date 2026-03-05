@@ -1,6 +1,9 @@
 from pathlib import Path
 import os
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-change-this-in-production-2025'
@@ -14,22 +17,26 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_extensions',
     'modules.upload_center',
     'modules.course_manage', 
     'modules.dashboard',
     'modules.program_manage',
-    'modules.login.apps.LoginConfig',  
+    'modules.login.apps.LoginConfig', 
+    'modules.core',
     
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    # 'sms_project.middleware.LoginProtectionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'modules.core.middleware.LoginRequiredMiddleware',
 ]
 
 ROOT_URLCONF = 'sms_project.urls'
@@ -57,9 +64,10 @@ WSGI_APPLICATION = 'sms_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'sms_db',
+        'NAME': 'sms',
         'USER': 'postgres',
-        'PASSWORD': 'postgre',
+        # 'PASSWORD': 'postgre',
+        'PASSWORD': 'sana@466',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -85,3 +93,12 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB (default is 2.5MB)
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000  
+
+# Authentication settings
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/login/'  # Where to redirect after logout
+
+# Session settings (optional - for better security)
+SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True

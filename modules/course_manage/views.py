@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.contrib import messages
 import pandas as pd
 
+
 def home(request):
     return redirect('course_management')   # or render('some_home.html')
 
