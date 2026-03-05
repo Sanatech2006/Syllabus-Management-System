@@ -18,6 +18,7 @@ urlpatterns = [
     path('programs/', include('modules.program_manage.urls')),
     path('uploads/', include('modules.upload_center.urls')),
     path('users/', include('modules.user_manage.urls')),
+    path('reports/', include('reports.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
