@@ -1,77 +1,250 @@
 {% load static %}
+<script src="https://unpkg.com/lucide@latest"></script>
 
-<!-- SIDEBAR -->
-<aside class="sidebar">
-    <div class="brand">
-        <img src="{% static 'images/logos.png' %}" class="college-logo" alt="logo">
-
-        <div class="brand-text">
-            <div class="college-name">
-                JAMAL MOHAMED COLLEGE
-            </div>
-            <div class="college-campus">
-                (Autonomous) TIRUCHIRAPPALLI
+<aside
+    class="w-78 bg-[#0b0f1a] text-slate-400 flex flex-col h-screen border-r border-white/5 font-sans"
+>
+    <div class="px-6 py-7 mb-2">
+        <div class="flex items-center gap-4">
+            <img
+                src="{% static 'images/logos.png' %}"
+                class="w-10 h-10 object-contain"
+                alt="College Logo"
+            />
+            <div class="flex flex-col leading-tight -ml-5">
+                <span class="text-sm font-bold text-slate-100">
+                    JAMAL MOHAMED COLLEGE
+                </span>
+                <span
+                    class="text-[10px] text-slate-500 font-semibold mt-0.5 tracking-wider uppercase"
+                >
+                    (Autonomous) TIRUCHIRAPPALLI
+                </span>
             </div>
         </div>
     </div>
-<nav class="menu">
-        <a href="{% url 'core:dashboard' %}" class="menu-item">
-        <span class="icon">🏠</span>
-        <span class="menu-text">Dashboard</span>
-    </a>
 
-    <li class="menu-item">
-    <div class="menu-toggle" onclick="toggleLoginMenu()">
-        <span>
-            <i class="icon">↪</i>
-            {% if user.is_authenticated %}
-                {{ user.username }}
-            {% else %}
-                Login
-            {% endif %}
-        </span>
-        <span id="login-arrow">▼</span>
-    </div>
-    
-            <ul class="submenu" id="login-submenu">
+    <nav class="flex-1 overflow-y-auto px-4 space-y-6 custom-scrollbar">
+        <!-- General -->
+        <div>
+            <p
+                class="px-3 text-[11px] font-bold text-slate-600 uppercase tracking-[0.2em] mb-3"
+            >
+                General
+            </p>
+            <div class="space-y-2">
+                <a
+                    href="{% url 'core:dashboard' %}"
+                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'dashboard' %}bg-white/10 text-white{% endif %}"
+                >
+                    <i
+                        data-lucide="layout-dashboard"
+                        class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"
+                    ></i>
+                    <span class="text-[14px]">Dashboard</span>
+                </a>
+            </div>
+        </div>
+
+        <div>
+            <p
+                class="px-3 text-[11px] font-bold text-slate-600 uppercase tracking-[0.2em] mb-3"
+            >
+                Academic
+            </p>
+            <div class="space-y-2">
+                <a
+                    href="{% url 'course_manage:course_management' %}"
+                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'course_manage' %}bg-white/10 text-white{% endif %}"
+                >
+                    <i
+                        data-lucide="book-copy"
+                       class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"
+                    ></i>
+                    <span class="text-[14px]">Course Management</span>
+                </a>
+                <a
+                    href="{% url 'program_manage:program_management' %}"
+                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'program_manage' %}bg-white/10 text-white{% endif %}"
+                >
+                    <i
+                        data-lucide="graduation-cap"
+                       class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"
+                    ></i>
+                    <span class="text-[14px]">Program Management</span>
+                </a>
+                <a
+                    href="{% url 'upload_center:upload_center' %}"
+                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'upload_center' %}bg-white/10 text-white{% endif %}"
+                >
+                    <i
+                        data-lucide="cloud-lightning"
+                       class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"
+                    ></i>
+                    <span class="text-[14px]">Upload Center</span>
+                </a>
+            </div>
+        </div>
+
+        <div>
+            <p
+                class="px-3 text-[11px] font-bold text-slate-600 uppercase tracking-[0.2em] mb-3"
+            >
+                Administration
+            </p>
+            <div class="space-y-2">
+                <a
+                    href="{% url 'user_manage:user_management' %}"
+                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'user_manage' %}bg-white/10 text-white{% endif %}"
+                >
+                    <i
+                        data-lucide="shield-check"
+                       class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"
+                    ></i>
+                    <span class="text-[14px]">User Management</span>
+                </a>
+                <a
+                    href="#"
+                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white"
+                >
+                    <i
+                        data-lucide="pie-chart"
+                       class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"
+                    ></i>
+                    <span class="text-[14px]">Report Center</span>
+                </a>
+                <a
+                href="#"
+                class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white"
+            >
+                <i
+                    data-lucide="settings"
+                    class="w-[18px] h-[18px] text-slate-500 group-hover:text-white group-hover:rotate-45 transition-transform duration-500"
+                ></i>
+                <span class="text-[14px]">System Settings</span>
+            </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="mt-auto border-t border-white/5 bg-[#0d121f] p-4">
+        <div class="relative">
+            <button
+                onclick="toggleLoginMenu()"
+                class="w-full flex items-center gap-3 p-2 rounded-xl transition-all hover:bg-white/5 group"
+            >
+                <div
+                    class="h-9 w-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg group-hover:scale-105 transition-transform"
+                >
+                    {% if user.is_authenticated %}
+                    {{ user.username|first|upper}}
+                    {% else %}
+                    <i data-lucide="user" class="w-4 h-4"></i>
+                    {% endif %}
+                </div>
+                <div class="flex-1 text-left overflow-hidden">
+                    <p
+                        class="text-[13px] font-semibold text-slate-200 truncate"
+                    >
+                        {% if user.is_authenticated %}
+                        {{ user.username }}
+                        {% else%}
+                        Guest Access
+                        {% endif %}
+                    </p>
+                    <p class="text-[10px] text-slate-500 truncate lowercase">
+                        {% if user.is_authenticated %}
+                        {{ user.email }}
+                        {% else %}
+                        Not signed in
+                        {% endif %}
+                    </p>
+                </div>
+                <i
+                    id="login-arrow"
+                    data-lucide="more-vertical"
+                    class="w-4 h-4 text-slate-600"
+                ></i>
+            </button>
+
+            <ul
+                id="login-submenu"
+                class="hidden absolute bottom-full left-0 w-full mb-2 bg-[#161b2c] border border-white/10 rounded-xl p-1.5 shadow-2xl backdrop-blur-md"
+            >
                 {% if user.is_authenticated %}
-                    <li><a href="{% url 'core:logout' %}">Logout</a></li>
+                <li>
+                    <a
+                        href="{% url 'core:logout' %}"
+                        class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-red-400 hover:bg-red-500/10 transition-colors font-medium"
+                    >
+                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                        Logout
+                    </a>
+                </li>
                 {% else %}
-                    <li><a href="{% url 'core:login' %}">ADMIN</a></li>
-                    <li><a href="{% url 'core:login' %}">HOD</a></li>
+                <li>
+                    <a
+                        href="{% url 'core:login' %}"
+                        class="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] hover:bg-white/5 transition-colors"
+                    >
+                        <i
+                            data-lucide="key-round"
+                            class="w-3.5 h-3.5 text-blue-400"
+                        ></i>
+                        ADMIN
+                    </a>
+                </li>
+                <li>
+                    <a
+                        href="{% url 'core:login' %}"
+                        class="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] hover:bg-white/5 transition-colors"
+                    >
+                        <i
+                            data-lucide="users"
+                            class="w-3.5 h-3.5 text-blue-400"
+                        ></i>
+                        HOD
+                    </a>
+                </li>
                 {% endif %}
             </ul>
-        
-        <a href="{% url 'course_manage:course_management' %}" class="menu-item">
-            <span class="icon">📚</span>
-            <span>Course Management</span>
-    </a>
-
-        <a href="{% url 'program_manage:program_management' %}" class="menu-item">
-            <span class="icon">🎓</span>
-            <span>Program Management</span>
-    </a>
-
-        <a href="{% url 'upload_center:upload_center' %}" class="menu-item">
-            <span class="icon">⏫</span>
-            <span>Upload Center</span>
-    </a>
-
-        <a href="#" class="menu-item">
-            <span class="icon">📊</span>
-            <span>Reports</span>
-        </a>
-
-        <li class="nav-item">
-       <a href="{% url 'user_manage:user_management' %}" class="menu-item">
-            <span class="icon">👥</span>
-            <span>User Management</span>
-        </a>
-        </li>
-
-        <a href="#" class="menu-item">
-            <span class="icon">⚙️</span>
-            <span>Settings</span>
-        </a>
-    </nav>
+        </div>
+    </div>
 </aside>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        } else {
+            console.error('Lucide script not loaded');
+        }
+    });
+
+    function toggleLoginMenu() {
+        const menu = document.getElementById("login-submenu");
+        menu.classList.toggle("hidden");
+    }
+
+    window.onclick = function (event) {
+        if (!event.target.closest(".relative")) {
+            document.getElementById("login-submenu").classList.add("hidden");
+        }
+    };
+</script>
+
+<style>
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+</style>

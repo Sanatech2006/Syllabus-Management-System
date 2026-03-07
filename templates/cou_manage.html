@@ -4,339 +4,358 @@
 {% block title %}Course Management{% endblock %}
 
 {% block content %}
-
-
-    <div class="management-header">
-        <!-- <h1 class="page-title">Course Management</h1> -->
-        <button class="btn-clear-filters" id="clearFilters">Clear All Filters</button>
+<div class="min-h-screen">
+    <!-- Page Header with Breadcrumb -->
+    <div class="mx-auto mb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                    <span class="bg-blue-600 text-white p-3 rounded-xl shadow-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                    </span>
+                    Course Management
+                </h1>
+                <nav class="flex mt-2 text-sm text-gray-500">
+                    <a href="#" class="hover:text-blue-600 transition">Dashboard</a>
+                    <span class="mx-2">/</span>
+                    <span class="text-gray-700 font-medium">Course Management</span>
+                </nav>
+            </div>
+            <button id="clearFilters" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Clear All Filters
+            </button>
+        </div>
     </div>
 
-    <!-- Filter Form - REPLACES your filter-box -->
-    <!-- Filter Form -->
-<div class="filters-card">
-    <h2 class="filters-title">Filter Courses</h2>
-    <form method="get" id="filterForm" class="filters-grid">
-        {% csrf_token %}
-        
-        <!-- ROW 1: 3 filters -->
-        <div class="filter-group">
-            <label for="year">Year of syllabus</label>
-            <select name="year" id="year">
-                {% for year in years %}
-                    <option value="{{ year }}" {% if request.GET.year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
-                {% endfor %}
-            </select>
+    <!-- Stats Cards (optional – add counts in view) -->
+    <div class="mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-2xl shadow-md p-6 border-l-4 border-blue-500 hover:shadow-lg transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Courses</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ total_courses|default:"0" }}</p>
+                </div>
+                <div class="bg-blue-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                </div>
+            </div>
         </div>
-
-        <div class="filter-group">
-            <label for="prog_type">Programme Type</label>
-            <select name="prog_type" id="prog_type">
-                <option value="" {% if not request.GET.prog_type %}selected{% endif %}>All Types</option>
-                <option value="UG" {% if request.GET.prog_type == "UG" %}selected{% endif %}>UG</option>
-                <option value="PG" {% if request.GET.prog_type == "PG" %}selected{% endif %}>PG</option>
-            </select>
+        <div class="bg-white rounded-2xl shadow-md p-6 border-l-4 border-green-500 hover:shadow-lg transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">UG Courses</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ ug_count|default:"0" }}</p>
+                </div>
+                <div class="bg-green-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+                    </svg>
+                </div>
+            </div>
         </div>
-
-        <div class="filter-group">
-            <label for="prog_category">Programme Category</label>
-            <select name="prog_category" id="prog_category">
-                <option value="" {% if not request.GET.prog_category %}selected{% endif %}>All Categories</option>
-                <option value="arts" {% if request.GET.prog_category == "arts" %}selected{% endif %}>Arts</option>
-                <option value="science" {% if request.GET.prog_category == "science" %}selected{% endif %}>Science</option>
-                {% for cat in prog_categories %}
-                    <option value="{{ cat }}" {% if request.GET.prog_category == cat|stringformat:"s" %}selected{% endif %}>{{ cat }}</option>
-                {% endfor %}
-            </select>
+        <div class="bg-white rounded-2xl shadow-md p-6 border-l-4 border-yellow-500 hover:shadow-lg transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">PG Courses</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ pg_count|default:"0" }}</p>
+                </div>
+                <div class="bg-yellow-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v8m-4-4h8" />
+                    </svg>
+                </div>
+            </div>
         </div>
-
-        <!-- ROW 2: 3 filters -->
-        <div class="filter-group">
-            <label for="prog_code">Programme Code</label>
-            <select name="prog_code" id="prog_code">
-                <option value="">All Programmes</option>
-                {% for prog in prog_codes %}
-                    <option value="{{ prog }}" {% if request.GET.prog_code == prog|stringformat:"s" %}selected{% endif %}>{{ prog }}</option>
-                {% endfor %}
-            </select>
+        <div class="bg-white rounded-2xl shadow-md p-6 border-l-4 border-purple-500 hover:shadow-lg transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Arts & Science</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ arts_count|add:science_count|default:"0" }}</p>
+                </div>
+                <div class="bg-purple-100 p-3 rounded-xl">
+                    <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <div class="filter-group">
-            <label for="part">Branch</label>
-            <select name="branch" id="branch">
-                <option value="">All Branches</option>
-                {% for b in branches %}
-                    <option value="{{ b }}" {% if request.GET.branch == b|stringformat:"s" %}selected{% endif %}>{{ b }}</option>
-                {% endfor %}
-            </select>
+    <!-- Filter Card -->
+    <div class="mx-auto bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-8">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filter Courses
+            </h2>
         </div>
-
-        <div class="filter-group">
-            <label for="sem">Semester</label>
-            <select name="sem" id="sem">
-                <option value="">All Semesters</option>
-                {% for semester in semesters %}
-                    <option value="{{ semester }}" {% if request.GET.sem == semester|stringformat:"s" %}selected{% endif %}>{{ semester }}</option>
-                {% endfor %}
-            </select>
+        <div class="p-6">
+            <form method="get" id="filterForm">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Year of syllabus -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Year of syllabus : </label>
+                        <select name="year" id="year" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Years</option>
+                            {% for year in years %}
+                                <option value="{{ year }}" {% if request.GET.year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- Programme Type -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Programme Type : </label>
+                        <select name="prog_type" id="prog_type" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="" {% if not request.GET.prog_type %}selected{% endif %}>All Types</option>
+                            <option value="UG" {% if request.GET.prog_type == "UG" %}selected{% endif %}>UG</option>
+                            <option value="PG" {% if request.GET.prog_type == "PG" %}selected{% endif %}>PG</option>
+                        </select>
+                    </div>
+                    <!-- Programme Category -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Programme Category : </label>
+                        <select name="prog_category" id="prog_category" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="" {% if not request.GET.prog_category %}selected{% endif %}>All Categories</option>
+                            <option value="arts" {% if request.GET.prog_category == "arts" %}selected{% endif %}>Arts</option>
+                            <option value="science" {% if request.GET.prog_category == "science" %}selected{% endif %}>Science</option>
+                            {% for cat in prog_categories %}
+                                <option value="{{ cat }}" {% if request.GET.prog_category == cat|stringformat:"s" %}selected{% endif %}>{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- Programme Code -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Programme Code : </label>
+                        <select name="prog_code" id="prog_code" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Programmes</option>
+                            {% for prog in prog_codes %}
+                                <option value="{{ prog }}" {% if request.GET.prog_code == prog|stringformat:"s" %}selected{% endif %}>{{ prog }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- Branch -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Branch : </label>
+                        <select name="branch" id="branch" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Branches</option>
+                            {% for b in branches %}
+                                <option value="{{ b }}" {% if request.GET.branch == b|stringformat:"s" %}selected{% endif %}>{{ b }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- Semester -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Semester : </label>
+                        <select name="sem" id="sem" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Semesters</option>
+                            {% for semester in semesters %}
+                                <option value="{{ semester }}" {% if request.GET.sem == semester|stringformat:"s" %}selected{% endif %}>{{ semester }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- Part -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Part : </label>
+                        <select name="part" id="part" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All parts</option>
+                            {% for p in parts %}
+                                <option value="{{ p }}" {% if request.GET.part == p|stringformat:"s" %}selected{% endif %}>{{ p }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- Course Code with Title -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Course Code with Title : </label>
+                        <select name="course_code" id="course_code" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Courses</option>
+                            {% for course in courses %}
+                                <option value="{{ course.course_code }}" 
+                                    {% if request.GET.course_code == course.course_code %}selected{% endif %}>
+                                    {{ course.course_code }} - {{ course.course_title }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition">
+                        Apply Filters
+                    </button>
+                </div>
+            </form>
         </div>
+    </div>
 
-        <div class="filter-group">
-            <label for="part">Part</label>
-            <select name="part" id="part">
-                <option value="">All parts</option>
-                {% for p in parts %}
-                    <option value="{{ p }}" {% if request.GET.sem == p|stringformat:"s" %}selected{% endif %}>{{ p }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- ROW 3: Course Code and Title filters -->
-        <div class="filter-group">
-    <label for="course_code">Course Code with Title</label>
-            <select name="course_code" id="course_code">
-                <option value="">All Courses</option>
-                {% for course in courses %}
-                    <option value="{{ course.course_code }}" 
-                        {% if request.GET.course_code == course.course_code %}selected{% endif %}>
-                        {{ course.course_code }} - {{ course.course_title }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="filter-group">
-            <!-- Empty for layout purposes -->
-        </div>
-
-        <div class="filter-actions">
-            <button type="submit" class="btn-apply">Apply Filters</button>
-        </div>
-    </form>
-</div>
-
-
-    <!-- Results Table -->
+    <!-- Results Table Card -->
     {% if courses %}
-    <div class="results-section">
-        <div class="results-header">
-            <h3 class="results-title">{{ courses|length }} Courses Found</h3>
+    <div class="mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+                Course Directory
+                <span class="ml-2 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">{{ courses|length }} found</span>
+            </h2>
+            <!-- Optional search (non-functional for now) -->
+            <div class="relative">
+                <input type="text" placeholder="Search courses..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-64">
+                <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </div>
         </div>
-        
-        <div class="table-responsive">
-            <table class="management-table">
-                <thead>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
                     <tr>
-                        <th>Year of syllabus</th>
-                        <th>Programme Type</th>
-                        <th>Programme Code</th>
-                        <th>Branch</th>
-                        <th>Semester</th>
-                        <th>Course Category</th>
-                        <th>Course Code with Title</th>
-                        <th>Credit</th>
-                        <th>Action</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Year</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Type</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Programme Code</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Branch</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Semester</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Course Category</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Course Code & Title</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Credit</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Action</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="bg-white divide-y divide-gray-200">
                     {% for course in courses %}
-                    <tr>
-                        <td>{{ course.year|default:"—" }}</td>
-                        <td>{{ course.prog_type|default:"—" }}</td>
-                        <td>{{ course.prog_code|default:"—" }}</td>
-                        <td>{{ course.branch|default:"—" }}</td>
-                        <td>{{ course.sem|default:"—" }}</td>
-                        <td>{{ course.course_category|default:"—" }}</td>
-                        <td>
-                            <strong>{{ course.course_code|default:"—" }}</strong><br>
-                            <small>{{ course.course_title|default:"—" }}</small>
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ course.year|default:"—" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ course.prog_type|default:"—" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ course.prog_code|default:"—" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ course.branch|default:"—" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ course.sem|default:"—" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ course.course_category|default:"—" }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900">
+                            <div class="font-medium">{{ course.course_code|default:"—" }}</div>
+                            <div class="text-xs text-gray-500">{{ course.course_title|default:"—" }}</div>
                         </td>
-                        <td>{{course.credit|default:"-"}}</td>
-                        <!-- REPLACE your current View button -->
-<td>
-    {% if course.course_code %}
-        <a href="{% url 'course_manage:view_course_pdf' course.course_code %}" class="view-btn">
-            View
-        </a>
-    {% else %}
-        <button class="view-btn" disabled>View</button>
-    {% endif %}
-</td>
-
-
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ course.credit|default:"-" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                            <button onclick="viewPDF('{{ course.course_code|escapejs }}')" class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                View
+                            </button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+        <!-- Pagination (if paginated) -->
+        {% if page_obj.has_other_pages %}
+        <div class="px-6 py-3 bg-gray-50 border-t border-gray-200">
+            <div class="flex items-center justify-between">
+                <p class="text-sm text-gray-600">
+                    Showing <span class="font-medium">{{ page_obj.start_index }}</span> to <span class="font-medium">{{ page_obj.end_index }}</span> of <span class="font-medium">{{ page_obj.paginator.count }}</span> results
+                </p>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">Previous</span>
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    </a>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">{{ num }}</span>
+                        {% else %}
+                        <a href="?page={{ num }}&{{ request.GET.urlencode }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">Next</span>
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+        {% endif %}
     </div>
     {% else %}
-    <div class="no-results">
-        <div class="no-results-icon">📚</div>
-        <h3>No Courses Found</h3>
-        <p>Apply filters or add courses from <a href="{% url 'upload_center:upload_center' %}">Upload Center</a></p>
+    <!-- No Results -->
+    <div class="mx-auto bg-white rounded-2xl shadow-xl p-12 text-center">
+        <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No Courses Found</h3>
+        <p class="text-gray-500 mb-4">Try adjusting your filters or add courses from the Upload Center.</p>
+        <a href="{% url 'upload_center:upload_center' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">
+            Go to Upload Center
+        </a>
     </div>
     {% endif %}
 </div>
 
 <!-- PDF Viewer Modal -->
-<div class="pdf-modal" id="pdfModal">
-    <div class="pdf-modal-content">
-        <div class="pdf-header">
-            <h3 id="pdfTitle">Loading Course Content...</h3>
-            <button class="close-pdf" id="closePdf">&times;</button>
-        </div>
-        <div class="pdf-container">
-            <iframe id="pdfFrame" src="" width="100%" height="600px"></iframe>
+<div id="pdfModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex min-h-screen items-center justify-center p-4">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closePDFModal()"></div>
+        <div class="relative transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all sm:max-w-4xl sm:w-full">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between">
+                <h3 class="text-lg font-medium text-white flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <span id="pdfTitle">Course Content</span>
+                </h3>
+                <button onclick="closePDFModal()" class="text-white hover:text-gray-200 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-4">
+                <iframe id="pdfFrame" src="" width="100%" height="600px" class="border-0 rounded-lg"></iframe>
+            </div>
         </div>
     </div>
 </div>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // ONLY open PDF when user clicks View button
-    document.querySelectorAll('.view-pdf-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const courseCode = this.getAttribute('data-course-code');
-            document.getElementById('pdfTitle').textContent = `Course: ${courseCode}`;
-            document.getElementById('pdfFrame').src = `/view_course_pdf/${courseCode}/`;
-            document.getElementById('pdfModal').style.display = 'flex';
-        });
-    });
-    
-    // Close modal
-    document.getElementById('closePdf').addEventListener('click', function() {
-        document.getElementById('pdfModal').style.display = 'none';
+
+    function openPDFModal() {
+        document.getElementById('pdfModal').classList.remove('hidden');
+    }
+
+    function closePDFModal() {
+        document.getElementById('pdfModal').classList.add('hidden');
         document.getElementById('pdfFrame').src = '';
+    }
+
+    function viewPDF(courseCode) {
+        document.getElementById('pdfTitle').textContent = `Course: ${courseCode}`;
+        document.getElementById('pdfFrame').src = `{% url 'course_manage:view_course_pdf' 0 %}`.replace('0', courseCode);
+        openPDFModal();
+    }
+
+    document.getElementById('clearFilters').addEventListener('click', function() {
+        document.querySelectorAll('#filterForm select').forEach(select => select.value = '');
+        document.getElementById('filterForm').submit();
     });
-    
-    // Close on outside click
-    document.getElementById('pdfModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.style.display = 'none';
-            document.getElementById('pdfFrame').src = '';
-        }
-    });
-});
+
 </script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Get all filter select elements
-    const filterSelects = {
-        'year': document.getElementById('year'),
-        'prog_type': document.getElementById('prog_type'),
-        'course_category': document.getElementById('course_category'),
-        'prog_code': document.getElementById('prog_code'),
-        'part': document.getElementById('part'),
-        'sem': document.getElementById('sem'),
-        'course_code': document.getElementById('course_code'),
-        'course_title': document.getElementById('course_title')
-    };
-    
-    // Store original options as data attributes
-    for (let [key, select] of Object.entries(filterSelects)) {
-        if (select) {
-            let options = [];
-            for (let option of select.options) {
-                if (option.value) {
-                    options.push({value: option.value, text: option.text});
-                }
-            }
-            select.dataset.allOptions = JSON.stringify(options);
-        }
-    }
-    
-    // Function to get current filter values
-    function getCurrentFilters() {
-        let filters = {};
-        for (let [key, select] of Object.entries(filterSelects)) {
-            if (select && select.value) {
-                filters[key] = select.value;
-            }
-        }
-        return filters;
-    }
-    
-    // Function to update a single dropdown
-    function updateDropdown(select, options, currentValue) {
-        if (!select) return;
-        
-        // Clear current options (keep the "All" option)
-        while (select.options.length > 1) {
-            select.remove(1);
-        }
-        
-        // Add new options
-        options.forEach(optValue => {
-            let option = document.createElement('option');
-            option.value = optValue;
-            option.text = optValue;
-            if (currentValue && currentValue === optValue) {
-                option.selected = true;
-            }
-            select.appendChild(option);
-        });
-    }
-    
-    // Function to update all dropdowns based on current filters
-    function updateFilters(changedFilter = null) {
-        let filters = getCurrentFilters();
-        
-        // Build URL with current filters
-        let url = '/get-filter-options/?' + new URLSearchParams(filters);
-        
-        // Fetch new options
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                // Update each dropdown with new options
-                for (let [key, select] of Object.entries(filterSelects)) {
-                    if (select && key !== changedFilter) { // Don't update the filter that just changed
-                        updateDropdown(select, data[key] || [], filters[key]);
-                    }
-                }
-            })
-            .catch(error => console.error('Error:', error));
-    }
-    
-    // Add event listeners to all filters
-    for (let [key, select] of Object.entries(filterSelects)) {
-        if (select) {
-            select.addEventListener('change', function() {
-                updateFilters(key);
-            });
-        }
-    }
-    
-    // Clear filters button
-    const clearBtn = document.getElementById('clearFilters');
-    if (clearBtn) {
-        clearBtn.addEventListener('click', function() {
-            // Reset all selects to "All" option
-            for (let [key, select] of Object.entries(filterSelects)) {
-                if (select) {
-                    select.value = '';
-                    
-                    // Restore all original options
-                    while (select.options.length > 1) {
-                        select.remove(1);
-                    }
-                    
-                    if (select.dataset.allOptions) {
-                        let allOptions = JSON.parse(select.dataset.allOptions);
-                        allOptions.forEach(opt => {
-                            let option = document.createElement('option');
-                            option.value = opt.value;
-                            option.text = opt.text;
-                            select.appendChild(option);
-                        });
-                    }
-                }
-            }
-            
-            // Submit the form to clear all filters
-            document.getElementById('filterForm').submit();
-        });
-    }
-});
-</script>
+
 {% endblock %}

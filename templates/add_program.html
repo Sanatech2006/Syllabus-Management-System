@@ -1,219 +1,311 @@
 {% extends "base_layout.html" %}
 {% load static %}
-
 {% block title %}Add Program{% endblock %}
-
 {% block content %}
-<div class="container-fluid page-wrapper">
 
-  <!-- PAGE HEADER -->
-  <div class="mb-4">
-    <h1 class="page-title">
-      {% if edit_program %}Edit Program{% else %}Add Program{% endif %}
-    </h1>
-  </div>
-
-  <div class="card shadow-sm border-0 rounded-4">
-    <div class="card-body p-4">
-
-      <h4 class="fw-semibold mb-4">Program Details</h4>
-
-      <!-- MAIN FORM -->
-      <form method="post"
-            action="{% if edit_program %}
-                    {% url 'program_manage:edit_program' edit_program.id %}
-                    {% else %}
-                    {% url 'program_manage:add_program' %}
-                    {% endif %}">
-        {% csrf_token %}
-
-        {% if edit_index is not None %}
-          <input type="hidden" name="edit_index" value="{{ edit_index }}">
-        {% endif %}
-
-        <!-- Year -->
-        <div class="mb-3">
-          <label class="form-label">Year</label>
-          <input type="text" name="year" class="form-control"
-                 value="{% if edit_program %}{{ edit_program.year }}{% endif %}">
+<div class="min-h-screen">
+    <!-- Page Header with Breadcrumb -->
+    <div class="mx-auto mb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                    <span class="bg-blue-600 text-white p-3 rounded-xl shadow-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                    </span>
+                    {% if edit_program %}Edit Program{% else %}Add Program{% endif %}
+                </h1>
+                <nav class="flex mt-2 text-sm text-gray-500">
+                    <a href="{% url 'program_manage:program_management' %}" class="hover:text-blue-600 transition">Program Management</a>
+                    <span class="mx-2">/</span>
+                    <span class="text-gray-700 font-medium">{% if edit_program %}Edit{% else %}Add New{% endif %}</span>
+                </nav>
+            </div>
+            <a href="{% url 'program_manage:program_management' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to List
+            </a>
         </div>
-
-        <!-- Programme Type -->
-        <div class="mb-3">
-          <label class="form-label">Programme Type</label>
-          <select name="prog_type" class="form-select">
-            <option value="">Select Type</option>
-            <option value="UG"
-              {% if edit_program and edit_program.prog_type == "UG" %}selected{% endif %}>
-              UG
-            </option>
-            <option value="PG"
-              {% if edit_program and edit_program.prog_type == "PG" %}selected{% endif %}>
-              PG
-            </option>
-          </select>
-        </div>
-
-        <!-- Programme Category -->
-        <div class="mb-3">
-          <label class="form-label">Programme Category</label>
-          <select name="prog_category" class="form-select">
-            <option value="">Select Category</option>
-            <option value="Arts"
-              {% if edit_program and edit_program.prog_category == "Arts" %}selected{% endif %}>
-              Arts
-            </option>
-            <option value="Science"
-              {% if edit_program and edit_program.prog_category == "Science" %}selected{% endif %}>
-              Science
-            </option>
-          </select>
-        </div>
-
-        <!-- Programme Code -->
-        <div class="mb-3">
-          <label class="form-label">Programme Code</label>
-          <input type="text" name="prog_code" class="form-control"
-                 value="{% if edit_program %}{{ edit_program.prog_code }}{% endif %}">
-        </div>
-
-        <!-- Branch -->
-        <div class="mb-3">
-          <label class="form-label">Branch</label>
-          <input type="text" name="branch" class="form-control"
-                 value="{% if edit_program %}{{ edit_program.branch }}{% endif %}">
-        </div>
-
-        <!-- Buttons -->
-        <div class="text-center mt-4">
-          {% if edit_program %}
-            <button type="submit" class="btn btn-warning px-4">
-              Update Program
-            </button>
-          {% else %}
-            <button type="submit" name="action" value="add"
-                    class="btn btn-primary px-4">
-              Add Program
-            </button>
-          {% endif %}
-        </div>
-
-      </form>
-
-      <!-- PREVIEW GRID -->
-      {% if preview_programs %}
-      <hr>
-      <h5 class="mt-4">Program List</h5>
-
-      <div class="table-responsive">
-        <table class="table table-bordered mt-3">
-          <thead class="table-light">
-            <tr>
-              <th>S.No</th>
-              <th>Year</th>
-              <th>Type</th>
-              <th>Category</th>
-              <th>Code</th>
-              <th>Branch</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-
-{% for p in preview_programs %}
-
-{% if edit_index == forloop.counter0 %}
-<form method="post">
-{% csrf_token %}
-<input type="hidden" name="index" value="{{ forloop.counter0 }}">
-
-<tr>
-<td>{{ forloop.counter }}</td>
-
-<td><input type="text" name="year" value="{{ p.year }}"
-class="form-control form-control-sm"></td>
-
-<td>
-<select name="prog_type" class="form-select form-select-sm">
-<option value="UG" {% if p.prog_type == "UG" %}selected{% endif %}>UG</option>
-<option value="PG" {% if p.prog_type == "PG" %}selected{% endif %}>PG</option>
-</select>
-</td>
-
-<td>
-<select name="prog_category" class="form-select form-select-sm">
-<option value="Arts" {% if p.prog_category == "Arts" %}selected{% endif %}>Arts</option>
-<option value="Science" {% if p.prog_category == "Science" %}selected{% endif %}>Science</option>
-</select>
-</td>
-
-<td><input type="text" name="prog_code" value="{{ p.prog_code }}"
-class="form-control form-control-sm"></td>
-
-<td><input type="text" name="branch" value="{{ p.branch }}"
-class="form-control form-control-sm"></td>
-
-<td>
-<button name="action" value="update"
-class="btn btn-success btn-sm">✔</button>
-
-<button name="action" value="cancel"
-class="btn btn-secondary btn-sm">✖</button>
-</td>
-
-</tr>
-</form>
-
-{% else %}
-<tr>
-<td>{{ forloop.counter }}</td>
-<td>{{ p.year }}</td>
-<td>{{ p.prog_type }}</td>
-<td>{{ p.prog_category }}</td>
-<td>{{ p.prog_code }}</td>
-<td>{{ p.branch }}</td>
-
-<td>
-
-<form method="post" style="display:inline;">
-{% csrf_token %}
-<input type="hidden" name="index" value="{{ forloop.counter0 }}">
-<button name="action" value="edit"
-class="btn btn-warning btn-sm">✏</button>
-</form>
-
-<form method="post" style="display:inline;">
-{% csrf_token %}
-<input type="hidden" name="index" value="{{ forloop.counter0 }}">
-<button name="action" value="delete"
-class="btn btn-danger btn-sm">🗑</button>
-</form>
-
-</td>
-</tr>
-{% endif %}
-
-{% endfor %}
-
-</tbody>
-        </table>
-      </div>
-
-      <!-- SAVE BUTTON -->
-      <div class="text-end mt-3">
-        <form method="post">
-          {% csrf_token %}
-          <button type="submit" name="action" value="save"
-                  class="btn btn-success px-4">
-            Save Program
-          </button>
-        </form>
-      </div>
-
-      {% endif %}
-
     </div>
-  </div>
 
+    <!-- Main Form Card -->
+    <div class="mx-auto bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Program Details
+            </h2>
+        </div>
+        <div class="p-6 -mt-6">
+            <form method="post"
+                  action="{% if edit_program %}{% url 'program_manage:edit_program' edit_program.id %}{% else %}{% url 'program_manage:add_program' %}{% endif %}"
+                  class="space-y-6">
+                {% csrf_token %}
+
+                {% if edit_index is not None %}
+                    <input type="hidden" name="edit_index" value="{{ edit_index }}">
+                {% endif %}
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Year -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Academic Year : </label>
+                        <input type="text" name="year"
+                               value="{% if edit_program %}{{ edit_program.year }}{% endif %}"
+                               placeholder="e.g., 2023-2024"
+                               class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Programme Type -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Programme Type : </label>
+                        <select name="prog_type"
+                                class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Type</option>
+                            <option value="UG" {% if edit_program and edit_program.prog_type == "UG" %}selected{% endif %}>UG</option>
+                            <option value="PG" {% if edit_program and edit_program.prog_type == "PG" %}selected{% endif %}>PG</option>
+                        </select>
+                    </div>
+
+                    <!-- Programme Category -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Programme Category : </label>
+                        <select name="prog_category"
+                                class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Category</option>
+                            <option value="Arts" {% if edit_program and edit_program.prog_category == "Arts" %}selected{% endif %}>Arts</option>
+                            <option value="Science" {% if edit_program and edit_program.prog_category == "Science" %}selected{% endif %}>Science</option>
+                        </select>
+                    </div>
+
+                    <!-- Programme Code -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Programme Code : </label>
+                        <input type="text" name="prog_code"
+                               value="{% if edit_program %}{{ edit_program.prog_code }}{% endif %}"
+                               placeholder="e.g., CS101"
+                               class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Branch -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Branch : </label>
+                        <input type="text" name="branch"
+                               value="{% if edit_program %}{{ edit_program.branch }}{% endif %}"
+                               placeholder="e.g., Computer Science"
+                               class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex justify-end gap-3 pt-4">
+                    {% if edit_program %}
+                        <button type="submit" class="px-6 py-2 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition">
+                            Update Program
+                        </button>
+                    {% else %}
+                        <button type="submit" name="action" value="add" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition">
+                            Add to List
+                        </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Preview Programs Card -->
+    {% if preview_programs %}
+    <div class="mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+                Program List (Preview)
+                <span class="ml-2 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">{{ preview_programs|length }}</span>
+            </h2>
+            <!-- Save All Button -->
+            <form method="post" class="inline">
+                {% csrf_token %}
+                <button type="submit" name="action" value="save" class="inline-flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                    </svg>
+                    Save All Programs
+                </button>
+            </form>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">#</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Year</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Type</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Category</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Code</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Branch</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for p in preview_programs %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ forloop.counter }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ p.year }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ p.prog_type }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ p.prog_category }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">{{ p.prog_code }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ p.branch }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                            <div class="flex justify-center items-center gap-3">
+                                <!-- Edit button opens modal -->
+                                <button onclick="openEditModal({{ forloop.counter0 }})" class="text-blue-600 hover:text-blue-900" title="Edit">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </button>
+                                <!-- Delete button with confirmation -->
+                                <button onclick="confirmDelete({{ forloop.counter0 }})" class="text-red-600 hover:text-red-900" title="Delete">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
 </div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex min-h-screen items-center justify-center p-4">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeModal('editModal')"></div>
+        <div class="relative transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all sm:max-w-lg sm:w-full">
+            <form method="post" id="editForm" action="{% url 'program_manage:add_program' %}">
+                {% csrf_token %}
+                <input type="hidden" name="index" id="editIndex">
+                <input type="hidden" name="action" value="update">
+
+                <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                    <h3 class="text-lg font-medium text-white flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit Program
+                    </h3>
+                </div>
+                <div class="px-6 py-4 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Year : </label>
+                        <input type="text" name="year" id="editYear" required class="mt-2 block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Programme Type : </label>
+                        <select name="prog_type" id="editProgType" required class="mt-2 block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="UG">UG</option>
+                            <option value="PG">PG</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Programme Category : </label>
+                        <select name="prog_category" id="editProgCategory" required class="mt-2 block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Arts">Arts</option>
+                            <option value="Science">Science</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Programme Code : </label>
+                        <input type="text" name="prog_code" id="editProgCode" required class="mt-2 block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Branch : </label>
+                        <input type="text" name="branch" id="editBranch" required class="mt-2 block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-6 py-3 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('editModal')" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteConfirmModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex min-h-screen items-center justify-center p-4">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeModal('deleteConfirmModal')"></div>
+        <div class="relative transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all sm:max-w-md sm:w-full">
+            <div class="px-6 py-4 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2">Confirm Delete</h3>
+                <p class="text-sm text-gray-500 mb-4">Are you sure you want to delete this program from the list? This action cannot be undone.</p>
+                <form method="post" id="deleteForm" action="{% url 'program_manage:add_program' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="index" id="deleteIndex">
+                    <input type="hidden" name="action" value="delete">
+                    <div class="flex justify-center gap-3">
+                        <button type="button" onclick="closeModal('deleteConfirmModal')" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">Delete</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openModal(modalId) {
+    document.getElementById(modalId).classList.remove('hidden');
+}
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.add('hidden');
+    }
+
+    function openEditModal(index) {
+
+        const previewPrograms = [
+            {% for p in preview_programs %}
+            {
+                year: "{{ p.year|escapejs }}",
+                prog_type: "{{ p.prog_type|escapejs }}",
+                prog_category: "{{ p.prog_category|escapejs }}",
+                prog_code: "{{ p.prog_code|escapejs }}",
+                branch: "{{ p.branch|escapejs }}"
+            },
+            {% endfor %}
+        ];
+        const p = previewPrograms[index];
+        if (p) {
+            document.getElementById('editIndex').value = index;
+            document.getElementById('editYear').value = p.year;
+            document.getElementById('editProgType').value = p.prog_type;
+            document.getElementById('editProgCategory').value = p.prog_category;
+            document.getElementById('editProgCode').value = p.prog_code;
+            document.getElementById('editBranch').value = p.branch;
+            openModal('editModal');
+        }
+    }
+
+    function confirmDelete(index) {
+        document.getElementById('deleteIndex').value = index;
+        openModal('deleteConfirmModal');
+    }
+</script>
 {% endblock %}

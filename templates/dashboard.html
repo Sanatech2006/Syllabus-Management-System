@@ -1,487 +1,327 @@
 {% extends "base_layout.html" %}
 {% load static %}
 {% block title %}Dashboard | Syllabus Management{% endblock %}
-
 {% block content %}
+
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Syllabus Dashboard</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts - Outfit -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Outfit', sans-serif;
-            background: #f0f2f5;
-        }
-        
-        /* Modern Glassmorphism Card */
-        .dashboard-card {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            border-radius: 28px;
-            box-shadow: 
-                0 20px 35px -8px rgba(0, 0, 0, 0.05),
-                0 0 0 1px rgba(0, 0, 0, 0.02) inset,
-                0 -2px 0 0 rgba(0, 0, 0, 0.02) inset;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .dashboard-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 
-                0 25px 40px -12px rgba(0, 0, 0, 0.15),
-                0 0 0 1px rgba(0, 0, 0, 0.02) inset;
-        }
-        
-        /* Stat Card with Gradient Accent */
-        .stat-card {
-            background: white;
-            border-radius: 24px;
-            padding: 1.5rem;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid #eef2f6;
-            transition: all 0.3s ease;
-        }
-        
-        .stat-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, #4158D0, #C850C0, #FFCC70);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .stat-card:hover::after {
-            opacity: 1;
-        }
-        
-        .stat-card:hover {
-            box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .stat-icon-wrapper {
-            width: 52px;
-            height: 52px;
-            border-radius: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecf2 100%);
-            color: #2c3e50;
-        }
-        
-        /* Chart Card */
-        .chart-card {
-            background: white;
-            border-radius: 28px;
-            padding: 1.75rem;
-            border: 1px solid #eef2f6;
-            transition: all 0.3s ease;
-        }
-        
-        .chart-card:hover {
-            border-color: #d0d9e4;
-            box-shadow: 0 25px 35px -12px rgba(0, 0, 0, 0.08);
-        }
-        
-        /* Modern Search */
-        .search-container {
-            position: relative;
-            max-width: 360px;
-        }
-        
-        .search-input {
-            width: 100%;
-            padding: 1rem 1.5rem 1rem 3.2rem;
-            background: white;
-            border: 1px solid #eef2f6;
-            border-radius: 60px;
-            font-size: 0.95rem;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.02);
-        }
-        
-        .search-input:focus {
-            outline: none;
-            border-color: #9b87f5;
-            box-shadow: 0 8px 20px -8px rgba(155, 135, 245, 0.3);
-        }
-        
-        .search-icon {
-            position: absolute;
-            left: 1.2rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #9aa6b5;
-            font-size: 1rem;
-        }
-        
-        /* Trend Badge */
-        .trend-badge {
-            padding: 0.25rem 0.75rem;
-            background: #f0f9ff;
-            color: #0284c7;
-            border-radius: 40px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-        }
-        
-        .trend-badge.up {
-            background: #f0fdf4;
-            color: #166534;
-        }
-        
-        .trend-badge i {
-            font-size: 0.6rem;
-            margin-right: 0.2rem;
-        }
-        
-        /* Section Title */
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #1e293b;
-            letter-spacing: -0.01em;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .section-title i {
-            color: #9b87f5;
-            font-size: 1rem;
-            background: #f5f3ff;
-            padding: 0.4rem;
-            border-radius: 12px;
-        }
-        
-        /* Value Style */
-        .stat-value {
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: #0f172a;
-            line-height: 1.2;
-            margin-bottom: 0.2rem;
-        }
-        
-        .stat-label {
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: #64748b;
-            letter-spacing: 0.02em;
-        }
-    </style>
-</head>
-<body class="p-6">
-    <div class="max-w-[1600px] mx-auto">
-        <!-- Header Section - Clean and Fresh -->
-        <div class="flex flex-col justify-between gap-4 mb-8 md:flex-row md:items-center">
-            <div>
-                <h1 class="text-3xl font-bold text-slate-800" style="letter-spacing: -0.02em;">
-                    Syllabus Dashboard
-                </h1>
-                <p class="mt-1 text-slate-500">
-                    Monitor and manage all syllabus-related data
-                </p>
-            </div>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Syllabus Dashboard</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+        <style>
+            body {
+                font-family: 'Inter', sans-serif;
+            }
+            .hover-lift {
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            .hover-lift:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.05), 0 8px 10px -6px rgb(0 0 0 / 0.02);
+            }
+        </style>
+    </head>
+
+    <body class="font-sans">
+
+        <div class="mx-auto">
             
-            <!-- Search - Simplified -->
-            <div class="search-container w-full md:w-auto">
-                <i class="fas fa-magnifying-glass search-icon"></i>
-                <input 
-                    type="text" 
-                    class="search-input" 
-                    placeholder="Search courses or programs..."
-                >
+            <!-- Header -->
+            <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Syllabus Dashboard</h1>
+                    <p class="text-slate-500 text-sm mt-1">Monitor and manage all syllabus‑related data</p>
+                </div>
+                
+                <!-- Search + last updated -->
+                <div class="flex items-center gap-4">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" placeholder="Search courses or programs..." 
+                            class="pl-10 pr-4 py-2 border border-slate-200 rounded-full text-sm w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400">
+                    </div>
+                </div>
+            </header>
+
+            <!-- Stats Cards (5 columns) – All Tailwind -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+                
+                <!-- Total Programs -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-3 hover-lift">
+                    <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 text-xl mb-3">
+                        <i class="fas fa-diagram-project"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-800">{{ total_programs|default:"0" }}</div>
+                    <div class="text-sm text-slate-500 mt-1">Total Programs</div>
+                    <div class="mt-3 inline-flex items-center gap-1 text-xs font-medium bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                        <i class="fas fa-arrow-up text-xs"></i> Active
+                    </div>
+                </div>
+                
+                <!-- UG Courses -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-3 hover-lift">
+                    <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 text-xl mb-3">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-800">{{ ug_courses|default:"0" }}</div>
+                    <div class="text-sm text-slate-500 mt-1">UG Courses</div>
+                    <div class="mt-3 inline-flex items-center gap-1 text-xs font-medium bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                        <i class="fas fa-arrow-up"></i> +2 this month
+                    </div>
+                </div>
+                
+                <!-- Arts Courses -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-3 hover-lift">
+                    <div class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 text-xl mb-3">
+                        <i class="fas fa-palette"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-800">{{ arts_courses|default:"0" }}</div>
+                    <div class="text-sm text-slate-500 mt-1">Arts Courses</div>
+                    <div class="mt-3 inline-flex items-center gap-1 text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
+                        <i class="fas fa-minus"></i> No change
+                    </div>
+                </div>
+                
+                <!-- Science Courses -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-3 hover-lift">
+                    <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 text-xl mb-3">
+                        <i class="fas fa-flask"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-800">{{ science_courses|default:"0" }}</div>
+                    <div class="text-sm text-slate-500 mt-1">Science Courses</div>
+                    <div class="mt-3 inline-flex items-center gap-1 text-xs font-medium bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                        <i class="fas fa-arrow-up"></i> +1 this month
+                    </div>
+                </div>
+                
+                <!-- Total Subjects (dynamic) -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-3 hover-lift">
+                    <div class="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 text-xl mb-3">
+                        <i class="fas fa-cubes"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-800">{{ total_subjects|default:"42" }}</div>
+                    <div class="text-sm text-slate-500 mt-1">Total Subjects</div>
+                    <div class="mt-3 inline-flex items-center gap-1 text-xs font-medium bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                        <i class="fas fa-arrow-up"></i> Mapped
+                    </div>
+                </div>
             </div>
+
+            <!-- Charts Grid (2x2) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                
+                <!-- Category Breakdown -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                            <i class="fas fa-chart-pie text-blue-500"></i> Course Categories
+                        </h2>
+                        <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{{ total_courses|default:"42" }} total</span>
+                    </div>
+                    <div style="height: 240px;">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <!-- Mini legend -->
+                    <div class="grid grid-cols-3 gap-2 mt-4 text-center text-sm">
+                        <div class="bg-slate-50 p-2 rounded-xl">
+                            <span class="text-xs text-slate-500 block">Core</span>
+                            <span class="font-bold text-slate-700">{{ core_courses|default:"24" }}</span>
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded-xl">
+                            <span class="text-xs text-slate-500 block">Elective</span>
+                            <span class="font-bold text-slate-700">{{ elective_courses|default:"12" }}</span>
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded-xl">
+                            <span class="text-xs text-slate-500 block">Lab</span>
+                            <span class="font-bold text-slate-700">{{ lab_courses|default:"6" }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Credits per Semester -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                            <i class="fas fa-chart-bar text-blue-500"></i> Credits per Semester
+                        </h2>
+                    </div>
+                    <div style="height: 240px;">
+                        <canvas id="creditsChart"></canvas>
+                    </div>
+                    <div class="flex justify-between mt-4 text-sm text-slate-600">
+                        <span>Total Credits: <span class="font-medium">{{ total_credits|default:"96" }}</span></span>
+                        <span class="text-emerald-600 font-medium">Ø {{ avg_credits|default:"24" }}/sem</span>
+                    </div>
+                </div>
+                
+                <!-- CIA vs ESE -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                            <i class="fas fa-chart-simple text-blue-500"></i> CIA vs ESE
+                        </h2>
+                    </div>
+                    <div style="height: 240px;">
+                        <canvas id="marksChart"></canvas>
+                    </div>
+                    <div class="flex justify-center gap-6 mt-4 text-sm">
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500"></span>CIA ({{ cia_percent|default:"40" }}%)</div>
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-indigo-500"></span>ESE ({{ ese_percent|default:"60" }}%)</div>
+                    </div>
+                </div>
+                
+                <!-- Program Distribution -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                            <i class="fas fa-chart-pie text-blue-500"></i> Program Distribution
+                        </h2>
+                    </div>
+                    <div style="height: 240px;">
+                        <canvas id="programChart"></canvas>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mt-4 text-sm">
+                        <div class="flex justify-between bg-slate-50 p-2 rounded-xl"><span>CSE</span><span class="font-medium">{{ cse_count|default:"15" }}</span></div>
+                        <div class="flex justify-between bg-slate-50 p-2 rounded-xl"><span>ECE</span><span class="font-medium">{{ ece_count|default:"12" }}</span></div>
+                        <div class="flex justify-between bg-slate-50 p-2 rounded-xl"><span>ME</span><span class="font-medium">{{ me_count|default:"8" }}</span></div>
+                        <div class="flex justify-between bg-slate-50 p-2 rounded-xl"><span>CE</span><span class="font-medium">{{ ce_count|default:"7" }}</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Syllabi Table -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                        <i class="fas fa-clock-rotate-left text-blue-500"></i> Recently Updated Syllabi
+                    </h2>
+                    <a href="#" class="text-sm text-blue-600 hover:underline">View all</a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="text-slate-500 border-b border-slate-200">
+                            <tr>
+                                <th class="text-center py-3 font-medium">Course</th>
+                                <th class="text-center py-3 font-medium">Program</th>
+                                <th class="text-center py-3 font-medium">Last updated</th>
+                                <th class="text-center py-3 font-medium">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-center">
+                            <!-- Example rows – replace with dynamic loop -->
+                            <tr class="hover:bg-slate-50 cursor-pointer" onclick="window.location='#'">
+                                <td class="py-3">Data Structures</td>
+                                <td>B.Tech CSE</td>
+                                <td>2 hours ago</td>
+                                <td><span class="bg-green-100 text-green-700 text-xs font-medium px-2 py-1 rounded-full">Published</span></td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 cursor-pointer" onclick="window.location='#'">
+                                <td class="py-3">Analog Circuits</td>
+                                <td>B.Tech ECE</td>
+                                <td>Yesterday</td>
+                                <td><span class="bg-yellow-100 text-yellow-700 text-xs font-medium px-2 py-1 rounded-full">Draft</span></td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 cursor-pointer" onclick="window.location='#'">
+                                <td class="py-3">Thermodynamics</td>
+                                <td>B.Tech ME</td>
+                                <td>3 days ago</td>
+                                <td><span class="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-1 rounded-full">Review</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="mt-8 text-center text-xs text-slate-400">
+                Syllabus Management System © {% now "Y" %} • All metrics are real‑time
+            </footer>
         </div>
 
-        <!-- Stats Grid - Fresh Design -->
-        <div class="grid grid-cols-2 gap-4 mb-8 md:grid-cols-3 lg:grid-cols-5">
-            <!-- Total Programs -->
-            <div class="stat-card">
-                <div class="stat-icon-wrapper">
-                    <i class="fas fa-diagram-project"></i>
-                </div>
-                <div class="stat-value">{{ total_programs }}</div>
-                <div class="stat-label">Total Programs</div>
-                <div class="mt-3 trend-badge">
-                    <i class="fas fa-arrow-up"></i> Academic Programs Available
-                </div>
-            </div>
+        <!-- Chart.js Initialization -->
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Data from Django (ensure these variables are passed in context)
+            const categoryChart = new Chart(document.getElementById('categoryChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Core', 'Elective', 'Lab'],
+                    datasets: [{
+                        data: [{{ core_courses|default:'24' }}, {{ elective_courses|default:'12' }}, {{ lab_courses|default:'6' }}],
+                        backgroundColor: ['#3b82f6', '#a855f7', '#f59e0b'],
+                        borderWidth: 0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: { legend: { display: false } }
+                }
+            });
 
-            <!-- UG Courses -->
-            <div class="stat-card">
-                <div class="stat-icon-wrapper">
-                    <i class="fas fa-book-open"></i>
-                </div>
-                <div class="stat-value">{{ ug_courses }}</div>
-                <div class="stat-label">UG Courses</div>
-                <div class="mt-3 trend-badge up">
-                    <i class="fas fa-arrow-up"></i> Active UG Curriculum
-                </div>
-            </div>
+            const creditsChart = new Chart(document.getElementById('creditsChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
+                    datasets: [{
+                        data: [{{ sem1_credits|default:'24' }}, {{ sem2_credits|default:'26' }}, {{ sem3_credits|default:'24' }}, {{ sem4_credits|default:'22' }}],
+                        backgroundColor: '#a855f7',
+                        borderRadius: 8,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, grid: { color: '#e2e8f0' } } }
+                }
+            });
 
-            <!-- Arts Courses -->
-            <div class="stat-card">
-                <div class="stat-icon-wrapper">
-                    <i class="fas fa-paint-brush"></i>
-                </div>
-                <div class="stat-value">{{ arts_courses|default:"0" }}</div>
-                <div class="stat-label">Arts Courses</div>
-                <div class="mt-3 trend-badge up">
-                    <i class="fas fa-arrow-up"></i> Courses in Arts Stream
-                </div>
-            </div>
+            const marksChart = new Chart(document.getElementById('marksChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['CIA', 'ESE'],
+                    datasets: [{
+                        data: [{{ cia_percent|default:'40' }}, {{ ese_percent|default:'60' }}],
+                        backgroundColor: ['#f59e0b', '#3b82f6'],
+                        borderRadius: 8,
+                        barPercentage: 0.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, max: 100, grid: { color: '#e2e8f0' } } }
+                }
+            });
 
-            <!-- Science Courses -->
-            <div class="stat-card">
-                <div class="stat-icon-wrapper">
-                    <i class="fas fa-flask"></i>
-                </div>
-                <div class="stat-value">{{ science_courses|default:"0" }}</div>
-                <div class="stat-label">Science Courses</div>
-                <div class="mt-3 trend-badge">
-                    <i class="fas fa-arrow-up"></i> Courses in Science Stream
-                </div>
-            </div>
-
-            <!-- Total Subjects (example) -->
-            <div class="stat-card">
-                <div class="stat-icon-wrapper">
-                    <i class="fas fa-cubes"></i>
-                </div>
-                <div class="stat-value">42</div>
-                <div class="stat-label">Total Subjects</div>
-                <div class="mt-3 trend-badge up">
-                    <i class="fas fa-arrow-up"></i> Subjects Mapped to Courses
-                </div>
-            </div>
-        </div>
-
-        <!-- Charts Grid - 2x2 Layout -->
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <!-- Category Breakdown -->
-            <div class="chart-card">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="section-title">
-                        <i class="fas fa-chart-pie"></i>
-                        Course Categories
-                    </div>
-                    <span class="px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600 rounded-full">
-                        42 Total
-                    </span>
-                </div>
-                <div style="height: 260px;">
-                    <canvas id="categoryChart"></canvas>
-                </div>
-                <div class="grid grid-cols-3 gap-2 mt-4 text-center">
-                    <div class="p-2 bg-slate-50 rounded-xl">
-                        <span class="text-xs font-medium text-slate-500">Core</span>
-                        <p class="text-sm font-bold text-slate-700">24</p>
-                    </div>
-                    <div class="p-2 bg-slate-50 rounded-xl">
-                        <span class="text-xs font-medium text-slate-500">Elective</span>
-                        <p class="text-sm font-bold text-slate-700">12</p>
-                    </div>
-                    <div class="p-2 bg-slate-50 rounded-xl">
-                        <span class="text-xs font-medium text-slate-500">Lab</span>
-                        <p class="text-sm font-bold text-slate-700">6</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Credits Distribution -->
-            <div class="chart-card">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="section-title">
-                        <i class="fas fa-chart-simple"></i>
-                        Credits per Semester
-                    </div>
-                </div>
-                <div style="height: 260px;">
-                    <canvas id="creditsChart"></canvas>
-                </div>
-                <div class="flex justify-between mt-4 text-sm text-slate-600">
-                    <span>Total Credits: 96</span>
-                    <span class="font-medium text-emerald-600">Ø 24/semester</span>
-                </div>
-            </div>
-
-            <!-- CIA vs ESE -->
-            <div class="chart-card">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="section-title">
-                        <i class="fas fa-chart-column"></i>
-                        CIA vs ESE
-                    </div>
-                </div>
-                <div style="height: 260px;">
-                    <canvas id="marksChart"></canvas>
-                </div>
-                <div class="flex justify-center gap-6 mt-4">
-                    <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded-full bg-amber-500"></div>
-                        <span class="text-sm text-slate-600">CIA (40%)</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded-full bg-blue-500"></div>
-                        <span class="text-sm text-slate-600">ESE (60%)</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Courses per Program -->
-            <div class="chart-card">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="section-title">
-                        <i class="fas fa-chart-donut"></i>
-                        Program Distribution
-                    </div>
-                </div>
-                <div style="height: 260px;">
-                    <canvas id="programChart"></canvas>
-                </div>
-                <div class="grid grid-cols-2 gap-2 mt-4">
-                    <div class="flex items-center justify-between p-2 bg-slate-50 rounded-xl">
-                        <span class="text-xs text-slate-500">CSE</span>
-                        <span class="text-xs font-bold">15</span>
-                    </div>
-                    <div class="flex items-center justify-between p-2 bg-slate-50 rounded-xl">
-                        <span class="text-xs text-slate-500">ECE</span>
-                        <span class="text-xs font-bold">12</span>
-                    </div>
-                    <div class="flex items-center justify-between p-2 bg-slate-50 rounded-xl">
-                        <span class="text-xs text-slate-500">ME</span>
-                        <span class="text-xs font-bold">8</span>
-                    </div>
-                    <div class="flex items-center justify-between p-2 bg-slate-50 rounded-xl">
-                        <span class="text-xs text-slate-500">CE</span>
-                        <span class="text-xs font-bold">7</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Simple Footer -->
-        <div class="mt-8 text-center">
-            <p class="text-xs text-slate-400">
-                Syllabus Management System © 2024
-            </p>
-        </div>
-    </div>
-
-    <!-- Chart.js - Same data, just visual update -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Category Chart
-        new Chart(document.getElementById('categoryChart'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Core', 'Elective', 'Lab'],
-                datasets: [{
-                    data: [24, 12, 6],
-                    backgroundColor: ['#4158D0', '#C850C0', '#FFCC70'],
-                    borderWidth: 0,
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '65%',
-                plugins: { legend: { display: false } }
-            }
+            const programChart = new Chart(document.getElementById('programChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['CSE', 'ECE', 'ME', 'CE'],
+                    datasets: [{
+                        data: [{{ cse_count|default:'15' }}, {{ ece_count|default:'12' }}, {{ me_count|default:'8' }}, {{ ce_count|default:'7' }}],
+                        backgroundColor: ['#3b82f6', '#a855f7', '#f59e0b', '#10b981'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: { legend: { display: false } }
+                }
+            });
         });
-
-        // Credits Chart
-        new Chart(document.getElementById('creditsChart'), {
-            type: 'bar',
-            data: {
-                labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
-                datasets: [{
-                    data: [24, 26, 24, 22],
-                    backgroundColor: '#C850C0',
-                    borderRadius: 8,
-                    barPercentage: 0.6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } }
-            }
-        });
-
-        // Marks Chart
-        new Chart(document.getElementById('marksChart'), {
-            type: 'bar',
-            data: {
-                labels: ['CIA', 'ESE'],
-                datasets: [{
-                    data: [40, 60],
-                    backgroundColor: ['#FFCC70', '#4158D0'],
-                    borderRadius: 8,
-                    barPercentage: 0.5
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } }
-            }
-        });
-
-        // Program Chart
-        new Chart(document.getElementById('programChart'), {
-            type: 'doughnut',
-            data: {
-                labels: ['CSE', 'ECE', 'ME', 'CE'],
-                datasets: [{
-                    data: [15, 12, 8, 7],
-                    backgroundColor: ['#4158D0', '#C850C0', '#FFCC70', '#2ecc71'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '60%',
-                plugins: { legend: { display: false } }
-            }
-        });
-    });
-    </script>
-</body>
+        </script>
+    </body>
 </html>
 {% endblock %}
