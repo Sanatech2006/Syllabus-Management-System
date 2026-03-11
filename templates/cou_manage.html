@@ -347,7 +347,7 @@
 
     function viewPDF(courseCode) {
         document.getElementById('pdfTitle').textContent = `Course: ${courseCode}`;
-        document.getElementById('pdfFrame').src = `{% url 'course_manage:view_course_pdf' 0 %}`.replace('0', courseCode);
+        window.open(`{% url 'course_manage:view_course_pdf' 0 %}`.replace('0', courseCode), '_blank');
         openPDFModal();
     }
 

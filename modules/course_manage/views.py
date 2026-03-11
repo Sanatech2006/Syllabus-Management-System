@@ -57,103 +57,104 @@ def bulk_upload(request):
 
         try:
             df = pd.read_excel(excel_file)
-
-            # Validation 3: Empty file (no rows)
-            if df.empty:
-                messages.error(request, "The uploaded Excel file is empty. Please add data and try again.")
-                return redirect('course_manage:bulk_upload')
-
-            # Normalize column names: strip spaces, lowercase
-            df.columns = [col.strip().lower() for col in df.columns]
-
-            # Validation 4: Check all required columns exist
-            missing_cols = [col for col in REQUIRED_COLUMNS if col not in df.columns]
-            if missing_cols:
-                messages.error(
-                    request,
-                    f"Missing columns in Excel file: {', '.join(missing_cols)}. "
-                    f"Required columns are: {', '.join(REQUIRED_COLUMNS)}"
-                )
-                return redirect('course_manage:bulk_upload')
-
-            # Validation 5: Drop completely empty rows, check if anything remains
-            df = df.dropna(how='all')
-            if df.empty:
-                messages.error(request, "The Excel file contains no data rows. Please fill in the data and try again.")
-                return redirect('course_manage:bulk_upload')
-
-            # Process rows
-            success_count = 0
-            skip_count = 0
-            error_rows = []
-
-            for index, row in df.iterrows():
-                row_num = index + 2  # Excel row number (1-based + header)
-
-                # Extract and clean text fields
-                course_code = str(row.get('course_code', '') or '').strip().upper()
-
-                # Validation 6: course_code is mandatory per row
-                if not course_code:
-                    error_rows.append(f"Row {row_num}: Missing course_code — skipped.")
-                    skip_count += 1
-                    continue
-
-                # Extract all text values
-                prog_code       = str(row.get('prog_code', '') or '').strip()
-                year            = str(row.get('year', '') or '').strip()
-                prog_type       = str(row.get('prog_type', '') or '').strip()
-                sem             = str(row.get('sem', '') or '').strip()
-                part            = str(row.get('part', '') or '').strip()
-                course_category = str(row.get('course_category', '') or '').strip()
-                course_title    = str(row.get('course_title', '') or '').strip()
-
-                # Extract and convert decimal values
-                hrs_per_week = to_decimal(row.get('hrs_per_week'))
-                credit       = to_decimal(row.get('credit'))
-                marks_cia    = to_decimal(row.get('marks_cia'))
-                marks_ese    = to_decimal(row.get('marks_ese'))
-                total_marks  = to_decimal(row.get('total_marks'))
-
-                # Skip duplicate course_code
-                if CourseStr.objects.filter(course_code=course_code).exists():
-                    error_rows.append(f"Row {row_num}: course_code '{course_code}' already exists — skipped.")
-                    skip_count += 1
-                    continue
-
-                # Save to database
-                CourseStr.objects.create(
-                    prog_code=prog_code,
-                    year=year,
-                    prog_type=prog_type,
-                    sem=sem,
-                    course_code=course_code,
-                    part=part,
-                    course_category=course_category,
-                    course_title=course_title,
-                    hrs_per_week=hrs_per_week,
-                    credit=credit,
-                    marks_cia=marks_cia,
-                    marks_ese=marks_ese,
-                    total_marks=total_marks,
-                    is_finalized=True,
-                )
-                success_count += 1
-
-            # Show results
-            if success_count:
-                messages.success(request, f"Successfully uploaded {success_count} course(s).")
-            if error_rows:
-                for err in error_rows:
-                    messages.warning(request, err)
-            if success_count == 0 and not error_rows:
-                messages.error(request, "No courses were uploaded. Please check your file.")
-
-            return redirect('course_manage:course_management')
-
         except Exception as e:
-            messages.error(request, f"Failed to process file: {str(e)}")
+            messages.error(request, f"Could not read file: {str(e)}")
             return redirect('course_manage:bulk_upload')
+
+        # Validation 3: Empty file
+        if df.empty:
+            messages.error(request, "The uploaded Excel file is empty. Please add data and try again.")
+            return redirect('course_manage:bulk_upload')
+
+        # Normalize column names
+        df.columns = [col.strip().lower() for col in df.columns]
+
+        # Validation 4: Check required columns
+        missing_cols = [col for col in REQUIRED_COLUMNS if col not in df.columns]
+        if missing_cols:
+            messages.error(
+                request,
+                f"Missing columns: {', '.join(missing_cols)}. "
+                f"Required: {', '.join(REQUIRED_COLUMNS)}"
+            )
+            return redirect('course_manage:bulk_upload')
+
+        # Drop completely empty rows
+        df = df.dropna(how='all')
+        if df.empty:
+            messages.error(request, "No data rows found in the file.")
+            return redirect('course_manage:bulk_upload')
+
+        success_count = 0
+        skip_count = 0
+        error_rows = []
+
+        for index, row in df.iterrows():
+            row_num = index + 2
+
+            # course_code is mandatory
+            course_code = str(row.get('course_code', '') or '').strip().upper()
+            if not course_code:
+                error_rows.append(f"Row {row_num}: Missing course_code — skipped.")
+                skip_count += 1
+                continue
+
+            # Year: accept 2023 or 2023-2024, always store just 2023
+            year_raw = str(row.get('year', '') or '').strip()
+            year = year_raw.split('-')[0].strip() if year_raw else ''
+            if year and (not year.isdigit() or len(year) != 4):
+                error_rows.append(f"Row {row_num}: Invalid year '{year_raw}' — must be a 4-digit year. Skipped.")
+                skip_count += 1
+                continue
+
+            # Extract text fields
+            prog_code       = str(row.get('prog_code', '') or '').strip()
+            prog_type       = str(row.get('prog_type', '') or '').strip()
+            sem             = str(row.get('sem', '') or '').strip()
+            part            = str(row.get('part', '') or '').strip()
+            course_category = str(row.get('course_category', '') or '').strip()
+            course_title    = str(row.get('course_title', '') or '').strip()
+
+            # Extract decimal fields
+            hrs_per_week = to_decimal(row.get('hrs_per_week'))
+            credit       = to_decimal(row.get('credit'))
+            marks_cia    = to_decimal(row.get('marks_cia'))
+            marks_ese    = to_decimal(row.get('marks_ese'))
+            total_marks  = to_decimal(row.get('total_marks'))
+
+            # Skip duplicate course_code
+            if CourseStr.objects.filter(course_code=course_code).exists():
+                error_rows.append(f"Row {row_num}: course_code '{course_code}' already exists — skipped.")
+                skip_count += 1
+                continue
+
+            CourseStr.objects.create(
+                prog_code=prog_code,
+                year=year,
+                prog_type=prog_type,
+                sem=sem,
+                course_code=course_code,
+                part=part,
+                course_category=course_category,
+                course_title=course_title,
+                hrs_per_week=hrs_per_week,
+                credit=credit,
+                marks_cia=marks_cia,
+                marks_ese=marks_ese,
+                total_marks=total_marks,
+                is_finalized=True,
+            )
+            success_count += 1
+
+        if success_count:
+            messages.success(request, f"Successfully uploaded {success_count} course(s).")
+        if error_rows:
+            for err in error_rows:
+                messages.warning(request, err)
+        if success_count == 0 and not error_rows:
+            messages.error(request, "No courses were uploaded. Please check your file.")
+
+        return redirect('course_manage:course_management')
 
     return render(request, 'bulk_upload.html')
 
