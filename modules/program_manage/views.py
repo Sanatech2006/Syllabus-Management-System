@@ -33,9 +33,13 @@ def program_management(request):
     branches = Program.objects.values_list("branch", flat=True).distinct()
 
     return render(request, "program_management.html", {
-        "programs": page_obj,
-        "page_obj": page_obj,
-        "branches": branches,
+    "programs": page_obj,
+    "page_obj": page_obj,
+    "branches": branches,
+    'arts_count': Program.objects.filter(is_active=True, prog_category='Arts').count(),
+    'science_count': Program.objects.filter(is_active=True, prog_category='Science').count(),
+    'ug_count': Program.objects.filter(is_active=True, prog_type='UG').count(),
+    'pg_count': Program.objects.filter(is_active=True, prog_type='PG').count(),
     })
 
 
