@@ -64,10 +64,10 @@ WSGI_APPLICATION = 'sms_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'sms',
+        'NAME': 'sms_db',
         'USER': 'postgres',
         # 'PASSWORD': 'postgre',
-        'PASSWORD': 'sana@466',
+        'PASSWORD': 'postgre',
         'HOST': 'localhost',
         'PORT': '5432',
     }

@@ -25,6 +25,8 @@ def program_management(request):
         programs = programs.filter(prog_code__icontains=prog_code)
     if branch:
         programs = programs.filter(branch=branch)
+    if science_count := request.GET.get("science_count"):
+        science_count = programs.filter(prog_category="Science").count()
 
     paginator = Paginator(programs.order_by("id"), 10)
     page_number = request.GET.get("page")
