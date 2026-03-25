@@ -181,7 +181,6 @@ def course_management(request):
     if sem: courses = courses.filter(sem=sem)
     if course_code: courses = courses.filter(course_code=course_code)
     if course_title: courses = courses.filter(course_title=course_title)
-    if science_count: science_count = courses.filter(branch="Science").count()
 
     context = {
         'courses': courses,

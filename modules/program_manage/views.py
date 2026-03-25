@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
+from modules.upload_center.models import CourseStr
 
 
 @login_required(login_url='/login/')
@@ -25,8 +26,6 @@ def program_management(request):
         programs = programs.filter(prog_code__icontains=prog_code)
     if branch:
         programs = programs.filter(branch=branch)
-    if science_count := request.GET.get("science_count"):
-        science_count = programs.filter(prog_category="Science").count()
 
     paginator = Paginator(programs.order_by("id"), 10)
     page_number = request.GET.get("page")
@@ -83,35 +82,20 @@ def add_program(request):
             return redirect("program_manage:add_program")
 
         if action == "add":
-            new_program = {
-                "year": request.POST.get("year"),
-                "prog_type": request.POST.get("prog_type"),
-                "prog_category": request.POST.get("prog_category"),
-                "prog_code": request.POST.get("prog_code"),
-                "branch": request.POST.get("branch"),
-            }
-            preview_programs.append(new_program)
-            request.session["preview_programs"] = preview_programs
+            Program.objects.create(
+            year=request.POST.get("year"),
+            prog_type=request.POST.get("prog_type"),
+            prog_category=request.POST.get("prog_category"),
+            prog_code=request.POST.get("prog_code"),
+            branch=request.POST.get("branch"),
+    )
 
-        elif action == "save":
-            saved_count = 0
-            skipped_count = 0
-            for p in preview_programs:
-                obj, created = Program.objects.get_or_create(**p)
-                if created:
-                    saved_count += 1
-                else:
-                    skipped_count += 1
-            request.session["preview_programs"] = []
-            if saved_count:
-                messages.success(request, f"{saved_count} program(s) saved successfully!")
-            if skipped_count:
-                messages.warning(request, f"{skipped_count} duplicate program(s) skipped.")
-            return redirect("program_manage:add_program")
+        messages.success(request, "Program added successfully!")
 
-    return render(request, "add_program.html", {"preview_programs": preview_programs})
+        return redirect("program_manage:program_management")  # 🔥 redirect here
 
-
+    return render(request, "add_program.html")
+    
 @login_required(login_url='/login/')
 def edit_program(request, id):
     program = get_object_or_404(Program, id=id)
@@ -126,11 +110,17 @@ def edit_program(request, id):
         messages.success(request, "Program updated successfully!")
         return redirect("program_manage:program_management")
 
+    # ✅ ADD THIS
+    science_count = CourseStr.objects.filter(
+        is_finalized=True,
+        branch="Science"
+    ).count()
+
     return render(request, "program_management.html", {
         "edit_program": program,
         "preview_programs": [],
+        "science_count": science_count,   # ✅ ADD THIS
     })
-
 
 @login_required(login_url='/login/')
 def delete_program(request, id):
