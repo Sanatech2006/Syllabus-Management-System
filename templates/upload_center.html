@@ -253,37 +253,54 @@
                         <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{{ course.course_title }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             <div class="flex justify-center items-center gap-2">
-                                {% if course.has_pdf %}
-                                    <button class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm cursor-not-allowed" disabled>
-                                        ✔ Uploaded
-                                    </button>
-                                {% elif course.is_saved %}
-                                    <button class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm cursor-not-allowed" disabled>
-                                        ✔ Saved
-                                    </button>
-                                {% else %}
-                                    <form method="post" enctype="multipart/form-data" action="{% url 'upload_center:upload_course_content' %}">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="course_code" value="{{ course.course_code }}">
-                                        <input type="file" name="pdf_file" accept=".pdf" id="pdf{{ course.id }}" class="hidden" onchange="this.form.submit();" required>
-                                        <label for="pdf{{ course.id }}" class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 cursor-pointer">
-                                            Upload
-                                         : </label>
-                                    </form>
-                                {% endif %}
-                                <form method="post" action="{% url 'upload_center:delete_course' course.id %}" class="inline">
-                                    {% csrf_token %}
-                                    <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">
-                                        Delete
-                                    </button>
-                                </form>
-                            </div>
+
+    {% if course.is_finalized %}
+        <!-- ⚪ FINAL: Uploaded ✔ -->
+        <button class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm cursor-not-allowed" disabled>
+            ✔ Uploaded
+        </button>
+
+    {% elif course.is_saved %}
+        <!-- 🟢 AFTER SAVE -->
+        <button class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm cursor-not-allowed" disabled>
+            ✔ Saved
+        </button>
+
+    {% elif course.has_pdf %}
+        <!-- 🔵 AFTER UPLOAD -->
+        <button class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm cursor-not-allowed" disabled>
+            Uploaded
+        </button>
+
+    {% else %}
+        <!-- 🟢 INITIAL UPLOAD -->
+        <form method="post" enctype="multipart/form-data" action="{% url 'upload_center:upload_course_content' %}">
+            {% csrf_token %}
+            <input type="hidden" name="course_code" value="{{ course.course_code }}">
+            <input type="file" name="pdf_file" accept=".pdf" id="pdf{{ course.id }}" class="hidden" onchange="this.form.submit();" required>
+
+            <label for="pdf{{ course.id }}"
+                   class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 cursor-pointer">
+                Upload
+            </label>
+        </form>
+    {% endif %}
+
+    <!-- DELETE BUTTON (unchanged) -->
+    <form method="post" action="{% url 'upload_center:delete_course' course.id %}" class="inline">
+        {% csrf_token %}
+        <button type="submit"
+                class="px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">
+            Delete
+        </button>
+    </form>
+
+</div>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
-            </table>
-        </div>
+            </table>    
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
             <form method="post" action="{% url 'upload_center:save_courses' %}">
                 {% csrf_token %}
