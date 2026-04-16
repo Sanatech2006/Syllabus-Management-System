@@ -215,6 +215,7 @@ def course_management(request):
             .exclude(course_code__isnull=True).exclude(course_code='')
             .values('course_code', 'course_title')
             .distinct().order_by('course_code')),
+        'total_count': CourseStr.objects.count(),
         'arts_count': CourseStr.objects.filter(is_finalized=True, prog_category='Arts').count(),
         'science_count': CourseStr.objects.filter(is_finalized=True, prog_category='Science').count(),
         'ug_count': CourseStr.objects.filter(is_finalized=True, prog_type='UG').count(),
