@@ -17,9 +17,10 @@ def upload_center(request):
             course_code=course.course_code,
             pdf__isnull=False
         ).exists()
-
+    years = CourseStr.objects.values_list('year', flat=True).distinct().order_by('-year')
     return render(request, 'upload_center.html', {
         'courses': courses,
+        'years':years,
     })
 
 

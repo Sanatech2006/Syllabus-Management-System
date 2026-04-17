@@ -34,8 +34,8 @@
             </p>
             <div class="space-y-2">
                 <a
-                    href="{% url 'core:dashboard' %}"
-                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'dashboard' %}bg-white/10 text-white{% endif %}"
+                    href="{% url 'dashboard:dashboard' %}"
+                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-white {% if request.resolver_mactch.namespace == 'dashboard' %}bg-white/10 text-white{% endif %}"
                 >
                     <i
                         data-lucide="layout-dashboard"

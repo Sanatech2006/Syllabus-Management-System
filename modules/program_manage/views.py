@@ -10,13 +10,13 @@ from modules.upload_center.models import CourseStr
 def program_management(request):
     programs = Program.objects.filter(is_active=True)
 
-    year = request.GET.get("year")
+    selected_year = request.GET.get("year")
     prog_type = request.GET.get("prog_type")
     prog_category = request.GET.get("prog_category")
     prog_code = request.GET.get("prog_code")
     branch = request.GET.get("branch")
 
-    if year:
+    if selected_year:
         programs = programs.filter(year=year)
     if prog_type:
         programs = programs.filter(prog_type=prog_type)
@@ -32,11 +32,13 @@ def program_management(request):
     page_obj = paginator.get_page(page_number)
 
     branches = Program.objects.values_list("branch", flat=True).distinct()
+    years = Program.objects.values_list("year", flat=True).distinct().order_by('-year')
 
     return render(request, "program_management.html", {
     "programs": page_obj,
     "page_obj": page_obj,
     "branches": branches,
+    "years":years,
     'arts_count': Program.objects.filter(is_active=True, prog_category='Arts').count(),
     'science_count': Program.objects.filter(is_active=True, prog_category='Science').count(),
     'ug_count': Program.objects.filter(is_active=True, prog_type='UG').count(),
