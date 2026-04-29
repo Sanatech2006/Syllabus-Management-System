@@ -90,6 +90,15 @@ def delete_course(request, course_id):
     if request.method == 'POST':
         try:
             course = CourseStr.objects.get(id=course_id)
+            course_code = (course.course_code or '').replace(' ', '')
+
+            if course_code:
+                content = CourseContent.objects.filter(course_code=course_code).first()
+                if content:
+                    if content.pdf:
+                        content.pdf.delete(save=False)
+                    content.delete()
+
             course.delete()
             messages.success(request, 'Course deleted successfully.')
         except CourseStr.DoesNotExist:
@@ -103,6 +112,7 @@ def add_course(request):
         CourseStr.objects.create(
             year=request.POST.get("year"),
             prog_type=request.POST.get("prog_type"),
+            prog_category=request.POST.get("prog_category"),
             prog_code=request.POST.get("prog_code"),
             branch=request.POST.get("branch"),
             sem=request.POST.get("sem"),
@@ -115,7 +125,12 @@ def add_course(request):
             marks_cia=request.POST.get("marks_cia") or 0,
             marks_ese=request.POST.get("marks_ese") or 0,
             total_marks=request.POST.get("total_marks") or 0,
+            is_saved=False,
+            is_finalized=False,
         )
+
+        if "add_next" in request.POST:
+            return redirect('upload_center:add_course')
 
         return redirect('upload_center:upload_center')
 

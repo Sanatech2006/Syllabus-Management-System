@@ -1,273 +1,325 @@
 {% extends "base_layout.html" %}
 {% load static %}
-
 {% block title %}Dashboard | Syllabus Management{% endblock %}
-
-{% block extra_css %}
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<style>
-    body { font-family: 'Inter', sans-serif; }
-    .hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .hover-lift:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.05), 0 8px 10px -6px rgb(0 0 0 / 0.02);
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="mx-auto">
 
-    <!-- Header -->
-    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div>
-            <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Syllabus Dashboard</h1>
-            <p class="text-slate-500 text-sm mt-1">Monitor and manage all syllabus‑related data</p>
-        </div>
-        <div class="flex items-center gap-4">
-            <div class="relative">
-                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                <input type="text" placeholder="Search courses or programs..."
-                    class="pl-10 pr-4 py-2 border border-slate-200 rounded-full text-sm w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400">
-            </div>
-        </div>
-    </header>
-
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-
-        <div class="bg-white rounded-2xl border border-slate-200 p-3 hover-lift">
-            <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 text-xl mb-3">
-                <i class="fas fa-diagram-project"></i>
-            </div>
-            <div class="text-3xl font-bold text-slate-800">{{ total_programs|default:"0" }}</div>
-            <div class="text-sm text-slate-500 mt-1">Total Programs</div>
-            <div class="mt-3 inline-flex items-center gap-1 text-xs font-medium bg-green-50 text-green-700 px-2 py-1 rounded-full">
-                <i class="fas fa-arrow-up text-xs"></i> Active
-            </div>
-        </div>
-
-        <div class="bg-white rounded-2xl border border-slate-200 p-3 hover-lift">
-            <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 text-xl mb-3">
-                <i class="fas fa-graduation-cap"></i>
-            </div>
-            <div class="text-3xl font-bold text-slate-800">{{ ug_courses|default:"0" }}</div>
-            <div class="text-sm text-slate-500 mt-1">UG Courses</div>
-            <div class="mt-3 inline-flex items-center gap-1 text-xs font-medium bg-green-50 text-green-700 px-2 py-1 rounded-full">
-                <i class="fas fa-arrow-up"></i> +2 this month
-            </div>
-        </div>
-
-        <div class="bg-white rounded-2xl border border-slate-200 p-3 hover-lift">
-            <div class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 text-xl mb-3">
-                <i class="fas fa-palette"></i>
-            </div>
-            <div class="text-3xl font-bold text-slate-800">{{ arts_courses|default:"0" }}</div>
-            <div class="text-sm text-slate-500 mt-1">Arts Courses</div>
-            <div class="mt-3 inline-flex items-center gap-1 text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
-                <i class="fas fa-minus"></i> No change
-            </div>
-        </div>
-
-        <div class="bg-white rounded-2xl border border-slate-200 p-3 hover-lift">
-            <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 text-xl mb-3">
-                <i class="fas fa-flask"></i>
-            </div>
-            <div class="text-3xl font-bold text-slate-800">{{ science_courses|default:"0" }}</div>
-            <div class="text-sm text-slate-500 mt-1">Science Courses</div>
-            <div class="mt-3 inline-flex items-center gap-1 text-xs font-medium bg-green-50 text-green-700 px-2 py-1 rounded-full">
-                <i class="fas fa-arrow-up"></i> +1 this month
-            </div>
-        </div>
-
-        <div class="bg-white rounded-2xl border border-slate-200 p-3 hover-lift">
-            <div class="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 text-xl mb-3">
-                <i class="fas fa-cubes"></i>
-            </div>
-            <div class="text-3xl font-bold text-slate-800">{{ total_subjects|default:"0" }}</div>
-            <div class="text-sm text-slate-500 mt-1">Total Subjects</div>
-            <div class="mt-3 inline-flex items-center gap-1 text-xs font-medium bg-green-50 text-green-700 px-2 py-1 rounded-full">
-                <i class="fas fa-arrow-up"></i> Mapped
-            </div>
-        </div>
-    </div>
-
-    <!-- Charts Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-
-        <div class="bg-white rounded-2xl border border-slate-200 p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
-                    <i class="fas fa-chart-pie text-blue-500"></i> Course Categories
-                </h2>
-                <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{{ total_courses|default:"0" }} total</span>
-            </div>
-            <div style="height: 240px;"><canvas id="categoryChart"></canvas></div>
-            <div class="grid grid-cols-3 gap-2 mt-4 text-center text-sm">
-                <div class="bg-slate-50 p-2 rounded-xl">
-                    <span class="text-xs text-slate-500 block">Core</span>
-                    <span class="font-bold text-slate-700">{{ core_courses|default:"0" }}</span>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+        <style>
+            body {
+                font-family: 'Inter', sans-serif;
+            }
+            .hover-lift {
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            .hover-lift:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.05), 0 8px 10px -6px rgb(0 0 0 / 0.02);
+            }
+        </style>
+        <div class="mx-auto">
+            
+            <!-- Header -->
+            <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Syllabus Dashboard</h1>
+                    <p class="text-slate-500 text-sm mt-1">Monitor and manage all syllabus‑related data</p>
                 </div>
-                <div class="bg-slate-50 p-2 rounded-xl">
-                    <span class="text-xs text-slate-500 block">Elective</span>
-                    <span class="font-bold text-slate-700">{{ elective_courses|default:"0" }}</span>
+                
+                <!-- Search + last updated -->
+                <div class="flex items-center gap-4">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" placeholder="Search courses or programs..." 
+                            class="pl-10 pr-4 py-2 border border-slate-200 rounded-full text-sm w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400">
+                    </div>
                 </div>
-                <div class="bg-slate-50 p-2 rounded-xl">
-                    <span class="text-xs text-slate-500 block">Lab</span>
-                    <span class="font-bold text-slate-700">{{ lab_courses|default:"0" }}</span>
+            </header>
+
+            <!-- Stats Cards (5 columns) – All Tailwind -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+                
+                <!-- Total Programs -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-3 hover-lift">
+                    <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 text-xl mb-3">
+                        <i class="fas fa-diagram-project"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-800">{{ total_programs|default:"0" }}</div>
+                    <div class="text-sm text-slate-500 mt-1">Total Programs</div>
+                    <div class="mt-3 inline-flex items-center gap-1 text-xs font-medium bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                        <i class="fas fa-arrow-up text-xs"></i> Active
+                    </div>
                 </div>
-            </div>
-        </div>
+                
+                <!-- UG Courses -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-3 hover-lift">
+                    <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 text-xl mb-3">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-800">{{ ug_courses|default:"0" }}</div>
+                    <div class="text-sm text-slate-500 mt-1">UG Courses</div>
+                    <div class="mt-3 inline-flex items-center gap-1 text-xs font-medium bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                    </div>
+                </div>
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
-                    <i class="fas fa-chart-bar text-blue-500"></i> Credits per Semester
-                </h2>
-            </div>
-            <div style="height: 240px;"><canvas id="creditsChart"></canvas></div>
-            <div class="flex justify-between mt-4 text-sm text-slate-600">
-                <span>Total Credits: <span class="font-medium">{{ total_credits|default:"0" }}</span></span>
-                <span class="text-emerald-600 font-medium">Ø {{ avg_credits|default:"0" }}/sem</span>
-            </div>
-        </div>
+                <!-- PG Courses -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-3 hover-lift">
+                    <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 text-xl mb-3">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-800">{{ pg_courses|default:"0" }}</div>
+                    <div class="text-sm text-slate-500 mt-1">PG Courses</div>
+                    <div class="mt-3 inline-flex items-center gap-1 text-xs font-medium bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                    </div>
+                </div>
+                
+                <!-- Arts Courses -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-3 hover-lift">
+                    <div class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 text-xl mb-3">
+                        <i class="fas fa-palette"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-800">{{ arts_courses|default:"0" }}</div>
+                    <div class="text-sm text-slate-500 mt-1">Arts Courses</div>
+                    <div class="mt-3 inline-flex items-center gap-1 text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
+                    </div>
+                </div>
+                
+                <!-- Science Courses -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-3 hover-lift">
+                    <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 text-xl mb-3">
+                        <i class="fas fa-flask"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-800">{{ science_courses|default:"0" }}</div>
+                    <div class="text-sm text-slate-500 mt-1">Science Courses</div>
+                    <div class="mt-3 inline-flex items-center gap-1 text-xs font-medium bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                    </div>
+                </div>
+                </div>
+                
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
-                    <i class="fas fa-chart-simple text-blue-500"></i> CIA vs ESE
-                </h2>
-            </div>
-            <div style="height: 240px;"><canvas id="marksChart"></canvas></div>
-            <div class="flex justify-center gap-6 mt-4 text-sm">
-                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500"></span>CIA ({{ cia_percent|default:"0" }}%)</div>
-                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-indigo-500"></span>ESE ({{ ese_percent|default:"0" }}%)</div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-2xl border border-slate-200 p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
-                    <i class="fas fa-chart-pie text-blue-500"></i> Program Distribution
-                </h2>
-            </div>
-            <div style="height: 240px;"><canvas id="programChart"></canvas></div>
-            <div class="grid grid-cols-2 gap-2 mt-4 text-sm">
-                <div class="grid grid-cols-2 gap-2 mt-4 text-sm">
-                <div class="flex justify-between bg-slate-50 p-2 rounded-xl"><span>{{ prog1_code }}</span><span class="font-medium">{{ prog1_count }}</span></div>
-                <div class="flex justify-between bg-slate-50 p-2 rounded-xl"><span>{{ prog2_code }}</span><span class="font-medium">{{ prog2_count }}</span></div>
-                <div class="flex justify-between bg-slate-50 p-2 rounded-xl"><span>{{ prog3_code }}</span><span class="font-medium">{{ prog3_count }}</span></div>
-                <div class="flex justify-between bg-slate-50 p-2 rounded-xl"><span>{{ prog4_code }}</span><span class="font-medium">{{ prog4_count }}</span></div>
-            </div>
-         </div>
-    </div>
-
-    <!-- Recent Syllabi Table -->
-    <div class="bg-white rounded-2xl border border-slate-200 p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
-                <i class="fas fa-clock-rotate-left text-blue-500"></i> Recently Updated Syllabi
-            </h2>
-            <a href="{% url 'course_manage:course_management' %}" class="text-sm text-blue-600 hover:underline">View all</a>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="text-slate-500 border-b border-slate-200">
-                    <tr>
-                        <th class="text-center py-3 font-medium">Course</th>
-                        <th class="text-center py-3 font-medium">Program</th>
-                        <th class="text-center py-3 font-medium">Last updated</th>
-                        <th class="text-center py-3 font-medium">Status</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-center">
-                    {% for course in recent_courses %}
-                    <tr class="hover:bg-slate-50 cursor-pointer">
-                        <td class="py-3">{{ course.course_title }}</td>
-                        <td>{{ course.prog_code }} {{ course.branch }}</td>
-                        <td>{{ course.created_at|timesince }} ago</td>
-                        <td>
-                            {% if course.is_finalized %}
-                                <span class="bg-green-100 text-green-700 text-xs font-medium px-2 py-1 rounded-full">Published</span>
-                            {% elif course.is_saved %}
-                                <span class="bg-yellow-100 text-yellow-700 text-xs font-medium px-2 py-1 rounded-full">Draft</span>
-                            {% else %}
-                                <span class="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-1 rounded-full">Review</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" class="py-4 text-slate-400">No recent courses found</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <footer class="mt-8 text-center text-xs text-slate-400">
-        Syllabus Management System © {% now "Y" %} • All metrics are real‑time
-    </footer>
+            <!-- Charts Grid (2x2) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                
+                <!-- Category Breakdown -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                            <i class="fas fa-chart-pie text-blue-500"></i> Course Categories
+                        </h2>
+                        <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{{ total_courses|default:"42" }} total</span>
+                    </div>
+                    <div style="height: 240px;">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <!-- Mini legend -->
+                    <div class="grid grid-cols-3 gap-2 mt-4 text-center text-sm">
+                        <div class="bg-slate-50 p-2 rounded-xl">
+                            <span class="text-xs text-slate-500 block">Core</span>
+                            <span class="font-bold text-slate-700">{{ core_courses|default:"24" }}</span>
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded-xl">
+                            <span class="text-xs text-slate-500 block">Elective</span>
+                            <span class="font-bold text-slate-700">{{ elective_courses|default:"12" }}</span>
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded-xl">
+                            <span class="text-xs text-slate-500 block">Lab</span>
+                            <span class="font-bold text-slate-700">{{ lab_courses|default:"6" }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Credits per Semester -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                            <i class="fas fa-chart-bar text-blue-500"></i> Credits per Semester
+                        </h2>
+                    </div>
+                    <div style="height: 240px;">
+                        <canvas id="creditsChart"></canvas>
+                    </div>
+                    <div class="flex justify-between mt-4 text-sm text-slate-600">
+                        <span>Total Credits: <span class="font-medium">{{ total_credits|default:"96" }}</span></span>
+                        <span class="text-emerald-600 font-medium">Ø {{ avg_credits|default:"24" }}/sem</span>
+                    </div>
+                </div>
+                
+                <!-- CIA vs ESE -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                            <i class="fas fa-chart-simple text-blue-500"></i> CIA vs ESE
+                        </h2>
+                    </div>
+                    <div style="height: 240px;">
+                        <canvas id="marksChart"></canvas>
+                    </div>
+                    <div class="flex justify-center gap-6 mt-4 text-sm">
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500"></span>CIA ({{ cia_percent|default:"40" }}%)</div>
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-indigo-500"></span>ESE ({{ ese_percent|default:"60" }}%)</div>
+                    </div>
+                </div>
+                
+                <!-- Program Distribution -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                            <i class="fas fa-chart-pie text-blue-500"></i> Program Distribution
+                        </h2>
+                    </div>
+                    <div style="height: 240px;">
+                        <canvas id="programChart"></canvas>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mt-4 text-sm">
+    <div class="flex justify-between bg-slate-50 p-2 rounded-xl"><span>{{ prog1_code }}</span><span class="font-medium">{{ prog1_count }}</span></div>
+    <div class="flex justify-between bg-slate-50 p-2 rounded-xl"><span>{{ prog2_code }}</span><span class="font-medium">{{ prog2_count }}</span></div>
+    <div class="flex justify-between bg-slate-50 p-2 rounded-xl"><span>{{ prog3_code }}</span><span class="font-medium">{{ prog3_count }}</span></div>
+    <div class="flex justify-between bg-slate-50 p-2 rounded-xl"><span>{{ prog4_code }}</span><span class="font-medium">{{ prog4_count }}</span></div>
 </div>
+                </div>
+            </div>
 
-<!-- Chart.js -->
-<script>
+            <!-- Recent Syllabi Table -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                        <i class="fas fa-clock-rotate-left text-blue-500"></i> Recently Updated Syllabi
+                    </h2>
+                    <a href="#" class="text-sm text-blue-600 hover:underline">View all</a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="text-slate-500 border-b border-slate-200">
+                            <tr>
+                                <th class="text-center py-3 font-medium">Course</th>
+                                <th class="text-center py-3 font-medium">Program</th>
+                                <th class="text-center py-3 font-medium">Last updated</th>
+                                <th class="text-center py-3 font-medium">Status</th>
+                            </tr>
+                        </thead>
+                                                <tbody class="divide-y divide-slate-100 text-center">
+                            {% for course in recent_courses %}
+                            <tr class="hover:bg-slate-50">
+                                <td class="py-3">{{ course.course_title }}</td>
+                                <td>{{ course.prog_code }} {{ course.branch }}</td>
+                                <td>{{ course.created_at|timesince }} ago</td>
+                                <td>
+                                    {% if course.is_finalized %}
+                                        <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">Published</span>
+                                    {% elif course.is_saved %}
+                                        <span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full">Draft</span>
+                                    {% else %}
+                                        <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">Review</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="py-4 text-slate-400">No recent courses</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="mt-8 text-center text-xs text-slate-400">
+                Syllabus Management System © {% now "Y" %} • All metrics are real‑time
+            </footer>
+        </div>
+        
+
+        <!-- Chart.js Initialization -->
+        <script>
 document.addEventListener('DOMContentLoaded', function() {
-    new Chart(document.getElementById('categoryChart'), {
+
+    const categoryChart = new Chart(document.getElementById('categoryChart'), {
         type: 'doughnut',
         data: {
             labels: ['Core', 'Elective', 'Lab'],
-            datasets: [{ 
-                data: [{{ core_courses|default:0 }}, {{ elective_courses|default:0 }}, {{ lab_courses|default:0 }}],
+            datasets: [{
+                data: [{{ core_courses }}, {{ elective_courses }}, {{ lab_courses }}],
                 backgroundColor: ['#3b82f6', '#a855f7', '#f59e0b'],
-                borderWidth: 0
+                borderWidth: 0,
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: { legend: { display: false } }
+        }
     });
 
-    new Chart(document.getElementById('creditsChart'), {
+    const creditsChart = new Chart(document.getElementById('creditsChart'), {
         type: 'bar',
         data: {
             labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
             datasets: [{
-                data: [{{ sem1_credits|default:0 }}, {{ sem2_credits|default:0 }}, {{ sem3_credits|default:0 }}, {{ sem4_credits|default:0 }}],
+                data: [{{ sem1_credits }}, {{ sem2_credits }}, {{ sem3_credits }}, {{ sem4_credits }}],
                 backgroundColor: '#a855f7',
                 borderRadius: 8,
                 barPercentage: 0.6
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#e2e8f0' } } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { color: '#e2e8f0' } } }
+        }
     });
 
-    new Chart(document.getElementById('marksChart'), {
+    const marksChart = new Chart(document.getElementById('marksChart'), {
         type: 'bar',
         data: {
             labels: ['CIA', 'ESE'],
             datasets: [{
-                data: [{{ cia_percent|default:0 }}, {{ ese_percent|default:0 }}],
+                data: [{{ cia_percent }}, {{ ese_percent }}],
                 backgroundColor: ['#f59e0b', '#3b82f6'],
                 borderRadius: 8,
                 barPercentage: 0.5
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, grid: { color: '#e2e8f0' } } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, max: 100, grid: { color: '#e2e8f0' } } }
+        }
     });
 
-    new Chart(document.getElementById('programChart'), {
-    type: 'doughnut',
-    data: {
-        labels: ['{{ prog1_code }}', '{{ prog2_code }}', '{{ prog3_code }}', '{{ prog4_code }}'],
-        datasets: [{
-            data: [{{ prog1_count }}, {{ prog2_count }}, {{ prog3_count }}, {{ prog4_count }}],
-            backgroundColor: ['#3b82f6', '#a855f7', '#f59e0b', '#10b981'],
-            borderWidth: 0
-        }]
-    },
-    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { display: false } } }
+    const programChart = new Chart(document.getElementById('programChart'), {
+        type: 'doughnut',
+        data: {
+            labels: [
+                '{{ prog1_code }}',
+                '{{ prog2_code }}',
+                '{{ prog3_code }}',
+                '{{ prog4_code }}'
+            ],
+            datasets: [{
+                data: [
+                    {{ prog1_count }},
+                    {{ prog2_count }},
+                    {{ prog3_count }},
+                    {{ prog4_count }}
+                ],
+                backgroundColor: ['#3b82f6', '#a855f7', '#f59e0b', '#10b981'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: { legend: { display: false } }
+        }
+    });
+
 });
 </script>
 {% endblock %}

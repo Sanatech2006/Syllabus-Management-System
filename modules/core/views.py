@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
+from modules.dashboard.views import dashboard as dashboard_view
 
 
 def login_view(request):
@@ -37,4 +38,4 @@ def logout_view(request):
 
 
 def dashboard(request):
-    return render(request, 'dashboard.html')
+    return dashboard_view(request)

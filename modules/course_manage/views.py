@@ -12,7 +12,7 @@ from decimal import Decimal, InvalidOperation
 
 # Required columns that must exist in the Excel file
 REQUIRED_COLUMNS = [
-    'prog_code', 'year', 'prog_type', 'sem',
+    'prog_code', 'year', 'prog_type', 'prog_category', 'sem',
     'course_code', 'part', 'course_category', 'course_title',
     'hrs_per_week', 'credit', 'marks_cia', 'marks_ese', 'total_marks'
 ]
@@ -22,7 +22,7 @@ DECIMAL_FIELDS = ['hrs_per_week', 'credit', 'marks_cia', 'marks_ese', 'total_mar
 
 # Text fields
 TEXT_FIELDS = [
-    'prog_code', 'year', 'prog_type', 'sem',
+    'prog_code', 'year', 'prog_type', 'prog_category', 'sem',
     'course_code', 'part', 'course_category', 'course_title'
 ]
 
@@ -110,6 +110,7 @@ def bulk_upload(request):
             # Extract text fields
             prog_code       = str(row.get('prog_code', '') or '').strip()
             prog_type       = str(row.get('prog_type', '') or '').strip()
+            prog_category   = str(row.get('prog_category', '') or '').strip()
             sem             = str(row.get('sem', '') or '').strip()
             part            = str(row.get('part', '') or '').strip()
             course_category = str(row.get('course_category', '') or '').strip()
@@ -132,6 +133,7 @@ def bulk_upload(request):
                 prog_code=prog_code,
                 year=year,
                 prog_type=prog_type,
+                prog_category=prog_category,
                 sem=sem,
                 course_code=course_code,
                 part=part,
