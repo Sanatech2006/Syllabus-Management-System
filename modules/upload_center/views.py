@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import HttpResponse
 from openpyxl.styles import Font, PatternFill
-from .models import CourseStr, CourseContent
+from .models import CourseStr, CourseContent, normalize_course_code
 from django.contrib.auth.decorators import login_required
 
 
@@ -16,7 +16,7 @@ def upload_center(request):
         course.has_pdf = CourseContent.objects.filter(
             course_code=course.course_code,
             pdf__isnull=False
-        ).exists()
+        ).exclude(pdf='').exists()
     years = CourseStr.objects.values_list('year', flat=True).distinct().order_by('-year')
     return render(request, 'upload_center.html', {
         'courses': courses,
@@ -27,18 +27,32 @@ def upload_center(request):
 # 🔵 Upload → Blue "Uploaded"
 def upload_course_content(request):
     if request.method == 'POST' and request.FILES.get('pdf_file'):
-        course_code = request.POST.get('course_code', '').strip()
+        course_code = request.POST.get('course_code', '')
         pdf_file = request.FILES['pdf_file']
 
-        if not course_code:
+        safe_code = normalize_course_code(course_code)
+
+        if not safe_code:
             messages.error(request, 'Missing course code.')
             return redirect('upload_center:upload_center')
 
-        safe_code = course_code.replace(' ', '')
-
         course_content, created = CourseContent.objects.get_or_create(course_code=safe_code)
-        course_content.pdf = pdf_file
-        course_content.save()
+
+        if course_content.pdf:
+            existing_name = course_content.pdf.name
+            target_name = f'course_pdfs/{safe_code}.pdf'
+            if existing_name and existing_name != target_name:
+                course_content.pdf.delete(save=False)
+
+        try:
+            course_content.pdf = pdf_file
+            course_content.save()
+        except PermissionError:
+            messages.error(
+                request,
+                f"The existing PDF for {safe_code} is currently open somewhere. Close the PDF tab/viewer or Explorer preview, then upload again."
+            )
+            return redirect('upload_center:upload_center')
 
         # RESET STATES
         CourseStr.objects.filter(course_code=safe_code).update(
@@ -62,7 +76,7 @@ def save_courses(request):
             has_pdf = CourseContent.objects.filter(
                 course_code=course.course_code,
                 pdf__isnull=False
-            ).exists()
+            ).exclude(pdf='').exists()
 
             if has_pdf and not course.is_finalized:
                 course.is_saved = True
@@ -90,7 +104,9 @@ def delete_course(request, course_id):
     if request.method == 'POST':
         try:
             course = CourseStr.objects.get(id=course_id)
-            course_code = (course.course_code or '').replace(' ', '')
+            course_code = normalize_course_code(course.course_code)
+
+            course.delete()
 
             if course_code:
                 content = CourseContent.objects.filter(course_code=course_code).first()
@@ -99,7 +115,6 @@ def delete_course(request, course_id):
                         content.pdf.delete(save=False)
                     content.delete()
 
-            course.delete()
             messages.success(request, 'Course deleted successfully.')
         except CourseStr.DoesNotExist:
             messages.error(request, 'Course not found.')
@@ -109,6 +124,12 @@ def delete_course(request, course_id):
 
 def add_course(request):
     if request.method == "POST":
+        course_code = normalize_course_code(request.POST.get("course_code"))
+
+        if course_code and CourseStr.objects.filter(course_code=course_code).exists():
+            messages.error(request, f"Course code {course_code} already exists. Use a different course code.")
+            return render(request, "add_course.html", request.POST)
+
         CourseStr.objects.create(
             year=request.POST.get("year"),
             prog_type=request.POST.get("prog_type"),
@@ -116,7 +137,7 @@ def add_course(request):
             prog_code=request.POST.get("prog_code"),
             branch=request.POST.get("branch"),
             sem=request.POST.get("sem"),
-            course_code=request.POST.get("course_code"),
+            course_code=course_code,
             part=request.POST.get("part"),
             course_category=request.POST.get("course_category"),
             course_title=request.POST.get("course_title"),

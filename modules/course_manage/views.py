@@ -1,6 +1,6 @@
 from django.shortcuts import redirect, render
 from django.shortcuts import get_object_or_404
-from modules.upload_center.models import CourseStr, CourseContent
+from modules.upload_center.models import CourseStr, CourseContent, normalize_course_code
 from django.http import HttpResponse, FileResponse, Http404
 import os
 from django.conf import settings
@@ -93,7 +93,7 @@ def bulk_upload(request):
             row_num = index + 2
 
             # course_code is mandatory
-            course_code = str(row.get('course_code', '') or '').strip().upper()
+            course_code = normalize_course_code(row.get('course_code', ''))
             if not course_code:
                 error_rows.append(f"Row {row_num}: Missing course_code — skipped.")
                 skip_count += 1
@@ -228,7 +228,7 @@ def course_management(request):
 
 
 def view_course_pdf(request, course_code):
-    course_code = course_code.strip()
+    course_code = normalize_course_code(course_code)
     try:
         course = CourseContent.objects.get(course_code=course_code)
     except CourseContent.DoesNotExist:
@@ -237,17 +237,24 @@ def view_course_pdf(request, course_code):
     if not course.pdf:
         raise Http404("PDF not uploaded for this course")
 
-    full_path = course.pdf.path
-    if not os.path.isfile(full_path):
+    if not course.pdf.storage.exists(course.pdf.name):
         raise Http404("PDF file not found on server")
 
-    return FileResponse(open(full_path, "rb"), content_type="application/pdf")
+    filename = os.path.basename(course.pdf.name)
+    response = FileResponse(
+        course.pdf.open("rb"),
+        content_type="application/pdf",
+        filename=filename,
+        as_attachment=False,
+    )
+    response["Content-Disposition"] = f'inline; filename="{filename}"'
+    return response
 
 
 def debug_pdf_path(request, course_code):
-    code = course_code.strip()
+    code = normalize_course_code(course_code)
     course_content = get_object_or_404(CourseContent, course_code__iexact=code)
-    path_in_db = course_content.course_content
+    path_in_db = course_content.pdf.name
     full_path = os.path.join(settings.MEDIA_ROOT, path_in_db)
     return HttpResponse(f"""
     <h2>DEBUG INFO for {course_code}</h2>

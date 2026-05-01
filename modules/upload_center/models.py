@@ -1,4 +1,11 @@
 from django.db import models
+from django.db.models import Q
+
+from .storage import OverwriteStorage
+
+
+def normalize_course_code(value):
+    return (value or "").strip().upper().replace(" ", "")
 
 
 class CourseStr(models.Model):
@@ -32,22 +39,30 @@ class CourseStr(models.Model):
         verbose_name = 'Course Structure'
         verbose_name_plural = 'Course Structures'
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['course_code'],
+                condition=Q(course_code__isnull=False) & ~Q(course_code=''),
+                name='unique_non_blank_course_code',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.course_code} - {self.course_title}"
     
 def course_pdf_upload_path(instance, filename):
-    return f"course_pdfs/{instance.course_code}.pdf"
+    return f"course_pdfs/{normalize_course_code(instance.course_code)}.pdf"
 
 class CourseContent(models.Model):
     course_code = models.CharField(max_length=20, blank=False, null=False)
     course_content = models.TextField(blank=True, null=True)
     
     pdf = models.FileField(
-    upload_to=course_pdf_upload_path,
-    null=True,
-    blank=True
-)
+        upload_to=course_pdf_upload_path,
+        storage=OverwriteStorage(),
+        null=True,
+        blank=True,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -60,3 +75,14 @@ class CourseContent(models.Model):
 
     def __str__(self):
         return f"{self.course_code} - Course Content"
+
+    def save(self, *args, **kwargs):
+        self.course_code = normalize_course_code(self.course_code)
+        super().save(*args, **kwargs)
+
+
+def _normalize_course_str_code(sender, instance, **kwargs):
+    instance.course_code = normalize_course_code(instance.course_code)
+
+
+models.signals.pre_save.connect(_normalize_course_str_code, sender=CourseStr)

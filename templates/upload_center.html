@@ -8,7 +8,6 @@
 {% block content %}
 
 <div class="min-h-screen">
-    <!-- Page Header with Breadcrumb -->
     <div class="mx-auto mb-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -27,14 +26,14 @@
                 </nav>
             </div>
             <div class="flex gap-3">
-                <a href="{% url 'course_manage:bulk_upload' %}" 
+                <a href="{% url 'course_manage:bulk_upload' %}"
                    class="inline-flex items-center px-5 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition shadow-md">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                     </svg>
                     Upload Files
                 </a>
-                <a href="{% url 'upload_center:add_course' %}" 
+                <a href="{% url 'upload_center:add_course' %}"
                    class="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition shadow-md">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -45,7 +44,6 @@
         </div>
     </div>
 
-    <!-- Filter Card -->
     <div class="mx-auto bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-8">
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
             <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -58,41 +56,28 @@
         <div class="p-6">
             <form method="get">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <!-- Programme Code -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Programme Code : </label>
                         <input type="text" name="prog_code" value="{{ request.GET.prog_code|default:'' }}"
                                class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
-                    <!-- Branch -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Branch : </label>
                         <input type="text" name="branch" value="{{ request.GET.branch|default:'' }}"
                                class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
-                    <!-- Year -->
                     <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Year of syllabus :
-                    </label>
-
-                    <select name="year" id="year"
-                        class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-
-                        <!-- Placeholder -->
-                        <option value="" disabled {% if not request.GET.year %}selected{% endif %}>
-                            Choose a year
-                        </option>
-
-                        {% for year in years %}
-                            <option value="{{ year }}"
-                                {% if request.GET.year == year|stringformat:"s" %}selected{% endif %}>
-                                {{ year }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                    <!-- Programme Type -->
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Year of syllabus :</label>
+                        <select name="year" id="year"
+                            class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="" disabled {% if not request.GET.year %}selected{% endif %}>Choose a year</option>
+                            {% for year in years %}
+                                <option value="{{ year }}" {% if request.GET.year == year|stringformat:"s" %}selected{% endif %}>
+                                    {{ year }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Programme Type : </label>
                         <select name="prog_type" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -101,7 +86,6 @@
                             <option value="PG" {% if request.GET.prog_type == "PG" %}selected{% endif %}>PG</option>
                         </select>
                     </div>
-                    <!-- Semester -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Semester : </label>
                         <select name="sem" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -114,7 +98,6 @@
                             <option value="VI" {% if request.GET.sem == "VI" %}selected{% endif %}>VI</option>
                         </select>
                     </div>
-                    <!-- Programme Category -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Programme Category : </label>
                         <select name="prog_category" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -123,13 +106,11 @@
                             <option value="Science" {% if request.GET.prog_category == "Science" %}selected{% endif %}>Science</option>
                         </select>
                     </div>
-                    <!-- Course Code -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Course Code : </label>
                         <input type="text" name="course_code" value="{{ request.GET.course_code|default:'' }}"
                                class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
-                    <!-- Part -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Part : </label>
                         <select name="part" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -139,7 +120,6 @@
                             <option value="III" {% if request.GET.part == "III" %}selected{% endif %}>III</option>
                         </select>
                     </div>
-                    <!-- Course Category -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Course Category : </label>
                         <select name="course_category" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -150,13 +130,11 @@
                             <option value="Skill Enhancement" {% if request.GET.course_category == "Skill Enhancement" %}selected{% endif %}>Skill Enhancement</option>
                         </select>
                     </div>
-                    <!-- Course Title -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Course Title : </label>
                         <input type="text" name="course_title" value="{{ request.GET.course_title|default:'' }}"
                                class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
-                    <!-- Hrs/Week -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Hrs/Week : </label>
                         <select name="hrs_per_week" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -169,7 +147,6 @@
                             <option value="6" {% if request.GET.hrs_per_week == "6" %}selected{% endif %}>6</option>
                         </select>
                     </div>
-                    <!-- Credit -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Credit : </label>
                         <select name="credit" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -181,7 +158,6 @@
                             <option value="5" {% if request.GET.credit == "5" %}selected{% endif %}>5</option>
                         </select>
                     </div>
-                    <!-- CIA Marks -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">CIA Marks : </label>
                         <select name="marks_cia" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -192,7 +168,6 @@
                             <option value="75" {% if request.GET.marks_cia == "75" %}selected{% endif %}>75</option>
                         </select>
                     </div>
-                    <!-- ESE Marks -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">ESE Marks : </label>
                         <select name="marks_ese" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -203,7 +178,6 @@
                             <option value="25" {% if request.GET.marks_ese == "25" %}selected{% endif %}>25</option>
                         </select>
                     </div>
-                    <!-- Total Marks -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Total Marks : </label>
                         <select name="total_marks" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -223,7 +197,6 @@
         </div>
     </div>
 
-    <!-- Saved Courses Section -->
     {% if courses %}
     <div class="mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
@@ -265,59 +238,44 @@
                         <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{{ course.course_title }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             <div class="flex justify-center items-center gap-2">
+                                {% if course.is_finalized %}
+                                    <span class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm">Uploaded</span>
+                                {% elif course.is_saved %}
+                                    <span class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm">Saved</span>
+                                {% elif course.has_pdf %}
+                                    <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">Uploaded</span>
+                                {% endif %}
 
-    {% if course.is_finalized %}
-        <!-- ⚪ FINAL: Uploaded ✔ -->
-        <button class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm cursor-not-allowed" disabled>
-            ✔ Uploaded
-        </button>
+                                {% if not course.has_pdf %}
+                                    <form method="post" enctype="multipart/form-data" action="{% url 'upload_center:upload_course_content' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="course_code" value="{{ course.course_code }}">
+                                        <input type="file" name="pdf_file" accept=".pdf" id="pdf{{ course.id }}" class="hidden" onchange="this.form.submit();" required>
+                                        <label for="pdf{{ course.id }}"
+                                               class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm cursor-pointer">
+                                            Upload
+                                        </label>
+                                    </form>
+                                {% endif %}
 
-    {% elif course.is_saved %}
-        <!-- 🟢 AFTER SAVE -->
-        <button class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm cursor-not-allowed" disabled>
-            ✔ Saved
-        </button>
-
-    {% elif course.has_pdf %}
-        <!-- 🔵 AFTER UPLOAD -->
-        <button class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm cursor-not-allowed" disabled>
-            Uploaded
-        </button>
-
-    {% else %}
-        <!-- 🟢 INITIAL UPLOAD -->
-        <form method="post" enctype="multipart/form-data" action="{% url 'upload_center:upload_course_content' %}">
-            {% csrf_token %}
-            <input type="hidden" name="course_code" value="{{ course.course_code }}">
-            <input type="file" name="pdf_file" accept=".pdf" id="pdf{{ course.id }}" class="hidden" onchange="this.form.submit();" required>
-
-            <label for="pdf{{ course.id }}"
-                   class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 cursor-pointer">
-                Upload
-            </label>
-        </form>
-    {% endif %}
-
-    <!-- DELETE BUTTON (unchanged) -->
-    <form method="post" action="{% url 'upload_center:delete_course' course.id %}" class="inline">
-        {% csrf_token %}
-        <button type="submit"
-                class="px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">
-            Delete
-        </button>
-    </form>
-
-</div>
+                                <form method="post" action="{% url 'upload_center:delete_course' course.id %}" class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
-            </table>    
+            </table>
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
             <form method="post" action="{% url 'upload_center:save_courses' %}">
                 {% csrf_token %}
                 <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">
-                    💾 Save
+                    Save
                 </button>
             </form>
             <form method="post" action="{% url 'upload_center:finalize_courses' %}">
@@ -329,7 +287,6 @@
         </div>
     </div>
     {% else %}
-    <!-- No Courses Found -->
     <div class="mx-auto bg-white rounded-2xl shadow-xl p-12 text-center">
         <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
             <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

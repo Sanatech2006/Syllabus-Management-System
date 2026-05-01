@@ -1,3 +1,38 @@
-from django.test import TestCase
+import shutil
+import tempfile
 
-# Create your tests here.
+from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, override_settings
+from django.urls import reverse
+
+from modules.upload_center.models import CourseContent
+
+
+class CourseManageTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._media_root = tempfile.mkdtemp()
+        cls._override = override_settings(MEDIA_ROOT=cls._media_root)
+        cls._override.enable()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._override.disable()
+        shutil.rmtree(cls._media_root, ignore_errors=True)
+        super().tearDownClass()
+
+    def setUp(self):
+        user = get_user_model().objects.create_user(username="tester", password="secret123")
+        self.client.force_login(user)
+
+    def test_view_course_pdf_serves_current_pdf_inline(self):
+        pdf_file = SimpleUploadedFile("syllabus.pdf", b"%PDF-inline", content_type="application/pdf")
+        CourseContent.objects.create(course_code="11UBA1401", pdf=pdf_file)
+
+        response = self.client.get(reverse("course_manage:view_course_pdf", args=["11uba1401"]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertIn("inline;", response["Content-Disposition"])
