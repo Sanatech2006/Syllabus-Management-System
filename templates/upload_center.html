@@ -218,7 +218,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
                 Saved Courses
-                <span class="ml-2 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">{{ courses|length }}</span>
+                <span class="ml-2 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">{{ page_obj.paginator.count }}</span>
             </h2>
         </div>
         <div class="overflow-x-auto">
@@ -251,11 +251,7 @@
                         <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{{ course.course_title }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             <div class="flex justify-center items-center gap-2">
-                                {% if course.is_finalized %}
-                                    <span class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm">Uploaded</span>
-                                {% elif course.is_saved %}
-                                    <span class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm">Saved</span>
-                                {% elif course.has_pdf %}
+                                {% if course.has_pdf %}
                                     <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">Uploaded</span>
                                 {% endif %}
 
@@ -295,6 +291,38 @@
                     {% endfor %}
                 </tbody>
             </table>
+        {% if page_obj.has_other_pages %}
+        <div class="px-6 py-3 bg-gray-50 border-t border-gray-200">
+            <div class="flex items-center justify-between">
+                <p class="text-sm text-gray-600">
+                    Showing <span class="font-medium">{{ page_obj.start_index }}</span> to <span class="font-medium">{{ page_obj.end_index }}</span> of <span class="font-medium">{{ page_obj.paginator.count }}</span> results
+                </p>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% if pagination_query %}&{{ pagination_query }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">Previous</span>
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    </a>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">{{ num }}</span>
+                        {% else %}
+                        <a href="?page={{ num }}{% if pagination_query %}&{{ pagination_query }}{% endif %}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if pagination_query %}&{{ pagination_query }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">Next</span>
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+        {% endif %}
         {% if user.is_superuser %}
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
             <form method="post" action="{% url 'upload_center:save_courses' %}">

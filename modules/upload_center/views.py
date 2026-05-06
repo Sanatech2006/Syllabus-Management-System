@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from openpyxl.styles import Font, PatternFill
 from .models import CourseStr, CourseContent, normalize_course_code
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 
 
 UPLOAD_FILTER_FIELDS = (
@@ -102,16 +103,23 @@ def upload_center(request):
     filters = {field: request.GET.get(field) for field in UPLOAD_FILTER_FIELDS}
     base_queryset = CourseStr.objects.all()
     courses = _apply_upload_filters(base_queryset, filters).order_by('-created_at')
+    paginator = Paginator(courses, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
 
     # Set has_pdf dynamically
-    for course in courses:
+    for course in page_obj:
         course.has_pdf = CourseContent.objects.filter(
             course_code=course.course_code,
             pdf__isnull=False
         ).exclude(pdf='').exists()
 
+    query_params = request.GET.copy()
+    query_params.pop('page', None)
+
     return render(request, 'upload_center.html', {
-        'courses': courses,
+        'courses': page_obj,
+        'page_obj': page_obj,
+        'pagination_query': query_params.urlencode(),
         **_build_upload_filter_options(base_queryset, filters),
     })
 

@@ -63,10 +63,13 @@ def program_management(request):
     paginator = Paginator(programs.order_by("id"), 10)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
 
     return render(request, "program_management.html", {
     "programs": page_obj,
     "page_obj": page_obj,
+    "pagination_query": query_params.urlencode(),
     **filter_options,
     'arts_count': base_queryset.filter(prog_category='Arts').count(),
     'science_count': base_queryset.filter(prog_category='Science').count(),

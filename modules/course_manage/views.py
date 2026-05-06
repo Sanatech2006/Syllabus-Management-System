@@ -6,6 +6,7 @@ import os
 from django.conf import settings
 from django.http import JsonResponse
 from django.contrib import messages
+from django.core.paginator import Paginator
 import pandas as pd
 from decimal import Decimal, InvalidOperation
 
@@ -237,11 +238,17 @@ def bulk_upload(request):
 def course_management(request):
     filters = {field: request.GET.get(field) for field in COURSE_FILTER_FIELDS}
     base_queryset = CourseStr.objects.filter(is_finalized=True)
-    courses = _apply_course_filters(base_queryset, filters)
+    courses = _apply_course_filters(base_queryset, filters).order_by('id')
     filter_options = _build_course_filter_options(base_queryset, filters)
+    paginator = Paginator(courses, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    query_params = request.GET.copy()
+    query_params.pop('page', None)
 
     context = {
-        'courses': courses,
+        'courses': page_obj,
+        'page_obj': page_obj,
+        'pagination_query': query_params.urlencode(),
         **filter_options,
         'total_count': base_queryset.count(),
         'arts_count': base_queryset.filter(prog_category='Arts').count(),
