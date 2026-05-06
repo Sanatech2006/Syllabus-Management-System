@@ -86,3 +86,166 @@ class UploadCenterTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Replace PDF")
+
+    def test_upload_center_filters_by_selected_year(self):
+        CourseStr.objects.create(
+            year="2022",
+            prog_type="UG",
+            prog_category="Arts",
+            prog_code="BAENG",
+            branch="English",
+            sem="I",
+            course_code="22ENG101",
+            part="I",
+            course_category="Core",
+            course_title="Poetry",
+        )
+        CourseStr.objects.create(
+            year="2023",
+            prog_type="PG",
+            prog_category="Science",
+            prog_code="MSCHEM",
+            branch="Chemistry",
+            sem="II",
+            course_code="23CHE501",
+            part="II",
+            course_category="Elective",
+            course_title="Organic Chemistry",
+        )
+
+        response = self.client.get(reverse("upload_center:upload_center"), {"year": "2022"})
+
+        self.assertEqual(response.status_code, 200)
+        courses = list(response.context["courses"])
+        self.assertEqual(len(courses), 1)
+        self.assertEqual(courses[0].course_code, "22ENG101")
+
+    def test_get_filter_options_limits_related_upload_filters_by_year(self):
+        CourseStr.objects.create(
+            year="2022",
+            prog_type="UG",
+            prog_category="Arts",
+            prog_code="BAENG",
+            branch="English",
+            sem="I",
+            course_code="22ENG101",
+            part="I",
+            course_category="Core",
+            course_title="Poetry",
+            hrs_per_week=3,
+            credit=4,
+            marks_cia=25,
+            marks_ese=75,
+            total_marks=100,
+        )
+        CourseStr.objects.create(
+            year="2022",
+            prog_type="PG",
+            prog_category="Science",
+            prog_code="MSCHEM",
+            branch="Chemistry",
+            sem="II",
+            course_code="22CHE501",
+            part="II",
+            course_category="Elective",
+            course_title="Organic Chemistry",
+            hrs_per_week=5,
+            credit=3,
+            marks_cia=40,
+            marks_ese=60,
+            total_marks=100,
+        )
+        CourseStr.objects.create(
+            year="2023",
+            prog_type="UG",
+            prog_category="Science",
+            prog_code="BSCPHY",
+            branch="Physics",
+            sem="III",
+            course_code="23PHY201",
+            part="III",
+            course_category="Core",
+            course_title="Mechanics",
+            hrs_per_week=6,
+            credit=5,
+            marks_cia=50,
+            marks_ese=50,
+            total_marks=100,
+        )
+
+        response = self.client.get(reverse("upload_center:get_filter_options"), {"year": "2022"})
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["prog_types"], ["PG", "UG"])
+        self.assertEqual(data["prog_codes"], ["BAENG", "MSCHEM"])
+        self.assertEqual(data["branches"], ["Chemistry", "English"])
+        self.assertEqual(data["course_codes"], ["22CHE501", "22ENG101"])
+        self.assertEqual(data["hrs_per_week_options"], ["3", "5"])
+
+    def test_edit_course_prefills_existing_data(self):
+        course = CourseStr.objects.create(
+            year="2022",
+            prog_type="UG",
+            prog_category="Arts",
+            prog_code="BAENG",
+            branch="English",
+            sem="I",
+            course_code="22ENG101",
+            part="I",
+            course_category="Core",
+            course_title="Poetry",
+        )
+
+        response = self.client.get(reverse("upload_center:edit_course", args=[course.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'value="22ENG101"')
+        self.assertContains(response, 'value="Poetry"')
+        self.assertContains(response, "Update Course")
+
+    def test_edit_course_updates_record_and_resets_status(self):
+        course = CourseStr.objects.create(
+            year="2022",
+            prog_type="UG",
+            prog_category="Arts",
+            prog_code="BAENG",
+            branch="English",
+            sem="I",
+            course_code="22ENG101",
+            part="I",
+            course_category="Core",
+            course_title="Poetry",
+            is_saved=True,
+            is_finalized=True,
+        )
+        CourseContent.objects.create(course_code="22ENG101")
+
+        response = self.client.post(
+            reverse("upload_center:edit_course", args=[course.id]),
+            {
+                "year": "2022",
+                "prog_type": "PG",
+                "prog_category": "Science",
+                "prog_code": "MSCHEM",
+                "branch": "Chemistry",
+                "sem": "II",
+                "course_code": "22CHE501",
+                "part": "II",
+                "course_category": "Elective",
+                "course_title": "Organic Chemistry",
+                "hrs_per_week": "5",
+                "credit": "3",
+                "marks_cia": "40",
+                "marks_ese": "60",
+                "total_marks": "100",
+            },
+        )
+
+        self.assertRedirects(response, reverse("upload_center:upload_center"))
+        course.refresh_from_db()
+        self.assertEqual(course.course_code, "22CHE501")
+        self.assertEqual(course.prog_type, "PG")
+        self.assertFalse(course.is_saved)
+        self.assertFalse(course.is_finalized)
+        self.assertTrue(CourseContent.objects.filter(course_code="22CHE501").exists())

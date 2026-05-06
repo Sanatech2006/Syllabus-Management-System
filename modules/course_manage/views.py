@@ -27,6 +27,20 @@ TEXT_FIELDS = [
 ]
 
 
+COURSE_FILTER_FIELDS = (
+    'year',
+    'prog_type',
+    'prog_category',
+    'course_category',
+    'prog_code',
+    'branch',
+    'part',
+    'sem',
+    'course_code',
+    'course_title',
+)
+
+
 def to_decimal(value):
     """Safely convert a value to Decimal, return None if invalid."""
     try:
@@ -37,11 +51,70 @@ def to_decimal(value):
         return None
 
 
+def _distinct_non_empty(queryset, field_name):
+    return list(
+        queryset.exclude(**{f'{field_name}__isnull': True})
+        .exclude(**{field_name: ''})
+        .values_list(field_name, flat=True)
+        .distinct()
+        .order_by(field_name)
+    )
+
+
+def _apply_course_filters(queryset, filters, exclude_field=None):
+    for field in COURSE_FILTER_FIELDS:
+        if field == exclude_field:
+            continue
+
+        value = filters.get(field)
+        if value:
+            queryset = queryset.filter(**{field: value})
+
+    return queryset
+
+
+def _build_course_filter_options(base_queryset, filters):
+    option_querysets = {
+        field: _apply_course_filters(base_queryset, filters, exclude_field=field)
+        for field in COURSE_FILTER_FIELDS
+    }
+
+    return {
+        'years': _distinct_non_empty(option_querysets['year'], 'year'),
+        'prog_types': _distinct_non_empty(option_querysets['prog_type'], 'prog_type'),
+        'prog_categories': _distinct_non_empty(option_querysets['prog_category'], 'prog_category'),
+        'course_categories': _distinct_non_empty(option_querysets['course_category'], 'course_category'),
+        'prog_codes': _distinct_non_empty(option_querysets['prog_code'], 'prog_code'),
+        'branches': _distinct_non_empty(option_querysets['branch'], 'branch'),
+        'parts': _distinct_non_empty(option_querysets['part'], 'part'),
+        'semesters': _distinct_non_empty(option_querysets['sem'], 'sem'),
+        'course_codes': _distinct_non_empty(option_querysets['course_code'], 'course_code'),
+        'course_titles': _distinct_non_empty(option_querysets['course_title'], 'course_title'),
+        'course_code_titles': list(
+            option_querysets['course_code']
+            .exclude(course_code__isnull=True)
+            .exclude(course_code='')
+            .values('course_code', 'course_title')
+            .distinct()
+            .order_by('course_code')
+        ),
+    }
+
+
 def home(request):
     return redirect('course_manage:course_management')
 
 
 def bulk_upload(request):
+    # Require login for bulk upload
+    if not request.user.is_authenticated:
+        return redirect('/login/')
+
+    # Allow only admins and HODs (staff)
+    if not (request.user.is_superuser or request.user.is_staff):
+        messages.error(request, 'You do not have permission to access bulk upload.')
+        return redirect('course_manage:course_management')
+
     if request.method == 'POST':
         excel_file = request.FILES.get('excel_file')
 
@@ -162,66 +235,19 @@ def bulk_upload(request):
 
 
 def course_management(request):
-    year = request.GET.get('year')
-    prog_type = request.GET.get('prog_type')
-    course_category = request.GET.get('course_category')
-    prog_code = request.GET.get('prog_code')
-    branch = request.GET.get('branch')
-    part = request.GET.get('part')
-    sem = request.GET.get('sem')
-    course_code = request.GET.get('course_code')
-    course_title = request.GET.get('course_title')
-
-    courses = CourseStr.objects.filter(is_finalized=True)
-
-    if year: courses = courses.filter(year=year)
-    if prog_type: courses = courses.filter(prog_type=prog_type)
-    if course_category: courses = courses.filter(course_category=course_category)
-    if prog_code: courses = courses.filter(prog_code=prog_code)
-    if branch: courses = courses.filter(branch=branch)
-    if part: courses = courses.filter(part=part)
-    if sem: courses = courses.filter(sem=sem)
-    if course_code: courses = courses.filter(course_code=course_code)
-    if course_title: courses = courses.filter(course_title=course_title)
+    filters = {field: request.GET.get(field) for field in COURSE_FILTER_FIELDS}
+    base_queryset = CourseStr.objects.filter(is_finalized=True)
+    courses = _apply_course_filters(base_queryset, filters)
+    filter_options = _build_course_filter_options(base_queryset, filters)
 
     context = {
         'courses': courses,
-        'years': list(CourseStr.objects.filter(is_finalized=True)
-            .exclude(year__isnull=True).exclude(year='')
-            .values_list('year', flat=True).distinct().order_by('year')),
-        'prog_types': list(CourseStr.objects.filter(is_finalized=True)
-            .exclude(prog_type__isnull=True).exclude(prog_type='')
-            .values_list('prog_type', flat=True).distinct().order_by('prog_type')),
-        'course_categories': list(CourseStr.objects.filter(is_finalized=True)
-            .exclude(course_category__isnull=True).exclude(course_category='')
-            .values_list('course_category', flat=True).distinct().order_by('course_category')),
-        'prog_codes': list(CourseStr.objects.filter(is_finalized=True)
-            .exclude(prog_code__isnull=True).exclude(prog_code='')
-            .values_list('prog_code', flat=True).distinct().order_by('prog_code')),
-        'branches': list(CourseStr.objects.filter(is_finalized=True)
-            .exclude(branch__isnull=True).exclude(branch='')
-            .values_list('branch', flat=True).distinct().order_by('branch')),
-        'parts': list(CourseStr.objects.filter(is_finalized=True)
-            .exclude(part__isnull=True).exclude(part='')
-            .values_list('part', flat=True).distinct().order_by('part')),
-        'semesters': list(CourseStr.objects.filter(is_finalized=True)
-            .exclude(sem__isnull=True).exclude(sem='')
-            .values_list('sem', flat=True).distinct().order_by('sem')),
-        'course_codes': list(CourseStr.objects.filter(is_finalized=True)
-            .exclude(course_code__isnull=True).exclude(course_code='')
-            .values_list('course_code', flat=True).distinct().order_by('course_code')),
-        'course_titles': list(CourseStr.objects.filter(is_finalized=True)
-            .exclude(course_title__isnull=True).exclude(course_title='')
-            .values_list('course_title', flat=True).distinct().order_by('course_title')),
-        'course_code_titles': list(CourseStr.objects.filter(is_finalized=True)
-            .exclude(course_code__isnull=True).exclude(course_code='')
-            .values('course_code', 'course_title')
-            .distinct().order_by('course_code')),
-        'total_count': CourseStr.objects.count(),
-        'arts_count': CourseStr.objects.filter(is_finalized=True, prog_category='Arts').count(),
-        'science_count': CourseStr.objects.filter(is_finalized=True, prog_category='Science').count(),
-        'ug_count': CourseStr.objects.filter(is_finalized=True, prog_type='UG').count(),
-        'pg_count': CourseStr.objects.filter(is_finalized=True, prog_type='PG').count(),
+        **filter_options,
+        'total_count': base_queryset.count(),
+        'arts_count': base_queryset.filter(prog_category='Arts').count(),
+        'science_count': base_queryset.filter(prog_category='Science').count(),
+        'ug_count': base_queryset.filter(prog_type='UG').count(),
+        'pg_count': base_queryset.filter(prog_type='PG').count(),
     }
 
     return render(request, 'cou_manage.html', context)
@@ -266,37 +292,6 @@ def debug_pdf_path(request, course_code):
 
 
 def get_filter_options(request):
-    year = request.GET.get('year')
-    prog_type = request.GET.get('prog_type')
-    course_category = request.GET.get('course_category')
-    prog_code = request.GET.get('prog_code')
-    branch = request.GET.get('branch')
-    part = request.GET.get('part')
-    sem = request.GET.get('sem')
-    course_code = request.GET.get('course_code')
-    course_title = request.GET.get('course_title')
-
+    filters = {field: request.GET.get(field) for field in COURSE_FILTER_FIELDS}
     queryset = CourseStr.objects.filter(is_finalized=True)
-
-    if year: queryset = queryset.filter(year=year)
-    if prog_type: queryset = queryset.filter(prog_type=prog_type)
-    if course_category: queryset = queryset.filter(course_category=course_category)
-    if prog_code: queryset = queryset.filter(prog_code=prog_code)
-    if branch: queryset = queryset.filter(branch=branch)
-    if part: queryset = queryset.filter(part=part)
-    if sem: queryset = queryset.filter(sem=sem)
-    if course_code: queryset = queryset.filter(course_code=course_code)
-    if course_title: queryset = queryset.filter(course_title=course_title)
-
-    options = {
-        'years': list(queryset.exclude(year__isnull=True).exclude(year='').values_list('year', flat=True).distinct().order_by('year')),
-        'prog_types': list(queryset.exclude(prog_type__isnull=True).exclude(prog_type='').values_list('prog_type', flat=True).distinct().order_by('prog_type')),
-        'course_categories': list(queryset.exclude(course_category__isnull=True).exclude(course_category='').values_list('course_category', flat=True).distinct().order_by('course_category')),
-        'prog_codes': list(queryset.exclude(prog_code__isnull=True).exclude(prog_code='').values_list('prog_code', flat=True).distinct().order_by('prog_code')),
-        'branches': list(queryset.exclude(branch__isnull=True).exclude(branch='').values_list('branch', flat=True).distinct().order_by('branch')),
-        'parts': list(queryset.exclude(part__isnull=True).exclude(part='').values_list('part', flat=True).distinct().order_by('part')),
-        'semesters': list(queryset.exclude(sem__isnull=True).exclude(sem='').values_list('sem', flat=True).distinct().order_by('sem')),
-        'course_codes': list(queryset.exclude(course_code__isnull=True).exclude(course_code='').values_list('course_code', flat=True).distinct().order_by('course_code')),
-        'course_titles': list(queryset.exclude(course_title__isnull=True).exclude(course_title='').values_list('course_title', flat=True).distinct().order_by('course_title')),
-    }
-    return JsonResponse(options)
+    return JsonResponse(_build_course_filter_options(queryset, filters))

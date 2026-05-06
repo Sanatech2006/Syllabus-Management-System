@@ -23,12 +23,20 @@
                     <span class="text-gray-700 font-medium">Program Management</span>
                 </nav>
             </div>
-            <a href="{% url 'program_manage:add_program' %}" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                Add New Program
-            </a>
+            <div class="flex flex-wrap gap-3">
+                <button id="clearFilters" type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Clear All Filters
+                </button>
+                <a href="{% url 'program_manage:add_program' %}" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add New Program
+                </a>
+            </div>
         </div>
     </div>
 
@@ -107,7 +115,7 @@
             </h2>
         </div>
                             <div class="p-6">
-                                <form method="get">
+                                <form method="get" id="filterForm">
                                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                         <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -132,23 +140,34 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Programme Type : </label>
-                        <select name="prog_type" class="border border-gray-200 mt-2 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-lg">
+                        <select name="prog_type" id="prog_type" class="border border-gray-200 mt-2 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-lg">
                             <option value="">All Types</option>
-                            <option value="UG" {% if request.GET.prog_type == "UG" %}selected{% endif %}>UG</option>
-                            <option value="PG" {% if request.GET.prog_type == "PG" %}selected{% endif %}>PG</option>
+                            {% for prog_type in prog_types %}
+                            <option value="{{ prog_type }}" {% if request.GET.prog_type == prog_type|stringformat:"s" %}selected{% endif %}>{{ prog_type }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Programme Category : </label>
-                        <select name="prog_category" class="border border-gray-200 mt-2 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-lg">
+                        <select name="prog_category" id="prog_category" class="border border-gray-200 mt-2 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-lg">
                             <option value="">All Categories</option>
-                            <option value="Arts" {% if request.GET.prog_category == "Arts" %}selected{% endif %}>Arts</option>
-                            <option value="Science" {% if request.GET.prog_category == "Science" %}selected{% endif %}>Science</option>
+                            {% for prog_category in prog_categories %}
+                            <option value="{{ prog_category }}" {% if request.GET.prog_category == prog_category|stringformat:"s" %}selected{% endif %}>{{ prog_category }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Programme Code : </label>
+                        <select name="prog_code" id="prog_code" class="border border-gray-200 mt-2 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-lg">
+                            <option value="">All Programmes</option>
+                            {% for program_code in prog_codes %}
+                            <option value="{{ program_code }}" {% if request.GET.prog_code == program_code|stringformat:"s" %}selected{% endif %}>{{ program_code }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Branch : </label>
-                        <select name="branch" class="border border-gray-200 mt-2 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-lg">
+                        <select name="branch" id="branch" class="border border-gray-200 mt-2 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-lg">
                             <option value="">All Branches</option>
                             {% for b in branches %}
                             <option value="{{ b }}" {% if request.GET.branch == b %}selected{% endif %}>{{ b }}</option>
@@ -296,6 +315,65 @@
 </div>
 
 <script>
+    const programFilterConfig = {
+        year: { key: 'years', defaultLabel: 'Choose a year', keepPlaceholderDisabled: true },
+        prog_type: { key: 'prog_types', defaultLabel: 'All Types' },
+        prog_category: { key: 'prog_categories', defaultLabel: 'All Categories' },
+        prog_code: { key: 'prog_codes', defaultLabel: 'All Programmes' },
+        branch: { key: 'branches', defaultLabel: 'All Branches' },
+    };
+
+    function populateProgramSelect(selectId, values, selectedValue, config) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+
+        select.innerHTML = '';
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = config.defaultLabel;
+        if (config.keepPlaceholderDisabled) {
+            defaultOption.disabled = true;
+        }
+        if (!selectedValue) {
+            defaultOption.selected = true;
+        }
+        select.appendChild(defaultOption);
+
+        values.forEach((item) => {
+            const option = document.createElement('option');
+            option.value = item;
+            option.textContent = item;
+            if (item === selectedValue) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+
+        const hasSelectedOption = Array.from(select.options).some((option) => option.value === selectedValue);
+        if (selectedValue && !hasSelectedOption) {
+            select.value = '';
+        }
+    }
+
+    async function refreshProgramFilters() {
+        const form = document.getElementById('filterForm');
+        const params = new URLSearchParams(new FormData(form));
+        const response = await fetch(`{% url 'program_manage:get_filter_options' %}?${params.toString()}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data = await response.json();
+        Object.entries(programFilterConfig).forEach(([selectId, config]) => {
+            const selectedValue = form.elements[selectId]?.value || '';
+            populateProgramSelect(selectId, data[config.key] || [], selectedValue, config);
+        });
+    }
+
     function openModal(modalId) {
         document.getElementById(modalId).classList.remove('hidden');
     }
@@ -309,5 +387,16 @@
         deleteForm.action = "{% url 'program_manage:delete_program' 0 %}".replace('0', programId);
         openModal('deleteConfirmModal');
     }
+
+    document.getElementById('clearFilters').addEventListener('click', function() {
+        document.querySelectorAll('#filterForm select').forEach(select => select.value = '');
+        document.getElementById('filterForm').submit();
+    });
+
+    document.querySelectorAll('#filterForm select').forEach((select) => {
+        select.addEventListener('change', refreshProgramFilters);
+    });
+
+    refreshProgramFilters();
 </script>
 {% endblock %}

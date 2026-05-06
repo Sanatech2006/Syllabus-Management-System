@@ -1,4 +1,5 @@
 from django.shortcuts import redirect
+from django.contrib import messages
 from functools import wraps
 
 def login_required_custom(view_func):
@@ -12,6 +13,22 @@ def login_required_custom(view_func):
         if not request.user.is_authenticated:
             # Store the current path to redirect back after login
             request.session['next_url'] = request.path
-            return redirect('login')
+            return redirect('/login/')
         return view_func(request, *args, **kwargs)
+    return _wrapped_view
+
+
+def admin_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            request.session['next_url'] = request.path
+            return redirect('/login/')
+
+        if not request.user.is_superuser:
+            messages.error(request, 'You do not have permission to access that section.')
+            return redirect('/dashboard/')
+
+        return view_func(request, *args, **kwargs)
+
     return _wrapped_view

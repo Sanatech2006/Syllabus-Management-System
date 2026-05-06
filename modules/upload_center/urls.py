@@ -5,7 +5,9 @@ app_name = 'upload_center'
 
 urlpatterns = [
     path('upload-center/', views.upload_center, name='upload_center'),
+    path('upload-center/get-filter-options/', views.get_filter_options, name='get_filter_options'),
     path('upload-center/add-course/', views.add_course, name='add_course'),
+    path('upload-center/edit/<int:course_id>/', views.edit_course, name='edit_course'),
     path('upload-center/delete/<int:course_id>/', views.delete_course, name='delete_course'),
     path('upload-center/upload-pdf/', views.upload_course_content, name='upload_course_content'),
     path('upload-center/finalize/', views.finalize_courses, name='finalize_courses'),

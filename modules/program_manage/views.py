@@ -1,52 +1,81 @@
 from .models import Program
 from django.shortcuts import get_object_or_404, render, redirect
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.http import JsonResponse
 from modules.upload_center.models import CourseStr
+from modules.core.decorators import admin_required
 
 
-@login_required(login_url='/login/')
+PROGRAM_FILTER_FIELDS = (
+    "year",
+    "prog_type",
+    "prog_category",
+    "prog_code",
+    "branch",
+)
+
+
+def _distinct_non_empty(queryset, field_name):
+    return list(
+        queryset.exclude(**{f"{field_name}__isnull": True})
+        .exclude(**{field_name: ""})
+        .values_list(field_name, flat=True)
+        .distinct()
+        .order_by(field_name)
+    )
+
+
+def _apply_program_filters(queryset, filters, exclude_field=None):
+    for field in PROGRAM_FILTER_FIELDS:
+        if field == exclude_field:
+            continue
+
+        value = filters.get(field)
+        if value:
+            queryset = queryset.filter(**{field: value})
+
+    return queryset
+
+
+def _build_program_filter_options(base_queryset, filters):
+    option_querysets = {
+        field: _apply_program_filters(base_queryset, filters, exclude_field=field)
+        for field in PROGRAM_FILTER_FIELDS
+    }
+
+    return {
+        "years": _distinct_non_empty(option_querysets["year"], "year"),
+        "prog_types": _distinct_non_empty(option_querysets["prog_type"], "prog_type"),
+        "prog_categories": _distinct_non_empty(option_querysets["prog_category"], "prog_category"),
+        "prog_codes": _distinct_non_empty(option_querysets["prog_code"], "prog_code"),
+        "branches": _distinct_non_empty(option_querysets["branch"], "branch"),
+    }
+
+
+@admin_required
 def program_management(request):
-    programs = Program.objects.filter(is_active=True)
-
-    selected_year = request.GET.get("year")
-    prog_type = request.GET.get("prog_type")
-    prog_category = request.GET.get("prog_category")
-    prog_code = request.GET.get("prog_code")
-    branch = request.GET.get("branch")
-
-    if selected_year:
-        programs = programs.filter(year=year)
-    if prog_type:
-        programs = programs.filter(prog_type=prog_type)
-    if prog_category:
-        programs = programs.filter(prog_category=prog_category)
-    if prog_code:
-        programs = programs.filter(prog_code__icontains=prog_code)
-    if branch:
-        programs = programs.filter(branch=branch)
+    filters = {field: request.GET.get(field) for field in PROGRAM_FILTER_FIELDS}
+    base_queryset = Program.objects.filter(is_active=True)
+    programs = _apply_program_filters(base_queryset, filters)
+    filter_options = _build_program_filter_options(base_queryset, filters)
 
     paginator = Paginator(programs.order_by("id"), 10)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    branches = Program.objects.values_list("branch", flat=True).distinct()
-    years = Program.objects.values_list("year", flat=True).distinct().order_by('-year')
-
     return render(request, "program_management.html", {
     "programs": page_obj,
     "page_obj": page_obj,
-    "branches": branches,
-    "years":years,
-    'arts_count': Program.objects.filter(is_active=True, prog_category='Arts').count(),
-    'science_count': Program.objects.filter(is_active=True, prog_category='Science').count(),
-    'ug_count': Program.objects.filter(is_active=True, prog_type='UG').count(),
-    'pg_count': Program.objects.filter(is_active=True, prog_type='PG').count(),
+    **filter_options,
+    'arts_count': base_queryset.filter(prog_category='Arts').count(),
+    'science_count': base_queryset.filter(prog_category='Science').count(),
+    'ug_count': base_queryset.filter(prog_type='UG').count(),
+    'pg_count': base_queryset.filter(prog_type='PG').count(),
     })
 
 
-@login_required(login_url='/login/')
+@admin_required
 def add_program(request):
     preview_programs = request.session.get("preview_programs", [])
 
@@ -98,7 +127,7 @@ def add_program(request):
 
     return render(request, "add_program.html")
     
-@login_required(login_url='/login/')
+@admin_required
 def edit_program(request, id):
     program = get_object_or_404(Program, id=id)
 
@@ -124,9 +153,16 @@ def edit_program(request, id):
         "science_count": science_count,   # ✅ ADD THIS
     })
 
-@login_required(login_url='/login/')
+@admin_required
 def delete_program(request, id):
     program = get_object_or_404(Program, id=id)
     program.delete()
     messages.success(request, "Program deleted successfully!")
     return redirect("program_manage:program_management")
+
+
+@admin_required
+def get_filter_options(request):
+    filters = {field: request.GET.get(field) for field in PROGRAM_FILTER_FIELDS}
+    queryset = Program.objects.filter(is_active=True)
+    return JsonResponse(_build_program_filter_options(queryset, filters))

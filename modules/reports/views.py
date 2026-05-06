@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from modules.upload_center.models import CourseStr, CourseContent
+from modules.core.decorators import admin_required
 
+@admin_required
 def work_progress_report(request):
     courses = CourseStr.objects.all()
     contents = CourseContent.objects.all()

@@ -1,11 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth import update_session_auth_hash
-from django.contrib.auth.decorators import login_required
+from modules.core.decorators import admin_required
 
 User = get_user_model()
 
-@login_required(login_url='/login/')
+@admin_required
 def user_management(request):
     """Display user management table with stats."""
     users = User.objects.all()
@@ -19,7 +19,7 @@ def user_management(request):
     }
     return render(request, "user_mgt.html", context)
 
-@login_required(login_url='/login/')
+@admin_required
 def add_user(request):
     """Handle creation of a new user from the modal."""
     if request.method == "POST":
@@ -48,7 +48,7 @@ def add_user(request):
 
     return redirect("user_manage:user_management")
 
-@login_required(login_url='/login/')
+@admin_required
 def edit_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
 

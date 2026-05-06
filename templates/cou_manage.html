@@ -73,8 +73,9 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Programme Type : </label>
                         <select name="prog_type" id="prog_type" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="" {% if not request.GET.prog_type %}selected{% endif %}>All Types</option>
-                            <option value="UG" {% if request.GET.prog_type == "UG" %}selected{% endif %}>UG</option>
-                            <option value="PG" {% if request.GET.prog_type == "PG" %}selected{% endif %}>PG</option>
+                            {% for prog_type in prog_types %}
+                                <option value="{{ prog_type }}" {% if request.GET.prog_type == prog_type|stringformat:"s" %}selected{% endif %}>{{ prog_type }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     <!-- Programme Category -->
@@ -82,8 +83,6 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Programme Category : </label>
                         <select name="prog_category" id="prog_category" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="" {% if not request.GET.prog_category %}selected{% endif %}>All Categories</option>
-                            <option value="arts" {% if request.GET.prog_category == "arts" %}selected{% endif %}>Arts</option>
-                            <option value="science" {% if request.GET.prog_category == "science" %}selected{% endif %}>Science</option>
                             {% for cat in prog_categories %}
                                 <option value="{{ cat }}" {% if request.GET.prog_category == cat|stringformat:"s" %}selected{% endif %}>{{ cat }}</option>
                             {% endfor %}
@@ -134,7 +133,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Course Code with Title : </label>
                         <select name="course_code" id="course_code" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">All Courses</option>
-                            {% for course in courses %}
+                            {% for course in course_code_titles %}
                                 <option value="{{ course.course_code }}" 
                                     {% if request.GET.course_code == course.course_code %}selected{% endif %}>
                                     {{ course.course_code }} - {{ course.course_title }}
@@ -267,13 +266,88 @@
 
 <script>
     function viewPDF(courseCode) {
-    window.open(`{% url 'course_manage:view_course_pdf' 0 %}`.replace('0', courseCode), '_blank');
-}
+        window.open(`{% url 'course_manage:view_course_pdf' 0 %}`.replace('0', courseCode), '_blank');
+    }
+
+    const courseFilterConfig = {
+        year: { key: 'years', defaultLabel: 'Choose a year', keepPlaceholderDisabled: true },
+        prog_type: { key: 'prog_types', defaultLabel: 'All Types' },
+        prog_category: { key: 'prog_categories', defaultLabel: 'All Categories' },
+        prog_code: { key: 'prog_codes', defaultLabel: 'All Programmes' },
+        branch: { key: 'branches', defaultLabel: 'All Branches' },
+        sem: { key: 'semesters', defaultLabel: 'All Semesters' },
+        part: { key: 'parts', defaultLabel: 'All parts' },
+        course_code: { key: 'course_code_titles', defaultLabel: 'All Courses' },
+    };
+
+    function populateCourseSelect(selectId, values, selectedValue, config) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+
+        select.innerHTML = '';
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = config.defaultLabel;
+        if (config.keepPlaceholderDisabled) {
+            defaultOption.disabled = true;
+        }
+        if (!selectedValue) {
+            defaultOption.selected = true;
+        }
+        select.appendChild(defaultOption);
+
+        values.forEach((item) => {
+            const option = document.createElement('option');
+            if (selectId === 'course_code') {
+                option.value = item.course_code;
+                option.textContent = `${item.course_code} - ${item.course_title || ''}`.trim();
+            } else {
+                option.value = item;
+                option.textContent = item;
+            }
+
+            if (option.value === selectedValue) {
+                option.selected = true;
+            }
+
+            select.appendChild(option);
+        });
+
+        const hasSelectedOption = Array.from(select.options).some((option) => option.value === selectedValue);
+        if (selectedValue && !hasSelectedOption) {
+            select.value = '';
+        }
+    }
+
+    async function refreshCourseFilters() {
+        const form = document.getElementById('filterForm');
+        const params = new URLSearchParams(new FormData(form));
+        const response = await fetch(`{% url 'course_manage:get_filter_options' %}?${params.toString()}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data = await response.json();
+        Object.entries(courseFilterConfig).forEach(([selectId, config]) => {
+            const selectedValue = form.elements[selectId]?.value || '';
+            populateCourseSelect(selectId, data[config.key] || [], selectedValue, config);
+        });
+    }
+
     document.getElementById('clearFilters').addEventListener('click', function() {
         document.querySelectorAll('#filterForm select').forEach(select => select.value = '');
         document.getElementById('filterForm').submit();
     });
 
+    document.querySelectorAll('#filterForm select').forEach((select) => {
+        select.addEventListener('change', refreshCourseFilters);
+    });
+
+    refreshCourseFilters();
 </script>
 
 {% endblock %}
