@@ -52,15 +52,6 @@
                 {% endif %}
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Year -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Academic Year : </label>
-                        <input type="text" name="year"
-                               value="{% if edit_program %}{{ edit_program.year }}{% endif %}"
-                               placeholder="e.g., 2023-2024"
-                               class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-
                     <!-- Programme Type -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Programme Type : </label>
@@ -83,12 +74,12 @@
                         </select>
                     </div>
 
-                    <!-- Programme Code -->
+                    <!-- Degree -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Programme Code : </label>
-                        <input type="text" name="prog_code"
-                               value="{% if edit_program %}{{ edit_program.prog_code }}{% endif %}"
-                               placeholder="e.g., CS101"
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Degree : </label>
+                        <input type="text" name="degree"
+                               value="{% if edit_program %}{{ edit_program.degree }}{% endif %}"
+                               placeholder="e.g., B.A. English"
                                class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
@@ -98,6 +89,15 @@
                         <input type="text" name="branch"
                                value="{% if edit_program %}{{ edit_program.branch }}{% endif %}"
                                placeholder="e.g., Computer Science"
+                               class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Programme Code -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Programme Code : </label>
+                        <input type="text" name="prog_code"
+                               value="{% if edit_program %}{{ edit_program.prog_code }}{% endif %}"
+                               placeholder="e.g., CS101"
                                class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
                 </div>
@@ -145,11 +145,11 @@
                 <thead class="bg-gray-100">
                     <tr>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">#</th>
-                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Year</th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Type</th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Category</th>
-                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Code</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Degree</th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Branch</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Code</th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
@@ -157,11 +157,11 @@
                     {% for p in preview_programs %}
                     <tr class="hover:bg-gray-50 transition">
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ forloop.counter }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ p.year }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ p.prog_type }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ p.prog_category }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">{{ p.prog_code }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ p.degree }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ p.branch }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">{{ p.prog_code }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                             <div class="flex justify-center items-center gap-3">
                                 <!-- Edit button opens modal -->
@@ -207,8 +207,8 @@
                 </div>
                 <div class="px-6 py-4 space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Year : </label>
-                        <input type="text" name="year" id="editYear" required class="mt-2 block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <label class="block text-sm font-medium text-gray-700">Degree : </label>
+                        <input type="text" name="degree" id="editDegree" required class="mt-2 block w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Programme Type : </label>
@@ -283,22 +283,22 @@ function openModal(modalId) {
         const previewPrograms = [
             {% for p in preview_programs %}
             {
-                year: "{{ p.year|escapejs }}",
                 prog_type: "{{ p.prog_type|escapejs }}",
                 prog_category: "{{ p.prog_category|escapejs }}",
-                prog_code: "{{ p.prog_code|escapejs }}",
-                branch: "{{ p.branch|escapejs }}"
+                degree: "{{ p.degree|escapejs }}",
+                branch: "{{ p.branch|escapejs }}",
+                prog_code: "{{ p.prog_code|escapejs }}"
             },
             {% endfor %}
         ];
         const p = previewPrograms[index];
         if (p) {
             document.getElementById('editIndex').value = index;
-            document.getElementById('editYear').value = p.year;
             document.getElementById('editProgType').value = p.prog_type;
             document.getElementById('editProgCategory').value = p.prog_category;
-            document.getElementById('editProgCode').value = p.prog_code;
+            document.getElementById('editDegree').value = p.degree;
             document.getElementById('editBranch').value = p.branch;
+            document.getElementById('editProgCode').value = p.prog_code;
             openModal('editModal');
         }
     }

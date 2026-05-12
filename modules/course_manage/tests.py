@@ -6,8 +6,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from modules.upload_center.models import CourseStr
-from modules.upload_center.models import CourseContent
+from modules.program_manage.models import Program
+from modules.upload_center.models import CourseContent, CourseStr
 
 
 class CourseManageTests(TestCase):
@@ -38,9 +38,12 @@ class CourseManageTests(TestCase):
         self.assertEqual(response["Content-Type"], "application/pdf")
         self.assertIn("inline;", response["Content-Disposition"])
 
-    def test_get_filter_options_limits_related_course_filters_by_year(self):
+    def test_get_filter_options_limits_related_course_filters_by_degree(self):
+        Program.objects.create(degree="B.A English", prog_type="UG", prog_category="Arts", prog_code="BAENG", branch="English")
+        Program.objects.create(degree="B.A English", prog_type="PG", prog_category="Science", prog_code="MSCHEM", branch="Chemistry")
+        Program.objects.create(degree="B.Sc Physics", prog_type="UG", prog_category="Science", prog_code="BSCPHY", branch="Physics")
+
         CourseStr.objects.create(
-            year="2022",
             prog_type="UG",
             prog_category="Arts",
             prog_code="BAENG",
@@ -53,7 +56,6 @@ class CourseManageTests(TestCase):
             is_finalized=True,
         )
         CourseStr.objects.create(
-            year="2022",
             prog_type="PG",
             prog_category="Science",
             prog_code="MSCHEM",
@@ -66,7 +68,6 @@ class CourseManageTests(TestCase):
             is_finalized=True,
         )
         CourseStr.objects.create(
-            year="2023",
             prog_type="UG",
             prog_category="Science",
             prog_code="BSCPHY",
@@ -79,10 +80,82 @@ class CourseManageTests(TestCase):
             is_finalized=True,
         )
 
-        response = self.client.get(reverse("course_manage:get_filter_options"), {"year": "2022"})
+        response = self.client.get(reverse("course_manage:get_filter_options"), {"degree": "B.A English"})
 
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data["prog_types"], ["PG", "UG"])
         self.assertEqual(data["prog_codes"], ["BAENG", "MSCHEM"])
         self.assertEqual(data["branches"], ["Chemistry", "English"])
+        self.assertEqual(data["degrees"], ["B.A English", "B.Sc Physics"])
+
+    def test_course_management_shows_degree_from_program_management(self):
+        Program.objects.create(
+            degree="B.A English",
+            prog_type="UG",
+            prog_category="Arts",
+            prog_code="BAENG",
+            branch="English",
+        )
+        CourseStr.objects.create(
+            prog_type="UG",
+            prog_category="Arts",
+            prog_code="BAENG",
+            branch="English",
+            sem="I",
+            part="I",
+            course_code="24ENG101",
+            course_category="Core",
+            course_title="Poetry",
+            is_finalized=True,
+        )
+
+        response = self.client.get(reverse("course_manage:course_management"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "B.A English")
+
+    def test_course_management_disables_view_button_when_pdf_is_missing(self):
+        CourseStr.objects.create(
+            year="2024",
+            prog_type="UG",
+            prog_category="Arts",
+            prog_code="BAENG",
+            branch="English",
+            sem="I",
+            part="I",
+            course_code="24ENG101",
+            course_category="Core",
+            course_title="Poetry",
+            is_finalized=True,
+        )
+
+        response = self.client.get(reverse("course_manage:course_management"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'title="PDF not available"')
+        self.assertContains(response, "disabled")
+
+    def test_course_management_keeps_view_button_active_when_pdf_exists(self):
+        CourseStr.objects.create(
+            year="2024",
+            prog_type="UG",
+            prog_category="Arts",
+            prog_code="BAENG",
+            branch="English",
+            sem="I",
+            part="I",
+            course_code="24ENG102",
+            course_category="Core",
+            course_title="Drama",
+            is_finalized=True,
+        )
+        CourseContent.objects.create(
+            course_code="24ENG102",
+            pdf=SimpleUploadedFile("syllabus.pdf", b"%PDF-active", content_type="application/pdf"),
+        )
+
+        response = self.client.get(reverse("course_manage:course_management"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "onclick=\"viewPDF('24ENG102')\"")

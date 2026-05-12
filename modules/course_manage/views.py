@@ -1,35 +1,33 @@
-from django.shortcuts import redirect, render
-from django.shortcuts import get_object_or_404
-from modules.upload_center.models import CourseStr, CourseContent, normalize_course_code
-from django.http import HttpResponse, FileResponse, Http404
 import os
-from django.conf import settings
-from django.http import JsonResponse
-from django.contrib import messages
-from django.core.paginator import Paginator
-import pandas as pd
 from decimal import Decimal, InvalidOperation
 
+import pandas as pd
+from django.conf import settings
+from django.contrib import messages
+from django.core.paginator import Paginator
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 
-# Required columns that must exist in the Excel file
+from modules.program_manage.models import Program, normalize_program_code, normalize_program_value
+from modules.upload_center.models import CourseContent, CourseStr, normalize_course_code
+
+
 REQUIRED_COLUMNS = [
-    'prog_code', 'year', 'prog_type', 'prog_category', 'sem',
+    'prog_code', 'degree', 'prog_type', 'prog_category', 'branch', 'sem',
     'course_code', 'part', 'course_category', 'course_title',
     'hrs_per_week', 'credit', 'marks_cia', 'marks_ese', 'total_marks'
 ]
 
-# Decimal fields that need type conversion
 DECIMAL_FIELDS = ['hrs_per_week', 'credit', 'marks_cia', 'marks_ese', 'total_marks']
 
-# Text fields
 TEXT_FIELDS = [
-    'prog_code', 'year', 'prog_type', 'prog_category', 'sem',
+    'prog_code', 'degree', 'prog_type', 'prog_category', 'branch', 'sem',
     'course_code', 'part', 'course_category', 'course_title'
 ]
 
 
 COURSE_FILTER_FIELDS = (
-    'year',
+    'degree',
     'prog_type',
     'prog_category',
     'course_category',
@@ -43,7 +41,6 @@ COURSE_FILTER_FIELDS = (
 
 
 def to_decimal(value):
-    """Safely convert a value to Decimal, return None if invalid."""
     try:
         if value is None or str(value).strip() in ('', 'nan', 'NaN', 'None'):
             return None
@@ -62,14 +59,63 @@ def _distinct_non_empty(queryset, field_name):
     )
 
 
+def _program_key_from_values(prog_type, prog_category, branch, prog_code):
+    return (
+        normalize_program_value(prog_type).upper(),
+        normalize_program_value(prog_category).title(),
+        normalize_program_value(branch),
+        normalize_program_code(prog_code),
+    )
+
+
+def _program_degree_lookup():
+    lookup = {}
+    for program in Program.objects.filter(is_active=True):
+        lookup[_program_key_from_values(
+            program.prog_type,
+            program.prog_category,
+            program.branch,
+            program.prog_code,
+        )] = program.degree or ""
+    return lookup
+
+
+def _course_program_key(course):
+    return _program_key_from_values(
+        course.prog_type,
+        course.prog_category,
+        course.branch,
+        course.prog_code,
+    )
+
+
+def _matching_course_ids_for_degree(queryset, degree):
+    if not degree:
+        return None
+
+    program_degree_lookup = _program_degree_lookup()
+    matching_ids = []
+    for course in queryset.only('id', 'prog_type', 'prog_category', 'branch', 'prog_code'):
+        if program_degree_lookup.get(_course_program_key(course), "") == degree:
+            matching_ids.append(course.id)
+    return matching_ids
+
+
 def _apply_course_filters(queryset, filters, exclude_field=None):
     for field in COURSE_FILTER_FIELDS:
         if field == exclude_field:
             continue
 
+        if field == 'degree':
+            continue
+
         value = filters.get(field)
         if value:
             queryset = queryset.filter(**{field: value})
+
+    if exclude_field != 'degree' and filters.get('degree'):
+        matching_ids = _matching_course_ids_for_degree(queryset, filters['degree'])
+        queryset = queryset.filter(id__in=matching_ids or [])
 
     return queryset
 
@@ -80,8 +126,14 @@ def _build_course_filter_options(base_queryset, filters):
         for field in COURSE_FILTER_FIELDS
     }
 
+    program_queryset = Program.objects.filter(is_active=True)
+    for program_field in ('prog_type', 'prog_category', 'branch', 'prog_code'):
+        value = filters.get(program_field)
+        if value:
+            program_queryset = program_queryset.filter(**{program_field: value})
+
     return {
-        'years': _distinct_non_empty(option_querysets['year'], 'year'),
+        'degrees': _distinct_non_empty(program_queryset, 'degree'),
         'prog_types': _distinct_non_empty(option_querysets['prog_type'], 'prog_type'),
         'prog_categories': _distinct_non_empty(option_querysets['prog_category'], 'prog_category'),
         'course_categories': _distinct_non_empty(option_querysets['course_category'], 'course_category'),
@@ -102,16 +154,18 @@ def _build_course_filter_options(base_queryset, filters):
     }
 
 
+def _program_exists_for_course(program_data):
+    return Program.objects.filter(is_active=True, **program_data).exists()
+
+
 def home(request):
     return redirect('course_manage:course_management')
 
 
 def bulk_upload(request):
-    # Require login for bulk upload
     if not request.user.is_authenticated:
         return redirect('/login/')
 
-    # Allow only admins and HODs (staff)
     if not (request.user.is_superuser or request.user.is_staff):
         messages.error(request, 'You do not have permission to access bulk upload.')
         return redirect('course_manage:course_management')
@@ -119,12 +173,10 @@ def bulk_upload(request):
     if request.method == 'POST':
         excel_file = request.FILES.get('excel_file')
 
-        # Validation 1: No file selected
         if not excel_file:
             messages.error(request, "Please select an Excel file before uploading.")
             return redirect('course_manage:bulk_upload')
 
-        # Validation 2: Must be an Excel file
         if not excel_file.name.endswith(('.xlsx', '.xls')):
             messages.error(request, "Invalid file type. Please upload an Excel file (.xlsx or .xls).")
             return redirect('course_manage:bulk_upload')
@@ -135,15 +187,12 @@ def bulk_upload(request):
             messages.error(request, f"Could not read file: {str(e)}")
             return redirect('course_manage:bulk_upload')
 
-        # Validation 3: Empty file
         if df.empty:
             messages.error(request, "The uploaded Excel file is empty. Please add data and try again.")
             return redirect('course_manage:bulk_upload')
 
-        # Normalize column names
         df.columns = [col.strip().lower() for col in df.columns]
 
-        # Validation 4: Check required columns
         missing_cols = [col for col in REQUIRED_COLUMNS if col not in df.columns]
         if missing_cols:
             messages.error(
@@ -153,7 +202,6 @@ def bulk_upload(request):
             )
             return redirect('course_manage:bulk_upload')
 
-        # Drop completely empty rows
         df = df.dropna(how='all')
         if df.empty:
             messages.error(request, "No data rows found in the file.")
@@ -165,49 +213,54 @@ def bulk_upload(request):
 
         for index, row in df.iterrows():
             row_num = index + 2
-
-            # course_code is mandatory
             course_code = normalize_course_code(row.get('course_code', ''))
             if not course_code:
-                error_rows.append(f"Row {row_num}: Missing course_code — skipped.")
+                error_rows.append(f"Row {row_num}: Missing course_code â€” skipped.")
                 skip_count += 1
                 continue
 
-            # Year: accept 2023 or 2023-2024, always store just 2023
-            year_raw = str(row.get('year', '') or '').strip()
-            year = year_raw.split('-')[0].strip() if year_raw else ''
-            if year and (not year.isdigit() or len(year) != 4):
-                error_rows.append(f"Row {row_num}: Invalid year '{year_raw}' — must be a 4-digit year. Skipped.")
-                skip_count += 1
-                continue
-
-            # Extract text fields
-            prog_code       = str(row.get('prog_code', '') or '').strip()
-            prog_type       = str(row.get('prog_type', '') or '').strip()
-            prog_category   = str(row.get('prog_category', '') or '').strip()
-            sem             = str(row.get('sem', '') or '').strip()
-            part            = str(row.get('part', '') or '').strip()
+            prog_code = normalize_program_code(row.get('prog_code', ''))
+            prog_type = normalize_program_value(row.get('prog_type', '')).upper()
+            prog_category = normalize_program_value(row.get('prog_category', '')).title()
+            degree = normalize_program_value(row.get('degree', ''))
+            branch = normalize_program_value(row.get('branch', ''))
+            sem = str(row.get('sem', '') or '').strip()
+            part = str(row.get('part', '') or '').strip()
             course_category = str(row.get('course_category', '') or '').strip()
-            course_title    = str(row.get('course_title', '') or '').strip()
+            course_title = str(row.get('course_title', '') or '').strip()
 
-            # Extract decimal fields
+            if not _program_exists_for_course(
+                {
+                    'prog_type': prog_type,
+                    'prog_category': prog_category,
+                    'degree': degree,
+                    'branch': branch,
+                    'prog_code': prog_code,
+                }
+            ):
+                error_rows.append(
+                    f"Row {row_num}: Program {prog_type} / {prog_category} / {degree} / {branch} / {prog_code} is not in Program Management â€” skipped."
+                )
+                skip_count += 1
+                continue
+
             hrs_per_week = to_decimal(row.get('hrs_per_week'))
-            credit       = to_decimal(row.get('credit'))
-            marks_cia    = to_decimal(row.get('marks_cia'))
-            marks_ese    = to_decimal(row.get('marks_ese'))
-            total_marks  = to_decimal(row.get('total_marks'))
+            credit = to_decimal(row.get('credit'))
+            marks_cia = to_decimal(row.get('marks_cia'))
+            marks_ese = to_decimal(row.get('marks_ese'))
+            total_marks = to_decimal(row.get('total_marks'))
 
-            # Skip duplicate course_code
             if CourseStr.objects.filter(course_code=course_code).exists():
-                error_rows.append(f"Row {row_num}: course_code '{course_code}' already exists — skipped.")
+                error_rows.append(f"Row {row_num}: course_code '{course_code}' already exists â€” skipped.")
                 skip_count += 1
                 continue
 
             CourseStr.objects.create(
                 prog_code=prog_code,
-                year=year,
+                degree=degree,
                 prog_type=prog_type,
                 prog_category=prog_category,
+                branch=branch,
                 sem=sem,
                 course_code=course_code,
                 part=part,
@@ -238,16 +291,50 @@ def bulk_upload(request):
 def course_management(request):
     filters = {field: request.GET.get(field) for field in COURSE_FILTER_FIELDS}
     base_queryset = CourseStr.objects.filter(is_finalized=True)
-    courses = _apply_course_filters(base_queryset, filters).order_by('id')
+    course_queryset = _apply_course_filters(base_queryset, filters).order_by('id')
+    program_degree_lookup = _program_degree_lookup()
+    courses = []
+
+    for course in course_queryset:
+        course.display_degree = program_degree_lookup.get(_course_program_key(course), "")
+        courses.append(course)
+
     filter_options = _build_course_filter_options(base_queryset, filters)
-    paginator = Paginator(courses, 10)
+    # items per page configurable via ?per_page=10|20|50|100 (defaults to 10)
+    per_page_default = 10
+    allowed_per_page = {10, 20, 50, 100}
+    try:
+        per_page = int(request.GET.get('per_page', per_page_default))
+        if per_page not in allowed_per_page:
+            per_page = per_page_default
+    except (ValueError, TypeError):
+        per_page = per_page_default
+
+    paginator = Paginator(courses, per_page)
     page_obj = paginator.get_page(request.GET.get('page'))
+    page_courses = list(page_obj.object_list)
+    course_codes = [course.course_code for course in page_courses if course.course_code]
+    pdf_contents = {
+        content.course_code: content
+        for content in CourseContent.objects.filter(course_code__in=course_codes)
+    }
+
+    for course in page_courses:
+        content = pdf_contents.get(course.course_code)
+        course.has_pdf = bool(
+            content
+            and content.pdf
+            and content.pdf.name
+            and content.pdf.storage.exists(content.pdf.name)
+        )
+
     query_params = request.GET.copy()
     query_params.pop('page', None)
 
     context = {
         'courses': page_obj,
         'page_obj': page_obj,
+        'per_page': per_page,
         'pagination_query': query_params.urlencode(),
         **filter_options,
         'total_count': base_queryset.count(),

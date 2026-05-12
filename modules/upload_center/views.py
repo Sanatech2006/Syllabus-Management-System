@@ -8,6 +8,7 @@ from openpyxl.styles import Font, PatternFill
 from .models import CourseStr, CourseContent, normalize_course_code
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from modules.program_manage.models import Program, normalize_program_code, normalize_program_value
 
 
 UPLOAD_FILTER_FIELDS = (
@@ -82,7 +83,7 @@ def _course_form_initial(course):
     return {
         'prog_code': course.prog_code or '',
         'branch': course.branch or '',
-        'year': course.year or '',
+        'degree': course.degree or course.year or '',
         'prog_type': course.prog_type or '',
         'prog_category': course.prog_category or '',
         'sem': course.sem or '',
@@ -96,6 +97,20 @@ def _course_form_initial(course):
         'marks_ese': course.marks_ese or '',
         'total_marks': course.total_marks or '',
     }
+
+
+def _program_match_from_post(post_data):
+    return {
+        'prog_type': normalize_program_value(post_data.get("prog_type")).upper(),
+        'prog_category': normalize_program_value(post_data.get("prog_category")).title(),
+        'degree': normalize_program_value(post_data.get("degree")),
+        'branch': normalize_program_value(post_data.get("branch")),
+        'prog_code': normalize_program_code(post_data.get("prog_code")),
+    }
+
+
+def _program_exists(program_data):
+    return Program.objects.filter(is_active=True, **program_data).exists()
 
 
 @login_required(login_url='/login/')
@@ -259,17 +274,31 @@ def add_course(request):
             messages.error(request, 'You do not have permission to add courses.')
             return redirect('upload_center:upload_center')
         course_code = normalize_course_code(request.POST.get("course_code"))
+        program_data = _program_match_from_post(request.POST)
 
         if course_code and CourseStr.objects.filter(course_code=course_code).exists():
             messages.error(request, f"Course code {course_code} already exists. Use a different course code.")
-            return render(request, "add_course.html", request.POST)
+            return render(request, "add_course.html", {
+                "form_values": request.POST,
+                "form_mode": "add",
+            })
+
+        if not _program_exists(program_data):
+            messages.error(
+                request,
+                "This program does not exist in Program Management. Add the program first before adding courses."
+            )
+            return render(request, "add_course.html", {
+                "form_values": request.POST,
+                "form_mode": "add",
+            })
 
         CourseStr.objects.create(
-            year=request.POST.get("year"),
-            prog_type=request.POST.get("prog_type"),
-            prog_category=request.POST.get("prog_category"),
-            prog_code=request.POST.get("prog_code"),
-            branch=request.POST.get("branch"),
+            degree=program_data["degree"],
+            prog_type=program_data["prog_type"],
+            prog_category=program_data["prog_category"],
+            prog_code=program_data["prog_code"],
+            branch=program_data["branch"],
             sem=request.POST.get("sem"),
             course_code=course_code,
             part=request.POST.get("part"),
@@ -309,6 +338,7 @@ def edit_course(request, course_id):
     if request.method == "POST":
         old_course_code = normalize_course_code(course.course_code)
         new_course_code = normalize_course_code(request.POST.get("course_code"))
+        program_data = _program_match_from_post(request.POST)
 
         if (
             new_course_code
@@ -321,11 +351,22 @@ def edit_course(request, course_id):
                 "course": course,
             })
 
-        course.year = request.POST.get("year")
-        course.prog_type = request.POST.get("prog_type")
-        course.prog_category = request.POST.get("prog_category")
-        course.prog_code = request.POST.get("prog_code")
-        course.branch = request.POST.get("branch")
+        if not _program_exists(program_data):
+            messages.error(
+                request,
+                "This program does not exist in Program Management. Add the program first before assigning a course to it."
+            )
+            return render(request, "add_course.html", {
+                "form_values": request.POST,
+                "form_mode": "edit",
+                "course": course,
+            })
+
+        course.degree = program_data["degree"]
+        course.prog_type = program_data["prog_type"]
+        course.prog_category = program_data["prog_category"]
+        course.prog_code = program_data["prog_code"]
+        course.branch = program_data["branch"]
         course.sem = request.POST.get("sem")
         course.course_code = new_course_code
         course.part = request.POST.get("part")
@@ -359,7 +400,7 @@ def download_template(request):
     ws.title = "Course Template"
 
     headings = [
-        'prog_code', 'year', 'prog_type', 'sem', 'course_code',
+        'year', 'prog_type', 'prog_category', 'sem', 'course_code',
         'part', 'course_category', 'course_title', 'hrs_per_week',
         'credit', 'marks_cia', 'marks_ese', 'total_marks'
     ]

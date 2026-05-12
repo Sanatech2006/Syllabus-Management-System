@@ -6,6 +6,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
+from modules.program_manage.models import Program
+
 from .models import CourseContent, CourseStr
 
 
@@ -24,8 +26,24 @@ class UploadCenterTests(TestCase):
         super().tearDownClass()
 
     def setUp(self):
-        user = get_user_model().objects.create_user(username="tester", password="secret123")
+        user = get_user_model().objects.create_user(
+            username="tester",
+            password="secret123",
+            is_superuser=True,
+            is_staff=True,
+        )
         self.client.force_login(user)
+
+    def _create_program(self, **overrides):
+        data = {
+            "prog_type": "UG",
+            "prog_category": "Arts",
+            "degree": "B.A English",
+            "branch": "English",
+            "prog_code": "BAENG",
+        }
+        data.update(overrides)
+        return Program.objects.create(**data)
 
     def test_reupload_overwrites_existing_pdf_without_renaming(self):
         CourseStr.objects.create(course_code="11 uba 1401", course_title="Test Course")
@@ -59,6 +77,7 @@ class UploadCenterTests(TestCase):
         self.assertFalse(content.pdf.storage.exists(pdf_name))
 
     def test_add_course_rejects_duplicate_course_code(self):
+        self._create_program()
         CourseStr.objects.create(course_code="23PEN2CC5", course_title="Existing")
 
         response = self.client.post(
@@ -67,6 +86,10 @@ class UploadCenterTests(TestCase):
                 "course_code": "23 pen2cc5",
                 "course_title": "Duplicate",
                 "prog_code": "BAENG",
+                "prog_type": "UG",
+                "prog_category": "Arts",
+                "degree": "B.A English",
+                "branch": "English",
             },
         )
 
@@ -74,6 +97,45 @@ class UploadCenterTests(TestCase):
         self.assertEqual(CourseStr.objects.filter(course_code="23PEN2CC5").count(), 1)
         messages = list(response.context["messages"])
         self.assertTrue(any("already exists" in str(message) for message in messages))
+
+    def test_add_course_rejects_when_program_is_missing(self):
+        response = self.client.post(
+            reverse("upload_center:add_course"),
+            {
+                "course_code": "24ENG101",
+                "course_title": "Poetry",
+                "prog_type": "UG",
+                "prog_category": "Arts",
+                "degree": "B.A English",
+                "branch": "English",
+                "prog_code": "BAENG",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(CourseStr.objects.filter(course_code="24ENG101").exists())
+        messages = list(response.context["messages"])
+        self.assertTrue(any("does not exist in Program Management" in str(message) for message in messages))
+
+    def test_add_course_allows_when_program_exists(self):
+        self._create_program()
+
+        response = self.client.post(
+            reverse("upload_center:add_course"),
+            {
+                "course_code": "24ENG101",
+                "course_title": "Poetry",
+                "prog_type": "UG",
+                "prog_category": "Arts",
+                "degree": "B.A English",
+                "branch": "English",
+                "prog_code": "BAENG",
+            },
+        )
+
+        self.assertRedirects(response, reverse("upload_center:upload_center"))
+        course = CourseStr.objects.get(course_code="24ENG101")
+        self.assertEqual(course.degree, "B.A English")
 
     def test_upload_center_does_not_show_replace_pdf_button(self):
         CourseStr.objects.create(course_code="11UBA1401", course_title="Test Course")
@@ -205,6 +267,14 @@ class UploadCenterTests(TestCase):
         self.assertContains(response, "Update Course")
 
     def test_edit_course_updates_record_and_resets_status(self):
+        self._create_program()
+        self._create_program(
+            prog_type="PG",
+            prog_category="Science",
+            degree="M.Sc Chemistry",
+            branch="Chemistry",
+            prog_code="MSCHEM",
+        )
         course = CourseStr.objects.create(
             year="2022",
             prog_type="UG",
@@ -224,9 +294,9 @@ class UploadCenterTests(TestCase):
         response = self.client.post(
             reverse("upload_center:edit_course", args=[course.id]),
             {
-                "year": "2022",
                 "prog_type": "PG",
                 "prog_category": "Science",
+                "degree": "M.Sc Chemistry",
                 "prog_code": "MSCHEM",
                 "branch": "Chemistry",
                 "sem": "II",
@@ -246,6 +316,7 @@ class UploadCenterTests(TestCase):
         course.refresh_from_db()
         self.assertEqual(course.course_code, "22CHE501")
         self.assertEqual(course.prog_type, "PG")
+        self.assertEqual(course.degree, "M.Sc Chemistry")
         self.assertFalse(course.is_saved)
         self.assertFalse(course.is_finalized)
         self.assertTrue(CourseContent.objects.filter(course_code="22CHE501").exists())

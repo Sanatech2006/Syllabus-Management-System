@@ -12,6 +12,7 @@ class CourseStr(models.Model):
     prog_code = models.CharField(max_length=20, blank=True, null=True)
     branch = models.CharField(max_length=30, blank=True, null=True)     # Branch/Department
     year = models.CharField(max_length=10, blank=True, null=True)
+    degree = models.CharField(max_length=50, blank=True, null=True)
     prog_type = models.CharField(max_length=5, blank=True, null=True)  # UG/PG
     prog_category=models.CharField(max_length=20, blank=True, null=True)  # Arts/Science.   
     sem = models.CharField(max_length=10, blank=True, null=True)       # Semester

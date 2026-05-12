@@ -57,18 +57,6 @@
                             <input type="text" name="prog_code" value="{{ form_values.prog_code|default:'' }}"
                                    class="w-full p-2 border border-gray-300 mt-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         </div>
-                        <!-- Branch -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Branch : </label>
-                            <input type="text" name="branch" value="{{ form_values.branch|default:'' }}"
-                                   class="w-full p-2 border border-gray-300 mt-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <!-- Year of syllabus -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Year of syllabus : </label>
-                            <input type="text" name="year" value="{{ form_values.year|default:'' }}"
-                                   class="w-full p-2 border border-gray-300 mt-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
                         <!-- Programme Type -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Programme Type : </label>
@@ -84,6 +72,18 @@
                                 <option value="Arts" {% if form_values.prog_category == "Arts" or form_values.prog_category == "arts" %}selected{% endif %}>Arts</option>
                                 <option value="Science" {% if form_values.prog_category == "Science" or form_values.prog_category == "science" %}selected{% endif %}>Science</option>
                             </select>
+                        </div>
+                        <!-- Degree -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Degree : </label>
+                            <input type="text" name="degree" value="{{ form_values.degree|default:'' }}"
+                                   class="w-full p-2 border border-gray-300 mt-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <!-- Branch -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Branch : </label>
+                            <input type="text" name="branch" value="{{ form_values.branch|default:'' }}"
+                                   class="w-full p-2 border border-gray-300 mt-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         </div>
                         <!-- Semester -->
                         <div>
