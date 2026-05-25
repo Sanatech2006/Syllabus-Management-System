@@ -1,9 +1,11 @@
 import openpyxl
+import json
 from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponse
 from django.http import JsonResponse
+from django.urls import reverse
 from openpyxl.styles import Font, PatternFill
 from .models import CourseStr, CourseContent, normalize_course_code
 from django.contrib.auth.decorators import login_required
@@ -28,6 +30,10 @@ UPLOAD_FILTER_FIELDS = (
     'marks_ese',
     'total_marks',
 )
+
+
+def _upload_center_table_redirect():
+    return redirect(f"{reverse('upload_center:upload_center')}#saved-courses-section")
 
 
 def _distinct_non_empty(queryset, field_name):
@@ -113,12 +119,43 @@ def _program_exists(program_data):
     return Program.objects.filter(is_active=True, **program_data).exists()
 
 
+def _program_form_context(form_values=None):
+    active_programs = Program.objects.filter(is_active=True)
+
+    program_rows = list(
+        active_programs
+        .values('prog_code', 'branch', 'degree', 'prog_type', 'prog_category')
+        .order_by('prog_code', 'branch')
+    )
+    prog_codes = list(
+        active_programs.exclude(prog_code='')
+        .values_list('prog_code', flat=True)
+        .distinct()
+        .order_by('prog_code')
+    )
+
+    return {
+        "form_values": form_values or {},
+        "program_rows_json": json.dumps(program_rows),
+        "prog_codes": prog_codes,
+    }
+
+
 @login_required(login_url='/login/')
 def upload_center(request):
     filters = {field: request.GET.get(field) for field in UPLOAD_FILTER_FIELDS}
     base_queryset = CourseStr.objects.all()
     courses = _apply_upload_filters(base_queryset, filters).order_by('-created_at')
-    paginator = Paginator(courses, 10)
+    per_page_default = 10
+    allowed_per_page = {10, 20, 50, 100}
+    try:
+        per_page = int(request.GET.get('per_page', per_page_default))
+        if per_page not in allowed_per_page:
+            per_page = per_page_default
+    except (ValueError, TypeError):
+        per_page = per_page_default
+
+    paginator = Paginator(courses, per_page)
     page_obj = paginator.get_page(request.GET.get('page'))
 
     # Set has_pdf dynamically
@@ -134,6 +171,7 @@ def upload_center(request):
     return render(request, 'upload_center.html', {
         'courses': page_obj,
         'page_obj': page_obj,
+        'per_page': per_page,
         'pagination_query': query_params.urlencode(),
         **_build_upload_filter_options(base_queryset, filters),
     })
@@ -147,7 +185,7 @@ def upload_course_content(request):
     # Allow HOD (is_staff) and Admin (is_superuser) to upload
     if not (request.user.is_superuser or request.user.is_staff):
         messages.error(request, 'You do not have permission to upload files.')
-        return redirect('upload_center:upload_center')
+        return _upload_center_table_redirect()
 
     if request.method == 'POST' and request.FILES.get('pdf_file'):
         course_code = request.POST.get('course_code', '')
@@ -157,7 +195,7 @@ def upload_course_content(request):
 
         if not safe_code:
             messages.error(request, 'Missing course code.')
-            return redirect('upload_center:upload_center')
+            return _upload_center_table_redirect()
 
         course_content, created = CourseContent.objects.get_or_create(course_code=safe_code)
 
@@ -175,7 +213,7 @@ def upload_course_content(request):
                 request,
                 f"The existing PDF for {safe_code} is currently open somewhere. Close the PDF tab/viewer or Explorer preview, then upload again."
             )
-            return redirect('upload_center:upload_center')
+            return _upload_center_table_redirect()
 
         # RESET STATES
         CourseStr.objects.filter(course_code=safe_code).update(
@@ -183,11 +221,11 @@ def upload_course_content(request):
             is_finalized=False
         )
 
-        messages.success(request, f'PDF uploaded for {safe_code}.')
-        return redirect('upload_center:upload_center')
+        messages.success(request, f'PDF queued for {safe_code}.')
+        return _upload_center_table_redirect()
 
     messages.error(request, 'No file uploaded.')
-    return redirect('upload_center:upload_center')
+    return _upload_center_table_redirect()
 
 
 # 🟢 Save → Green "Saved"
@@ -201,6 +239,8 @@ def save_courses(request):
             return redirect('upload_center:upload_center')
         courses = CourseStr.objects.all()
 
+        saved_count = 0
+
         for course in courses:
             has_pdf = CourseContent.objects.filter(
                 course_code=course.course_code,
@@ -208,10 +248,17 @@ def save_courses(request):
             ).exclude(pdf='').exists()
 
             if has_pdf and not course.is_finalized:
+                if not course.is_saved:
+                    saved_count += 1
                 course.is_saved = True
                 course.save()
 
-        messages.success(request, "Courses saved successfully.")
+        if saved_count == 1:
+            messages.success(request, "1 PDF uploaded successfully.")
+        elif saved_count > 1:
+            messages.success(request, f"{saved_count} PDFs uploaded successfully.")
+        else:
+            messages.info(request, "No queued PDFs to upload.")
 
     return redirect('upload_center:upload_center')
 
@@ -263,6 +310,38 @@ def delete_course(request, course_id):
 
     return redirect('upload_center:upload_center')
 
+def delete_pdf(request, course_id):
+    if request.method == 'POST':
+        if not request.user.is_authenticated:
+            return redirect('/login/')
+
+        if not request.user.is_superuser:
+            messages.error(request, 'Only administrators can delete syllabi.')
+            return redirect('upload_center:upload_center')
+
+        try:
+            course = CourseStr.objects.get(id=course_id)
+            course_code = normalize_course_code(course.course_code)
+
+            content = CourseContent.objects.filter(course_code=course_code).first()
+            if content and content.pdf:
+                content.pdf.delete(save=False)
+                content.pdf = None
+                content.save()
+
+                CourseStr.objects.filter(course_code=course_code).update(
+                    is_saved=False,
+                    is_finalized=False
+                )
+                messages.success(request, f'Syllabus PDF deleted for {course_code}.')
+            else:
+                messages.warning(request, f'No syllabus found for {course_code}.')
+
+        except CourseStr.DoesNotExist:
+            messages.error(request, 'Course not found.')
+
+    return redirect('upload_center:upload_center')
+
 
 def add_course(request):
     if request.method == "POST":
@@ -279,7 +358,7 @@ def add_course(request):
         if course_code and CourseStr.objects.filter(course_code=course_code).exists():
             messages.error(request, f"Course code {course_code} already exists. Use a different course code.")
             return render(request, "add_course.html", {
-                "form_values": request.POST,
+                **_program_form_context(request.POST),
                 "form_mode": "add",
             })
 
@@ -289,7 +368,7 @@ def add_course(request):
                 "This program does not exist in Program Management. Add the program first before adding courses."
             )
             return render(request, "add_course.html", {
-                "form_values": request.POST,
+                **_program_form_context(request.POST),
                 "form_mode": "add",
             })
 
@@ -319,7 +398,7 @@ def add_course(request):
         return redirect('upload_center:upload_center')
 
     return render(request, "add_course.html", {
-        "form_values": {},
+        **_program_form_context(),
         "form_mode": "add",
     })
 
@@ -346,7 +425,7 @@ def edit_course(request, course_id):
         ):
             messages.error(request, f"Course code {new_course_code} already exists. Use a different course code.")
             return render(request, "add_course.html", {
-                "form_values": request.POST,
+                **_program_form_context(request.POST),
                 "form_mode": "edit",
                 "course": course,
             })
@@ -357,7 +436,7 @@ def edit_course(request, course_id):
                 "This program does not exist in Program Management. Add the program first before assigning a course to it."
             )
             return render(request, "add_course.html", {
-                "form_values": request.POST,
+                **_program_form_context(request.POST),
                 "form_mode": "edit",
                 "course": course,
             })
@@ -388,7 +467,7 @@ def edit_course(request, course_id):
         return redirect('upload_center:upload_center')
 
     return render(request, "add_course.html", {
-        "form_values": _course_form_initial(course),
+        **_program_form_context(_course_form_initial(course)),
         "form_mode": "edit",
         "course": course,
     })

@@ -13,4 +13,5 @@ urlpatterns = [
     path('upload-center/finalize/', views.finalize_courses, name='finalize_courses'),
     path("upload-center/save/", views.save_courses, name="save_courses"),
     path('download-template/', views.download_template, name='download_template'),
+    path('delete-pdf/<int:course_id>/', views.delete_pdf, name='delete_pdf'),
 ]

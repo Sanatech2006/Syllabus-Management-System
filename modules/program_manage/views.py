@@ -235,6 +235,14 @@ def bulk_upload(request):
                 error_rows.append(f"Row {index}: All program fields are required — skipped.")
                 continue
 
+            if prog_type not in {"UG", "PG"}:
+                error_rows.append(f"Row {index}: Invalid prog_type '{prog_type}' — must be UG or PG. Skipped.")
+                continue
+
+            if prog_category not in {"Arts", "Science"}:
+                error_rows.append(f"Row {index}: Invalid prog_category '{prog_category}' — must be Arts or Science. Skipped.")
+                continue
+
             if Program.objects.filter(
                 prog_type=prog_type,
                 prog_category=prog_category,
@@ -269,23 +277,130 @@ def bulk_upload(request):
 
 @admin_required
 def download_template(request):
-    workbook = openpyxl.Workbook()
-    sheet = workbook.active
-    sheet.title = "Program Template"
+    from openpyxl.worksheet.datavalidation import DataValidation
+    from openpyxl.utils import get_column_letter
+    from openpyxl.styles import Alignment, Border, Side
 
-    headings = ["prog_type", "prog_category", "degree", "branch", "prog_code"]
+    wb = openpyxl.Workbook()
 
-    for col_num, heading in enumerate(headings, 1):
-        cell = sheet.cell(row=1, column=col_num)
-        cell.value = heading
-        cell.font = Font(bold=True)
-        cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    # ── Sheet 1: Programs ────────────────────────────────────────────────────
+    ws = wb.active
+    ws.title = "Programs"
+
+    HEADER_BG  = "1E40AF"
+    HEADER_FG  = "FFFFFF"
+    EXAMPLE_BG = "EFF6FF"
+    BORDER_CLR = "CBD5E1"
+
+    thin   = Side(style="thin", color=BORDER_CLR)
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    headers    = ["prog_type", "prog_category", "degree", "branch", "prog_code"]
+    col_widths = [16, 20, 24, 36, 20]
+    col_notes  = [
+        "UG or PG only",
+        "Arts or Science only",
+        "e.g. B.Sc, B.A, M.Sc, M.A",
+        "e.g. Computer Science, Mathematics",
+        "e.g. BSC-CS, BA-ENG (auto-uppercased)",
+    ]
+
+    for col, (h, w) in enumerate(zip(headers, col_widths), 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.font      = Font(bold=True, color=HEADER_FG, name="Arial", size=11)
+        cell.fill      = PatternFill("solid", start_color=HEADER_BG)
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border    = border
+        ws.column_dimensions[get_column_letter(col)].width = w
+    ws.row_dimensions[1].height = 30
+
+    for col, note in enumerate(col_notes, 1):
+        cell = ws.cell(row=2, column=col, value=note)
+        cell.font      = Font(italic=True, color="92400E", name="Arial", size=9)
+        cell.fill      = PatternFill("solid", start_color="FEF3C7")
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border    = border
+    ws.row_dimensions[2].height = 28
+
+    examples = [
+        ("UG", "Science", "B.Sc", "Computer Science", "BSC-CS"),
+        ("UG", "Arts",    "B.A",  "English",           "BA-ENG"),
+        ("PG", "Science", "M.Sc", "Mathematics",       "MSC-MATHS"),
+    ]
+    for r, row_data in enumerate(examples, 3):
+        for c, val in enumerate(row_data, 1):
+            cell = ws.cell(row=r, column=c, value=val)
+            cell.font      = Font(name="Arial", size=10, color="1E3A5F")
+            cell.fill      = PatternFill("solid", start_color=EXAMPLE_BG)
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border    = border
+
+    for r in range(6, 201):
+        for c in range(1, 6):
+            cell = ws.cell(row=r, column=c)
+            cell.font      = Font(name="Arial", size=10)
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border    = border
+
+    ws.freeze_panes = "A3"
+
+    dv_type = DataValidation(
+        type="list", formula1='"UG,PG"', allow_blank=False,
+        showDropDown=False,
+        error="Only UG or PG allowed.", errorTitle="Invalid prog_type",
+        prompt="Select UG or PG", promptTitle="prog_type"
+    )
+    dv_cat = DataValidation(
+        type="list", formula1='"Arts,Science"', allow_blank=False,
+        showDropDown=False,
+        error="Only Arts or Science allowed.", errorTitle="Invalid prog_category",
+        prompt="Select Arts or Science", promptTitle="prog_category"
+    )
+    ws.add_data_validation(dv_type)
+    ws.add_data_validation(dv_cat)
+    dv_type.sqref = "A3:A200"
+    dv_cat.sqref  = "B3:B200"
+
+    # ── Sheet 2: Instructions ────────────────────────────────────────────────
+    wi = wb.create_sheet("Instructions")
+    wi.column_dimensions["A"].width = 22
+    wi.column_dimensions["B"].width = 60
+
+    def ins_row(r, label, value):
+        lc = wi.cell(row=r, column=1, value=label)
+        lc.font      = Font(bold=True, name="Arial", size=10, color="1E40AF")
+        lc.alignment = Alignment(vertical="top")
+        vc = wi.cell(row=r, column=2, value=value)
+        vc.font      = Font(name="Arial", size=10)
+        vc.alignment = Alignment(vertical="top", wrap_text=True)
+        wi.row_dimensions[r].height = 20
+
+    wi.cell(row=1, column=1, value="Program Bulk Upload – Instructions").font = Font(
+        bold=True, size=13, color="1E40AF", name="Arial"
+    )
+    wi.merge_cells("A1:B1")
+    wi.row_dimensions[1].height = 28
+
+    ins_row(3,  "Sheet to edit:",   "Fill data in the 'Programs' sheet only. Do NOT rename columns.")
+    ins_row(4,  "Row 1:",           "Column headers – do not modify.")
+    ins_row(5,  "Row 2:",           "Notes/hints – you may delete this row before uploading.")
+    ins_row(6,  "Rows 3-5:",        "Example data – delete before uploading.")
+    ins_row(7,  "Rows 6+:",         "Enter your program data here.")
+    ins_row(9,  "prog_type",        "Must be exactly: UG  or  PG  (dropdown enforced).")
+    ins_row(10, "prog_category",    "Must be exactly: Arts  or  Science  (dropdown enforced).")
+    ins_row(11, "degree",           "Free text. Examples: B.Sc, B.A, M.Sc, M.A, B.Com, M.Com.")
+    ins_row(12, "branch",           "Full branch/department name. E.g. 'Computer Science', 'Tamil'.")
+    ins_row(13, "prog_code",        "Short unique code. Spaces and lowercase are auto-corrected.")
+    ins_row(15, "Duplicates:",      "Rows where all five fields already exist will be skipped with a warning.")
+    ins_row(16, "Empty rows:",      "Rows where any field is blank will be skipped with a warning.")
+    ins_row(17, "File format:",     "Save as .xlsx or .xls before uploading.")
+    wi.sheet_view.showGridLines = False
 
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
     response["Content-Disposition"] = 'attachment; filename="program_upload_template.xlsx"'
-    workbook.save(response)
+    wb.save(response)
     return response
 
 

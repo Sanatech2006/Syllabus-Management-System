@@ -66,6 +66,39 @@ class UploadCenterTests(TestCase):
         with content.pdf.open("rb") as saved_pdf:
             self.assertEqual(saved_pdf.read(), b"%PDF-second")
 
+    def test_upload_pdf_message_says_queued(self):
+        CourseStr.objects.create(course_code="CS401", course_title="Compiler Design")
+
+        response = self.client.post(
+            reverse("upload_center:upload_course_content"),
+            {
+                "course_code": "CS401",
+                "pdf_file": SimpleUploadedFile("syllabus.pdf", b"%PDF-file", content_type="application/pdf"),
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        messages = [str(message) for message in response.context["messages"]]
+        self.assertIn("PDF queued for CS401.", messages)
+
+    def test_upload_pdf_redirects_back_to_saved_courses_section(self):
+        CourseStr.objects.create(course_code="CS401", course_title="Compiler Design")
+
+        response = self.client.post(
+            reverse("upload_center:upload_course_content"),
+            {
+                "course_code": "CS401",
+                "pdf_file": SimpleUploadedFile("syllabus.pdf", b"%PDF-file", content_type="application/pdf"),
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('upload_center:upload_center')}#saved-courses-section",
+            fetch_redirect_response=False,
+        )
+
     def test_delete_removes_pdf_and_content_for_course_code(self):
         course = CourseStr.objects.create(course_code="23PEN2CC8", course_title="One")
         pdf_file = SimpleUploadedFile("syllabus.pdf", b"%PDF-content", content_type="application/pdf")
@@ -137,6 +170,31 @@ class UploadCenterTests(TestCase):
         course = CourseStr.objects.get(course_code="24ENG101")
         self.assertEqual(course.degree, "B.A English")
 
+    def test_add_course_shows_program_code_and_branch_as_dropdowns(self):
+        self._create_program(branch="General", prog_code="UCO", degree="B.Com")
+        self._create_program(branch="International Finance", prog_code="UCO", degree="B.Com")
+
+        response = self.client.get(reverse("upload_center:add_course"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<select id="prog_code" name="prog_code"')
+        self.assertContains(response, '<select id="branch" name="branch"')
+        self.assertContains(response, 'value="UCO"')
+        self.assertContains(response, 'International Finance')
+        self.assertContains(response, 'General')
+
+    def test_add_course_program_code_dropdown_lists_all_existing_program_codes(self):
+        self._create_program(prog_code="UCO", branch="General", degree="B.Com")
+        self._create_program(prog_code="UAM", branch="Aviation Management", degree="BBA")
+        self._create_program(prog_code="UEN", branch="General", degree="B.A English")
+
+        response = self.client.get(reverse("upload_center:add_course"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<option value="UAM">UAM</option>', html=True)
+        self.assertContains(response, '<option value="UCO">UCO</option>', html=True)
+        self.assertContains(response, '<option value="UEN">UEN</option>', html=True)
+
     def test_upload_center_does_not_show_replace_pdf_button(self):
         CourseStr.objects.create(course_code="11UBA1401", course_title="Test Course")
         CourseContent.objects.create(
@@ -148,6 +206,54 @@ class UploadCenterTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Replace PDF")
+
+    def test_upload_center_shows_program_code_as_dropdown_and_dependent_filters_as_read_only_fields(self):
+        response = self.client.get(reverse("upload_center:upload_center"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<select name="prog_code"')
+        self.assertContains(response, 'id="branch_display"')
+        self.assertContains(response, 'id="prog_type_display"')
+        self.assertContains(response, 'id="sem_display"')
+        self.assertContains(response, 'id="prog_category_display"')
+        self.assertContains(response, 'id="course_code_display"')
+        self.assertContains(response, 'id="part_display"')
+        self.assertContains(response, 'id="course_category_display"')
+        self.assertContains(response, 'id="course_title_display"')
+        self.assertNotContains(response, '<select name="branch"')
+        self.assertNotContains(response, '<select name="prog_type"')
+        self.assertNotContains(response, '<select name="sem"')
+        self.assertNotContains(response, '<select name="prog_category"')
+        self.assertNotContains(response, '<select name="course_code"')
+        self.assertNotContains(response, '<select name="part"')
+        self.assertNotContains(response, '<select name="course_category"')
+        self.assertNotContains(response, '<select name="course_title"')
+
+    def test_upload_center_shows_pdf_queued_for_uploaded_pdf_before_save(self):
+        CourseStr.objects.create(course_code="11UBA1401", course_title="Test Course")
+        CourseContent.objects.create(
+            course_code="11UBA1401",
+            pdf=SimpleUploadedFile("syllabus.pdf", b"%PDF-file", content_type="application/pdf"),
+        )
+
+        response = self.client.get(reverse("upload_center:upload_center"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "PDF Queued")
+        self.assertNotContains(response, "PDF Uploaded</span>")
+
+    def test_save_courses_message_says_uploaded(self):
+        CourseStr.objects.create(course_code="CS401", course_title="Compiler Design", is_saved=False, is_finalized=False)
+        CourseContent.objects.create(
+            course_code="CS401",
+            pdf=SimpleUploadedFile("syllabus.pdf", b"%PDF-file", content_type="application/pdf"),
+        )
+
+        response = self.client.post(reverse("upload_center:save_courses"), follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        messages = [str(message) for message in response.context["messages"]]
+        self.assertIn("1 PDF uploaded successfully.", messages)
 
     def test_upload_center_filters_by_selected_year(self):
         CourseStr.objects.create(

@@ -23,10 +23,10 @@
             <!-- Main content (scrolls independently) -->
             <main class="flex-1 overflow-y-auto bg-gray-100 p-10">
                 {% if messages %}
-                <div class="mb-4 space-y-2">
+                <div class="{% if request.resolver_match.url_name == 'upload_center' %}fixed top-6 right-6 z-50 w-full max-w-md space-y-2{% else %}mb-4 space-y-2{% endif %}">
                     {% for message in messages %}
                     <div
-                        class="p-4 rounded-lg text-sm shadow {% if message.tags == 'success' %}bg-green-100 text-green-800 {% elif message.tags == 'error' %}bg-red-100 text-red-800 {% else %}bg-blue-100 text-blue-800{% endif %}"
+                        class="p-4 rounded-lg text-sm shadow {% if request.resolver_match.url_name == 'upload_center' %}shadow-lg{% endif %} {% if message.tags == 'success' %}bg-green-100 text-green-800 {% elif message.tags == 'error' %}bg-red-100 text-red-800 {% else %}bg-blue-100 text-blue-800{% endif %}"
                     >
                         {{ message }}
                     </div>

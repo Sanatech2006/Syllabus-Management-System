@@ -76,7 +76,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Programme Code : </label>
                         <select name="prog_code" id="prog_code" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Programmes</option>
+                            <option value="">Choose programme code</option>
                             {% for prog_code in prog_codes %}
                             <option value="{{ prog_code }}" {% if request.GET.prog_code == prog_code|stringformat:"s" %}selected{% endif %}>{{ prog_code }}</option>
                             {% endfor %}
@@ -84,76 +84,52 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Branch : </label>
-                        <select name="branch" id="branch" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Branches</option>
-                            {% for branch in branches %}
-                            <option value="{{ branch }}" {% if request.GET.branch == branch|stringformat:"s" %}selected{% endif %}>{{ branch }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="text" id="branch_display" value="{{ request.GET.branch }}" placeholder="Auto-selected after choosing a year" readonly
+                            class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:outline-none">
+                        <input type="hidden" name="branch" id="branch" value="{{ request.GET.branch }}">
                     </div>
                     
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Programme Type : </label>
-                        <select name="prog_type" id="prog_type" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Types</option>
-                            {% for prog_type in prog_types %}
-                            <option value="{{ prog_type }}" {% if request.GET.prog_type == prog_type|stringformat:"s" %}selected{% endif %}>{{ prog_type }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="text" id="prog_type_display" value="{{ request.GET.prog_type }}" placeholder="Auto-selected after choosing a year" readonly
+                            class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:outline-none">
+                        <input type="hidden" name="prog_type" id="prog_type" value="{{ request.GET.prog_type }}">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Semester : </label>
-                        <select name="sem" id="sem" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Semesters</option>
-                            {% for semester in semesters %}
-                            <option value="{{ semester }}" {% if request.GET.sem == semester|stringformat:"s" %}selected{% endif %}>{{ semester }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="text" id="sem_display" value="{{ request.GET.sem }}" placeholder="Auto-selected after choosing a year" readonly
+                            class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:outline-none">
+                        <input type="hidden" name="sem" id="sem" value="{{ request.GET.sem }}">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Programme Category : </label>
-                        <select name="prog_category" id="prog_category" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Categories</option>
-                            {% for prog_category in prog_categories %}
-                            <option value="{{ prog_category }}" {% if request.GET.prog_category == prog_category|stringformat:"s" %}selected{% endif %}>{{ prog_category }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="text" id="prog_category_display" value="{{ request.GET.prog_category }}" placeholder="Auto-selected after choosing a year" readonly
+                            class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:outline-none">
+                        <input type="hidden" name="prog_category" id="prog_category" value="{{ request.GET.prog_category }}">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Course Code : </label>
-                        <select name="course_code" id="course_code" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Courses</option>
-                            {% for course_code in course_codes %}
-                            <option value="{{ course_code }}" {% if request.GET.course_code == course_code|stringformat:"s" %}selected{% endif %}>{{ course_code }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="text" id="course_code_display" value="{{ request.GET.course_code }}" placeholder="Auto-selected after choosing a programme code" readonly
+                            class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:outline-none">
+                        <input type="hidden" name="course_code" id="course_code" value="{{ request.GET.course_code }}">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Part : </label>
-                        <select name="part" id="part" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Parts</option>
-                            {% for part in parts %}
-                            <option value="{{ part }}" {% if request.GET.part == part|stringformat:"s" %}selected{% endif %}>{{ part }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="text" id="part_display" value="{{ request.GET.part }}" placeholder="Auto-selected after choosing a programme code" readonly
+                            class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:outline-none">
+                        <input type="hidden" name="part" id="part" value="{{ request.GET.part }}">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Course Category : </label>
-                        <select name="course_category" id="course_category" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Categories</option>
-                            {% for course_category in course_categories %}
-                            <option value="{{ course_category }}" {% if request.GET.course_category == course_category|stringformat:"s" %}selected{% endif %}>{{ course_category }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="text" id="course_category_display" value="{{ request.GET.course_category }}" placeholder="Auto-selected after choosing a programme code" readonly
+                            class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:outline-none">
+                        <input type="hidden" name="course_category" id="course_category" value="{{ request.GET.course_category }}">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Course Title : </label>
-                        <select name="course_title" id="course_title" class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Titles</option>
-                            {% for course_title in course_titles %}
-                            <option value="{{ course_title }}" {% if request.GET.course_title == course_title|stringformat:"s" %}selected{% endif %}>{{ course_title }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="text" id="course_title_display" value="{{ request.GET.course_title }}" placeholder="Auto-selected after choosing a programme code" readonly
+                            class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:outline-none">
+                        <input type="hidden" name="course_title" id="course_title" value="{{ request.GET.course_title }}">
                     </div>
                     <!-- <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Hrs/Week : </label>
@@ -211,7 +187,7 @@
     </div>
 
     {% if courses %}
-    <div class="mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+    <div id="saved-courses-section" class="mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
             <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,7 +228,13 @@
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             <div class="flex justify-center items-center gap-2">
                                 {% if course.has_pdf %}
-                                    <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">Uploaded</span>
+                                    {% if course.is_finalized %}
+                                        <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">PDF Uploaded</span>
+                                    {% elif course.is_saved %}
+                                        <span class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm">PDF Uploaded</span>
+                                    {% else %}
+                                        <span class="px-3 py-1 bg-amber-500 text-white rounded-lg text-sm">PDF Queued</span>
+                                    {% endif %}
                                 {% endif %}
 
                                 {% if user.is_authenticated %}
@@ -271,19 +253,31 @@
                                     {% endif %}
                                 {% endif %}
 
-                                {% if user.is_superuser %}
+                               {% if user.is_superuser %}
                                 <a href="{% url 'upload_center:edit_course' course.id %}"
                                    class="px-3 py-1 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600">
                                     Edit
                                 </a>
 
-                                <form method="post" action="{% url 'upload_center:delete_course' course.id %}" class="inline">
+                                <form method="post" action="{% url 'upload_center:delete_course' course.id %}" class="inline"
+                                      onsubmit="return confirm('Delete this course and its syllabus PDF?')">
                                     {% csrf_token %}
                                     <button type="submit"
                                             class="px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">
                                         Delete
                                     </button>
                                 </form>
+
+                                {% if course.has_pdf %}
+                                <form method="post" action="{% url 'upload_center:delete_pdf' course.id %}" class="inline"
+                                      onsubmit="return confirm('Delete only the syllabus PDF for {{ course.course_code }}?')">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="px-3 py-1 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600">
+                                        Delete pdf
+                                    </button>
+                                </form>
+                                {% endif %}
                                 {% endif %}
                             </div>
                         </td>
@@ -291,12 +285,12 @@
                     {% endfor %}
                 </tbody>
             </table>
-        {% if page_obj.has_other_pages %}
         <div class="px-6 py-3 bg-gray-50 border-t border-gray-200">
             <div class="flex items-center justify-between">
                 <p class="text-sm text-gray-600">
                     Showing <span class="font-medium">{{ page_obj.start_index }}</span> to <span class="font-medium">{{ page_obj.end_index }}</span> of <span class="font-medium">{{ page_obj.paginator.count }}</span> results
                 </p>
+                {% if page_obj.has_other_pages %}
                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                     {% if page_obj.has_previous %}
                     <a href="?page={{ page_obj.previous_page_number }}{% if pagination_query %}&{{ pagination_query }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
@@ -320,9 +314,18 @@
                     </a>
                     {% endif %}
                 </nav>
+                {% endif %}
+            </div>
+            <div class="mt-3 flex items-center justify-end">
+                <label class="text-sm text-gray-600 mr-2">Items per page:</label>
+                <select id="perPageSelect" class="p-2 border border-gray-300 rounded-lg" aria-label="Items per page">
+                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                </select>
             </div>
         </div>
-        {% endif %}
         {% if user.is_superuser %}
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
             <form method="post" action="{% url 'upload_center:save_courses' %}">
@@ -374,6 +377,8 @@
         total_marks: { key: 'total_marks_options', defaultLabel: 'Select Total' },
     };
 
+    const autoUploadFields = ['branch', 'prog_type', 'sem', 'prog_category', 'course_code', 'part', 'course_category', 'course_title'];
+
     function populateUploadSelect(selectId, values, selectedValue, config) {
         const select = document.getElementById(selectId);
         if (!select) return;
@@ -407,19 +412,118 @@
         }
     }
 
-    async function refreshUploadFilters() {
-        const form = document.getElementById('filterForm');
+    function populateAutoUploadField(fieldId, values, selectedValue, shouldPopulate) {
+        const hiddenInput = document.getElementById(fieldId);
+        const displayInput = document.getElementById(`${fieldId}_display`);
+        if (!hiddenInput || !displayInput) return false;
+
+        const normalizedValues = values.map((value) => `${value}`);
+        let resolvedValue = '';
+
+        if (shouldPopulate) {
+            if (selectedValue && normalizedValues.includes(selectedValue)) {
+                resolvedValue = selectedValue;
+            } else if (normalizedValues.length > 0) {
+                resolvedValue = normalizedValues[0];
+            }
+        }
+
+        const changed = hiddenInput.value !== resolvedValue;
+        hiddenInput.value = resolvedValue;
+        displayInput.value = resolvedValue;
+
+        return changed;
+    }
+
+    function clearAutoUploadFields() {
+        autoUploadFields.forEach((fieldId) => {
+            const hiddenInput = document.getElementById(fieldId);
+            const displayInput = document.getElementById(`${fieldId}_display`);
+            if (hiddenInput) {
+                hiddenInput.value = '';
+            }
+            if (displayInput) {
+                displayInput.value = '';
+            }
+        });
+    }
+
+    function clearDependentUploadSelects() {
+        ['hrs_per_week', 'credit', 'marks_cia', 'marks_ese', 'total_marks'].forEach((fieldId) => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.value = '';
+            }
+        });
+    }
+
+    async function fetchUploadFilterData(form) {
         const params = new URLSearchParams(new FormData(form));
         const response = await fetch(`{% url 'upload_center:get_filter_options' %}?${params.toString()}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
 
         if (!response.ok) {
+            return null;
+        }
+
+        return response.json();
+    }
+
+    async function refreshUploadFilters() {
+        const form = document.getElementById('filterForm');
+        const yearValue = form.elements.year?.value || '';
+        const previousYearValue = form.dataset.selectedYear || '';
+        let currentProgCodeValue = form.elements.prog_code?.value || '';
+        const previousProgCodeValue = form.dataset.selectedProgCode || '';
+
+        if (previousYearValue !== yearValue) {
+            clearAutoUploadFields();
+            clearDependentUploadSelects();
+            if (form.elements.prog_code) {
+                form.elements.prog_code.value = '';
+            }
+            currentProgCodeValue = '';
+        }
+
+        if (previousProgCodeValue !== currentProgCodeValue) {
+            clearAutoUploadFields();
+            clearDependentUploadSelects();
+        }
+
+        form.dataset.selectedYear = yearValue;
+        form.dataset.selectedProgCode = currentProgCodeValue;
+        let data = await fetchUploadFilterData(form);
+        if (!data) {
             return;
         }
 
-        const data = await response.json();
+        populateUploadSelect('prog_code', data[uploadFilterConfig.prog_code.key] || [], currentProgCodeValue, {
+            ...uploadFilterConfig.prog_code,
+            defaultLabel: yearValue ? 'Choose programme code' : 'Choose year first',
+            keepPlaceholderDisabled: !!yearValue,
+        });
+
+        const resolvedProgCodeValue = form.elements.prog_code?.value || '';
+        let autoFieldChanged = false;
+        autoUploadFields.forEach((fieldId) => {
+            const selectedValue = form.elements[fieldId]?.value || '';
+            if (populateAutoUploadField(fieldId, data[uploadFilterConfig[fieldId].key] || [], selectedValue, !!resolvedProgCodeValue)) {
+                autoFieldChanged = true;
+            }
+        });
+
+        if (autoFieldChanged) {
+            const refreshedData = await fetchUploadFilterData(form);
+            if (refreshedData) {
+                data = refreshedData;
+            }
+        }
+
         Object.entries(uploadFilterConfig).forEach(([selectId, config]) => {
+            if (selectId === 'prog_code' || autoUploadFields.includes(selectId)) {
+                return;
+            }
             const selectedValue = form.elements[selectId]?.value || '';
             populateUploadSelect(selectId, data[config.key] || [], selectedValue, config);
         });
@@ -430,5 +534,15 @@
     });
 
     refreshUploadFilters();
+
+    const perPageSelect = document.getElementById('perPageSelect');
+    if (perPageSelect) {
+        perPageSelect.addEventListener('change', function() {
+            const params = new URLSearchParams(window.location.search);
+            params.set('per_page', this.value);
+            params.delete('page');
+            window.location.search = params.toString();
+        });
+    }
 </script>
 {% endblock %}
