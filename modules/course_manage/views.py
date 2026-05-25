@@ -70,14 +70,32 @@ def _program_key_from_values(prog_type, prog_category, branch, prog_code):
 
 def _program_degree_lookup():
     lookup = {}
+    branch_lookup = {}
+    code_lookup = {}
+
     for program in Program.objects.filter(is_active=True):
-        lookup[_program_key_from_values(
+        key = _program_key_from_values(
             program.prog_type,
             program.prog_category,
             program.branch,
             program.prog_code,
-        )] = program.degree or ""
-    return lookup
+        )
+        degree = program.degree or ""
+        lookup[key] = degree
+        branch_lookup[(normalize_program_code(program.prog_code), normalize_program_value(program.branch))] = degree
+        code_lookup.setdefault(normalize_program_code(program.prog_code), set()).add(degree)
+
+    unique_code_lookup = {
+        prog_code: next(iter(degrees))
+        for prog_code, degrees in code_lookup.items()
+        if len(degrees) == 1
+    }
+
+    return {
+        "full": lookup,
+        "branch": branch_lookup,
+        "code": unique_code_lookup,
+    }
 
 
 def _course_program_key(course):
@@ -89,14 +107,33 @@ def _course_program_key(course):
     )
 
 
+def _resolved_course_degree(course, program_degree_lookup):
+    stored_degree = normalize_program_value(getattr(course, 'degree', ''))
+    if stored_degree:
+        return stored_degree
+
+    derived_degree = program_degree_lookup["full"].get(_course_program_key(course), "")
+    if derived_degree:
+        return derived_degree
+
+    derived_degree = program_degree_lookup["branch"].get(
+        (normalize_program_code(course.prog_code), normalize_program_value(course.branch)),
+        "",
+    )
+    if derived_degree:
+        return derived_degree
+
+    return program_degree_lookup["code"].get(normalize_program_code(course.prog_code), "")
+
+
 def _matching_course_ids_for_degree(queryset, degree):
     if not degree:
         return None
 
     program_degree_lookup = _program_degree_lookup()
     matching_ids = []
-    for course in queryset.only('id', 'prog_type', 'prog_category', 'branch', 'prog_code'):
-        if program_degree_lookup.get(_course_program_key(course), "") == degree:
+    for course in queryset.only('id', 'degree', 'prog_type', 'prog_category', 'branch', 'prog_code'):
+        if _resolved_course_degree(course, program_degree_lookup) == degree:
             matching_ids.append(course.id)
     return matching_ids
 
@@ -296,7 +333,7 @@ def course_management(request):
     courses = []
 
     for course in course_queryset:
-        course.display_degree = program_degree_lookup.get(_course_program_key(course), "")
+        course.display_degree = _resolved_course_degree(course, program_degree_lookup)
         courses.append(course)
 
     filter_options = _build_course_filter_options(base_queryset, filters)

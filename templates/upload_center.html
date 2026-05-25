@@ -253,31 +253,33 @@
                                     {% endif %}
                                 {% endif %}
 
-                               {% if user.is_superuser %}
-                                <a href="{% url 'upload_center:edit_course' course.id %}"
-                                   class="px-3 py-1 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600">
-                                    Edit
-                                </a>
-
-                                <form method="post" action="{% url 'upload_center:delete_course' course.id %}" class="inline"
-                                      onsubmit="return confirm('Delete this course and its syllabus PDF?')">
-                                    {% csrf_token %}
-                                    <button type="submit"
-                                            class="px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">
-                                        Delete
-                                    </button>
-                                </form>
-
-                                {% if course.has_pdf %}
-                                <form method="post" action="{% url 'upload_center:delete_pdf' course.id %}" class="inline"
-                                      onsubmit="return confirm('Delete only the syllabus PDF for {{ course.course_code }}?')">
-                                    {% csrf_token %}
-                                    <button type="submit"
-                                            class="px-3 py-1 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600">
-                                        Delete pdf
-                                    </button>
-                                </form>
+                                {% if user.is_superuser %}
+                                        <a href="{% url 'upload_center:edit_course' course.id %}"
+                                           class="px-3 py-1 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600">
+                                            Edit
+                                        </a>
                                 {% endif %}
+
+                                {% if user.is_superuser or user.is_staff %}
+                                        <form method="post" action="{% url 'upload_center:delete_course' course.id %}" class="inline"
+                                              onsubmit="return confirm('Delete this course and its syllabus PDF?')">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">
+                                                Delete
+                                            </button>
+                                        </form>
+
+                                        {% if course.has_pdf %}
+                                        <form method="post" action="{% url 'upload_center:delete_pdf' course.id %}" class="inline"
+                                              onsubmit="return confirm('Delete only the syllabus PDF for {{ course.course_code }}?')">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="px-3 py-1 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600">
+                                                Delete pdf
+                                            </button>
+                                        </form>
+                                        {% endif %}
                                 {% endif %}
                             </div>
                         </td>

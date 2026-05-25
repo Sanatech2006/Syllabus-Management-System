@@ -89,6 +89,53 @@ class CourseManageTests(TestCase):
         self.assertEqual(data["branches"], ["Chemistry", "English"])
         self.assertEqual(data["degrees"], ["B.A English", "B.Sc Physics"])
 
+    def test_get_filter_options_uses_program_lookup_fallback_for_inconsistent_course_metadata(self):
+        Program.objects.create(degree="MCA", prog_type="PG", prog_category="Science", prog_code="MCA", branch="General")
+        Program.objects.create(degree="MCA", prog_type="PG", prog_category="Science", prog_code="MCA", branch="-")
+
+        CourseStr.objects.create(
+            prog_type="UG",
+            prog_category="Science",
+            prog_code="MCA",
+            branch="General",
+            sem="II",
+            part="II",
+            course_code="25MCA2DE1B",
+            course_category="Elective",
+            course_title="Data Engineering",
+            is_finalized=True,
+        )
+
+        response = self.client.get(reverse("course_manage:get_filter_options"), {"degree": "MCA"})
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["prog_types"], ["UG"])
+        self.assertEqual(data["prog_codes"], ["MCA"])
+        self.assertEqual(data["branches"], ["General"])
+        self.assertEqual(data["semesters"], ["II"])
+        self.assertEqual(data["parts"], ["II"])
+        self.assertEqual(data["course_codes"], ["25MCA2DE1B"])
+
+    def test_course_management_shows_branch_as_dropdown_and_other_degree_dependent_filters_as_read_only_fields(self):
+        response = self.client.get(reverse("course_manage:course_management"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<select name="degree" id="degree"')
+        self.assertContains(response, '<select name="branch" id="branch"')
+        self.assertContains(response, 'id="prog_type_display"')
+        self.assertContains(response, 'id="prog_category_display"')
+        self.assertContains(response, 'id="prog_code_display"')
+        self.assertContains(response, 'id="sem_display"')
+        self.assertContains(response, 'id="part_display"')
+        self.assertContains(response, 'id="course_code_display"')
+        self.assertNotContains(response, '<select name="prog_type"')
+        self.assertNotContains(response, '<select name="prog_category"')
+        self.assertNotContains(response, '<select name="prog_code"')
+        self.assertNotContains(response, '<select name="sem"')
+        self.assertNotContains(response, '<select name="part"')
+        self.assertNotContains(response, '<select name="course_code"')
+
     def test_course_management_shows_degree_from_program_management(self):
         Program.objects.create(
             degree="B.A English",

@@ -287,8 +287,9 @@ def delete_course(request, course_id):
         if not request.user.is_authenticated:
             return redirect('/login/')
 
-        if not request.user.is_superuser:
-            messages.error(request, 'Only administrators can delete courses.')
+        # Allow both administrators and HODs (staff) to delete
+        if not (request.user.is_superuser or request.user.is_staff):
+            messages.error(request, 'You do not have permission to delete courses.')
             return redirect('upload_center:upload_center')
 
         try:
@@ -315,8 +316,9 @@ def delete_pdf(request, course_id):
         if not request.user.is_authenticated:
             return redirect('/login/')
 
-        if not request.user.is_superuser:
-            messages.error(request, 'Only administrators can delete syllabi.')
+        # Allow both administrators and HODs (staff) to delete PDFs
+        if not (request.user.is_superuser or request.user.is_staff):
+            messages.error(request, 'You do not have permission to delete syllabi.')
             return redirect('upload_center:upload_center')
 
         try:

@@ -60,38 +60,29 @@
                     <!-- Programme Type -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Programme Type : </label>
-                        <select name="prog_type" id="prog_type" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="" {% if not request.GET.prog_type %}selected{% endif %}>All Types</option>
-                            {% for prog_type in prog_types %}
-                                <option value="{{ prog_type }}" {% if request.GET.prog_type == prog_type|stringformat:"s" %}selected{% endif %}>{{ prog_type }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="text" id="prog_type_display" value="{{ request.GET.prog_type }}" placeholder="Auto-selected after choosing a degree" readonly
+                            class="w-full p-2 border mt-2 border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:outline-none">
+                        <input type="hidden" name="prog_type" id="prog_type" value="{{ request.GET.prog_type }}">
                     </div>
                     <!-- Programme Category -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Programme Category : </label>
-                        <select name="prog_category" id="prog_category" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="" {% if not request.GET.prog_category %}selected{% endif %}>All Categories</option>
-                            {% for cat in prog_categories %}
-                                <option value="{{ cat }}" {% if request.GET.prog_category == cat|stringformat:"s" %}selected{% endif %}>{{ cat }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="text" id="prog_category_display" value="{{ request.GET.prog_category }}" placeholder="Auto-selected after choosing a degree" readonly
+                            class="w-full p-2 border mt-2 border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:outline-none">
+                        <input type="hidden" name="prog_category" id="prog_category" value="{{ request.GET.prog_category }}">
                     </div>
                     <!-- Programme Code -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Programme Code : </label>
-                        <select name="prog_code" id="prog_code" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Programmes</option>
-                            {% for prog in prog_codes %}
-                                <option value="{{ prog }}" {% if request.GET.prog_code == prog|stringformat:"s" %}selected{% endif %}>{{ prog }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="text" id="prog_code_display" value="{{ request.GET.prog_code }}" placeholder="Auto-selected after choosing a degree" readonly
+                            class="w-full p-2 border mt-2 border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:outline-none">
+                        <input type="hidden" name="prog_code" id="prog_code" value="{{ request.GET.prog_code }}">
                     </div>
                     <!-- Branch -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Branch : </label>
                         <select name="branch" id="branch" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Branches</option>
+                            <option value="">Choose a branch</option>
                             {% for b in branches %}
                                 <option value="{{ b }}" {% if request.GET.branch == b|stringformat:"s" %}selected{% endif %}>{{ b }}</option>
                             {% endfor %}
@@ -100,35 +91,23 @@
                     <!-- Semester -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Semester : </label>
-                        <select name="sem" id="sem" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Semesters</option>
-                            {% for semester in semesters %}
-                                <option value="{{ semester }}" {% if request.GET.sem == semester|stringformat:"s" %}selected{% endif %}>{{ semester }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="text" id="sem_display" value="{{ request.GET.sem }}" placeholder="Auto-selected after choosing a degree" readonly
+                            class="w-full p-2 border mt-2 border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:outline-none">
+                        <input type="hidden" name="sem" id="sem" value="{{ request.GET.sem }}">
                     </div>
                     <!-- Part -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Part : </label>
-                        <select name="part" id="part" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All parts</option>
-                            {% for p in parts %}
-                                <option value="{{ p }}" {% if request.GET.part == p|stringformat:"s" %}selected{% endif %}>{{ p }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="text" id="part_display" value="{{ request.GET.part }}" placeholder="Auto-selected after choosing a degree" readonly
+                            class="w-full p-2 border mt-2 border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:outline-none">
+                        <input type="hidden" name="part" id="part" value="{{ request.GET.part }}">
                     </div>
                     <!-- Course Code with Title -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Course Code with Title : </label>
-                        <select name="course_code" id="course_code" class="w-full p-2 border mt-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Courses</option>
-                            {% for course in course_code_titles %}
-                                <option value="{{ course.course_code }}"
-                                    {% if request.GET.course_code == course.course_code %}selected{% endif %}>
-                                    {{ course.course_code }} - {{ course.course_title }}
-                                </option>
-                            {% endfor %}
-                        </select>
+                        <input type="text" id="course_code_display" value="{% if request.GET.course_code %}{{ request.GET.course_code }}{% endif %}" placeholder="Auto-selected after choosing a degree" readonly
+                            class="w-full p-2 border mt-2 border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:outline-none">
+                        <input type="hidden" name="course_code" id="course_code" value="{{ request.GET.course_code }}">
                     </div>
                 </div>
                 <div class="mt-4 flex justify-end">
@@ -291,6 +270,8 @@
         course_code: { key: 'course_code_titles', defaultLabel: 'All Courses' },
     };
 
+    const courseAutoFields = ['prog_type', 'prog_category', 'prog_code', 'sem', 'part', 'course_code'];
+
     function populateCourseSelect(selectId, values, selectedValue, config) {
         const select = document.getElementById(selectId);
         if (!select) return;
@@ -331,19 +312,127 @@
         }
     }
 
-    async function refreshCourseFilters() {
-        const form = document.getElementById('filterForm');
+    function populateCourseAutoField(fieldId, values, selectedValue, shouldPopulate) {
+        const hiddenInput = document.getElementById(fieldId);
+        const displayInput = document.getElementById(`${fieldId}_display`);
+        if (!hiddenInput || !displayInput) return false;
+
+        let resolvedValue = '';
+        let displayValue = '';
+
+        if (shouldPopulate) {
+            if (fieldId === 'course_code') {
+                const courseOptions = values.map((item) => ({
+                    value: item.course_code,
+                    label: `${item.course_code} - ${item.course_title || ''}`.trim(),
+                }));
+                const selectedOption = courseOptions.find((item) => item.value === selectedValue);
+                if (selectedOption) {
+                    resolvedValue = selectedOption.value;
+                    displayValue = selectedOption.label;
+                } else if (courseOptions.length === 1) {
+                    resolvedValue = courseOptions[0].value;
+                    displayValue = courseOptions[0].label;
+                }
+            } else {
+                const normalizedValues = values.map((value) => `${value}`);
+                if (selectedValue && normalizedValues.includes(selectedValue)) {
+                    resolvedValue = selectedValue;
+                    displayValue = selectedValue;
+                } else if (normalizedValues.length === 1) {
+                    resolvedValue = normalizedValues[0];
+                    displayValue = normalizedValues[0];
+                }
+            }
+        }
+
+        const changed = hiddenInput.value !== resolvedValue || displayInput.value !== displayValue;
+        hiddenInput.value = resolvedValue;
+        displayInput.value = displayValue;
+        return changed;
+    }
+
+    function clearCourseAutoFields() {
+        courseAutoFields.forEach((fieldId) => {
+            const hiddenInput = document.getElementById(fieldId);
+            const displayInput = document.getElementById(`${fieldId}_display`);
+            if (hiddenInput) {
+                hiddenInput.value = '';
+            }
+            if (displayInput) {
+                displayInput.value = '';
+            }
+        });
+    }
+
+    async function fetchCourseFilterData(form) {
         const params = new URLSearchParams(new FormData(form));
         const response = await fetch(`{% url 'course_manage:get_filter_options' %}?${params.toString()}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
 
         if (!response.ok) {
+            return null;
+        }
+
+        return response.json();
+    }
+
+    async function refreshCourseFilters() {
+        const form = document.getElementById('filterForm');
+        const degreeValue = form.elements.degree?.value || '';
+        const previousDegreeValue = form.dataset.selectedDegree || '';
+        const previousBranchValue = form.dataset.selectedBranch || '';
+        let branchValue = form.elements.branch?.value || '';
+
+        if (previousDegreeValue !== degreeValue) {
+            clearCourseAutoFields();
+            if (form.elements.branch) {
+                form.elements.branch.value = '';
+            }
+            branchValue = '';
+        }
+
+        if (previousBranchValue !== branchValue) {
+            clearCourseAutoFields();
+        }
+
+        form.dataset.selectedDegree = degreeValue;
+        form.dataset.selectedBranch = branchValue;
+
+        let data = await fetchCourseFilterData(form);
+        if (!data) {
             return;
         }
 
-        const data = await response.json();
+        populateCourseSelect('branch', data[courseFilterConfig.branch.key] || [], branchValue, {
+            ...courseFilterConfig.branch,
+            defaultLabel: degreeValue ? 'Choose a branch' : 'Choose a degree first',
+            keepPlaceholderDisabled: !!degreeValue,
+        });
+
+        const resolvedBranchValue = form.elements.branch?.value || '';
+        let autoFieldChanged = false;
+        courseAutoFields.forEach((fieldId) => {
+            const selectedValue = form.elements[fieldId]?.value || '';
+            const values = data[courseFilterConfig[fieldId].key] || [];
+            const shouldPopulate = !!degreeValue && (!!resolvedBranchValue || values.length === 1);
+            if (populateCourseAutoField(fieldId, values, selectedValue, shouldPopulate)) {
+                autoFieldChanged = true;
+            }
+        });
+
+        if (autoFieldChanged) {
+            const refreshedData = await fetchCourseFilterData(form);
+            if (refreshedData) {
+                data = refreshedData;
+            }
+        }
+
         Object.entries(courseFilterConfig).forEach(([selectId, config]) => {
+            if (selectId === 'branch' || courseAutoFields.includes(selectId)) {
+                return;
+            }
             const selectedValue = form.elements[selectId]?.value || '';
             populateCourseSelect(selectId, data[config.key] || [], selectedValue, config);
         });
