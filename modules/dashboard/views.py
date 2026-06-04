@@ -1,26 +1,21 @@
 from django.shortcuts import render
 from django.db.models import Sum, Count
 from django.db.models.functions import Trim, Lower
-from modules.upload_center.models import CourseStr
-
+from modules.course_manage.models import CourseStructure  # Changed import
 
 def dashboard(request):
-    current_courses = CourseStr.objects.filter(is_finalized=True)
+    current_courses = CourseStructure.objects.filter(is_finalized=True)  # Changed from CourseStr
 
-    total_programs = current_courses.values('prog_code').distinct().count()
+    total_programs = current_courses.values('program__prog_code').distinct().count()  # Changed to use ForeignKey
     total_courses = current_courses.count()
     total_subjects = total_courses
 
-    ug_courses = current_courses.filter(prog_code__istartswith='U').count()
-    pg_courses = current_courses.exclude(prog_code__istartswith='U').count()
+    # Now using program__prog_code through the ForeignKey relationship
+    ug_courses = current_courses.filter(program__prog_type='UG').count()  # Changed logic
+    pg_courses = current_courses.filter(program__prog_type='PG').count()  # Changed logic
 
-    arts_courses = current_courses.annotate(
-        clean_prog_category=Lower(Trim('prog_category'))
-    ).filter(clean_prog_category='arts').count()
-
-    science_courses = current_courses.annotate(
-        clean_prog_category=Lower(Trim('prog_category'))
-    ).filter(clean_prog_category='science').count()
+    arts_courses = current_courses.filter(program__prog_category='Arts').count()  # Changed logic
+    science_courses = current_courses.filter(program__prog_category='Science').count()  # Changed logic
 
     normalized_courses = current_courses.annotate(
         clean_cat=Lower(Trim('course_category')),
@@ -51,9 +46,10 @@ def dashboard(request):
         cia_percent = 0
         ese_percent = 0
 
+    # Changed to use program__prog_code through ForeignKey
     program_dist = (
         current_courses
-        .values('prog_code')
+        .values('program__prog_code')  # Changed field name
         .annotate(count=Count('id'))
         .order_by('-count')[:4]
     )
@@ -61,7 +57,7 @@ def dashboard(request):
     prog_list = list(program_dist)
 
     while len(prog_list) < 4:
-        prog_list.append({'prog_code': '-', 'count': 0})
+        prog_list.append({'program__prog_code': '-', 'count': 0})  # Changed key name
 
     recent_courses = current_courses.order_by('-id')[:5]
 
@@ -84,13 +80,13 @@ def dashboard(request):
         'avg_credits': avg_credits,
         'cia_percent': cia_percent,
         'ese_percent': ese_percent,
-        'prog1_code': prog_list[0]['prog_code'],
+        'prog1_code': prog_list[0]['program__prog_code'],  # Changed key name
         'prog1_count': prog_list[0]['count'],
-        'prog2_code': prog_list[1]['prog_code'],
+        'prog2_code': prog_list[1]['program__prog_code'],  # Changed key name
         'prog2_count': prog_list[1]['count'],
-        'prog3_code': prog_list[2]['prog_code'],
+        'prog3_code': prog_list[2]['program__prog_code'],  # Changed key name
         'prog3_count': prog_list[2]['count'],
-        'prog4_code': prog_list[3]['prog_code'],
+        'prog4_code': prog_list[3]['program__prog_code'],  # Changed key name
         'prog4_count': prog_list[3]['count'],
         'recent_courses': recent_courses,
     }

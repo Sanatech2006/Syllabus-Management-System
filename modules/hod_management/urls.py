@@ -4,13 +4,23 @@ from . import views
 app_name = 'hod_management'
 
 urlpatterns = [
-    # Main mapping views
-    path('', views.hod_program_map_list, name='hod_program_map_list'),
-    path('mappings/', views.hod_program_map_list, name='hod_program_map_list'),
-    path('mappings/create/', views.hod_program_map_create, name='hod_program_map_create'),
-    path('mappings/<int:pk>/edit/', views.hod_program_map_edit, name='hod_program_map_edit'),
-    path('mappings/<int:pk>/delete/', views.hod_program_map_delete, name='hod_program_map_delete'),
+
+    path("", views.hod_program_map_management, name="hod_management"),
+    # Main page
+    path("hod-program-map/", views.hod_program_map_management, name="hod_program_map"),
     
-    # API endpoints
-    path('api/hod-programs/<int:user_id>/', views.get_hod_programs_api, name='get_hod_programs'),
+    # CRUD operations
+    path("get-mapping/<int:mapping_id>/", views.get_mapping, name="get_mapping"),
+    path("add-mapping/", views.add_mapping, name="add_mapping"),
+    path("edit-mapping/<int:mapping_id>/", views.edit_mapping, name="edit_mapping"),
+    path("delete-mapping/<int:mapping_id>/", views.delete_mapping, name="delete_mapping"),
+    
+    # Excel operations
+    path("download-sample/", views.download_sample_mapping_excel, name="download_sample"),
+    path("download-mappings/", views.download_mappings_excel, name="download_mappings"),
+    path("upload-mappings/", views.upload_mappings_excel, name="upload_mappings"),
+    
+    # Helper endpoints
+    path("get-hods/", views.get_hods_list, name="get_hods"),
+    path("get-programs/", views.get_programs_list, name="get_programs"),
 ]

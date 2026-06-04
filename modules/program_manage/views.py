@@ -1,13 +1,17 @@
 import openpyxl
+import pandas as pd
+import io
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.http import HttpResponse
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from openpyxl.styles import Font, PatternFill
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.utils import get_column_letter
 
 from modules.core.decorators import admin_required
-
 from .models import Program
 
 
@@ -42,11 +46,9 @@ def _apply_program_filters(queryset, filters, exclude_field=None):
     for field in PROGRAM_FILTER_FIELDS:
         if field == exclude_field:
             continue
-
         value = filters.get(field)
         if value:
             queryset = queryset.filter(**{field: value})
-
     return queryset
 
 
@@ -55,7 +57,6 @@ def _build_program_filter_options(base_queryset, filters):
         field: _apply_program_filters(base_queryset, filters, exclude_field=field)
         for field in PROGRAM_FILTER_FIELDS
     }
-
     return {
         "prog_types": _distinct_non_empty(option_querysets["prog_type"], "prog_type"),
         "prog_categories": _distinct_non_empty(option_querysets["prog_category"], "prog_category"),
@@ -67,261 +68,291 @@ def _build_program_filter_options(base_queryset, filters):
 
 @admin_required
 def program_management(request):
+    """Main Program Management page with filters, stats, and pagination"""
+    
+    # Get pagination and per page parameters
+    per_page = int(request.GET.get('per_page', 10))
+    page = request.GET.get('page', 1)
+    
+    # Apply filters
     filters = {field: request.GET.get(field) for field in PROGRAM_FILTER_FIELDS}
     base_queryset = Program.objects.filter(is_active=True)
     programs = _apply_program_filters(base_queryset, filters)
+    
+    # Get filter options for dropdowns
     filter_options = _build_program_filter_options(base_queryset, filters)
-
-    paginator = Paginator(programs.order_by("id"), 10)
-    page_obj = paginator.get_page(request.GET.get("page"))
+    
+    # Pagination
+    paginator = Paginator(programs.order_by('prog_code'), per_page)
+    page_obj = paginator.get_page(page)
+    
+    # Preserve query parameters for pagination
     query_params = request.GET.copy()
-    query_params.pop("page", None)
-
-    return render(
-        request,
-        "program_management.html",
-        {
-            "programs": page_obj,
-            "page_obj": page_obj,
-            "pagination_query": query_params.urlencode(),
-            **filter_options,
-            "arts_count": base_queryset.filter(prog_category="Arts").count(),
-            "science_count": base_queryset.filter(prog_category="Science").count(),
-            "ug_count": base_queryset.filter(prog_type="UG").count(),
-            "pg_count": base_queryset.filter(prog_type="PG").count(),
-        },
-    )
+    query_params.pop('page', None)
+    
+    # Calculate stats
+    stats = {
+        'ug_count': base_queryset.filter(prog_type="UG").count(),
+        'pg_count': base_queryset.filter(prog_type="PG").count(),
+        'arts_count': base_queryset.filter(prog_category="Arts").count(),
+        'science_count': base_queryset.filter(prog_category="Science").count(),
+    }
+    
+    context = {
+        "programs": page_obj,
+        "page_obj": page_obj,
+        "per_page": per_page,
+        "pagination_query": query_params.urlencode(),
+        **filter_options,
+        **stats,
+    }
+    return render(request, "program_management.html", context)
 
 
 @admin_required
+def get_filter_options(request):
+    """AJAX endpoint to get filter options dynamically"""
+    filters = {field: request.GET.get(field) for field in PROGRAM_FILTER_FIELDS}
+    queryset = Program.objects.filter(is_active=True)
+    return JsonResponse(_build_program_filter_options(queryset, filters))
+
+
+@admin_required
+def get_program(request, program_id):
+    """AJAX endpoint to get single program details"""
+    try:
+        program = get_object_or_404(Program, id=program_id)
+        data = {
+            'success': True,
+            'program': {
+                'id': program.id,
+                'prog_code': program.prog_code,
+                'degree': program.degree,
+                'branch': program.branch,
+                'prog_type': program.prog_type,
+                'prog_category': program.prog_category,
+                'prog_type_display': program.get_prog_type_display(),
+                'prog_category_display': program.get_prog_category_display(),
+            }
+        }
+        return JsonResponse(data)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@admin_required
+@require_http_methods(["POST"])
 def add_program(request):
-    preview_programs = request.session.get("preview_programs", [])
-
-    if request.method == "POST":
-        action = request.POST.get("action")
-
-        if action == "delete":
-            index = int(request.POST.get("index"))
-            if 0 <= index < len(preview_programs):
-                preview_programs.pop(index)
-                request.session["preview_programs"] = preview_programs
-            return redirect("program_manage:add_program")
-
-        if action == "edit":
-            index = int(request.POST.get("index"))
-            return render(
-                request,
-                "add_program.html",
-                {
-                    "preview_programs": preview_programs,
-                    "edit_index": index,
-                },
-            )
-
-        if action == "update":
-            index = int(request.POST.get("index"))
-            if 0 <= index < len(preview_programs):
-                preview_programs[index] = {
-                    "prog_type": request.POST.get("prog_type"),
-                    "prog_category": request.POST.get("prog_category"),
-                    "degree": request.POST.get("degree"),
-                    "branch": request.POST.get("branch"),
-                    "prog_code": request.POST.get("prog_code"),
-                }
-                request.session["preview_programs"] = preview_programs
-            return redirect("program_manage:add_program")
-
-        if action == "cancel":
-            return redirect("program_manage:add_program")
-
-        if action == "add":
-            Program.objects.create(
-                prog_type=request.POST.get("prog_type"),
-                prog_category=request.POST.get("prog_category"),
-                degree=request.POST.get("degree"),
-                branch=request.POST.get("branch"),
-                prog_code=request.POST.get("prog_code"),
-            )
-            messages.success(request, "Program added successfully!")
-            return redirect("program_manage:program_management")
-
-    return render(request, "add_program.html")
+    """AJAX endpoint to add new program"""
+    try:
+        prog_code = request.POST.get("prog_code", "").strip().upper().replace(" ", "")
+        degree = request.POST.get("degree", "").strip()
+        branch = request.POST.get("branch", "").strip()
+        prog_type = request.POST.get("prog_type", "").strip()
+        prog_category = request.POST.get("prog_category", "").strip()
+        
+        # Validate required fields
+        if not all([prog_code, degree, branch, prog_type, prog_category]):
+            return JsonResponse({'success': False, 'error': 'All fields are required.'})
+        
+        # Validate program type
+        if prog_type not in ["UG", "PG"]:
+            return JsonResponse({'success': False, 'error': 'Program type must be UG or PG.'})
+        
+        # Validate program category
+        if prog_category not in ["Arts", "Science"]:
+            return JsonResponse({'success': False, 'error': 'Program category must be Arts or Science.'})
+        
+        # Check if program code exists
+        if Program.objects.filter(prog_code=prog_code).exists():
+            return JsonResponse({'success': False, 'error': f'Program code "{prog_code}" already exists.'})
+        
+        # Create program
+        program = Program.objects.create(
+            prog_code=prog_code,
+            degree=degree,
+            branch=branch,
+            prog_type=prog_type,
+            prog_category=prog_category,
+            is_active=True
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Program created successfully.',
+            'program_id': program.id
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 
 @admin_required
-def edit_program(request, id):
-    program = get_object_or_404(Program, id=id)
-
-    if request.method == "POST":
-        program.prog_type = request.POST.get("prog_type")
-        program.prog_category = request.POST.get("prog_category")
-        program.degree = request.POST.get("degree")
-        program.branch = request.POST.get("branch")
-        program.prog_code = request.POST.get("prog_code")
+@require_http_methods(["POST"])
+def edit_program(request, program_id):
+    """AJAX endpoint to edit program"""
+    try:
+        program = get_object_or_404(Program, id=program_id)
+        
+        prog_code = request.POST.get("prog_code", "").strip().upper().replace(" ", "")
+        degree = request.POST.get("degree", "").strip()
+        branch = request.POST.get("branch", "").strip()
+        prog_type = request.POST.get("prog_type", "").strip()
+        prog_category = request.POST.get("prog_category", "").strip()
+        
+        # Validate required fields
+        if not all([prog_code, degree, branch, prog_type, prog_category]):
+            return JsonResponse({'success': False, 'error': 'All fields are required.'})
+        
+        # Validate program type
+        if prog_type not in ["UG", "PG"]:
+            return JsonResponse({'success': False, 'error': 'Program type must be UG or PG.'})
+        
+        # Validate program category
+        if prog_category not in ["Arts", "Science"]:
+            return JsonResponse({'success': False, 'error': 'Program category must be Arts or Science.'})
+        
+        # Check if program code exists for other programs
+        if Program.objects.exclude(id=program_id).filter(prog_code=prog_code).exists():
+            return JsonResponse({'success': False, 'error': f'Program code "{prog_code}" already exists.'})
+        
+        # Update program
+        program.prog_code = prog_code
+        program.degree = degree
+        program.branch = branch
+        program.prog_type = prog_type
+        program.prog_category = prog_category
         program.save()
-        messages.success(request, "Program updated successfully!")
-        return redirect("program_manage:program_management")
+        
+        return JsonResponse({'success': True, 'message': 'Program updated successfully.'})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
-    return render(
-        request,
-        "add_program.html",
-        {
-            "edit_program": program,
-            "preview_programs": [],
-        },
+
+@admin_required
+@require_http_methods(["POST"])
+def delete_program(request, program_id):
+    """AJAX endpoint to delete program"""
+    try:
+        program = get_object_or_404(Program, id=program_id)
+        program.delete()
+        return JsonResponse({'success': True, 'message': 'Program deleted successfully.'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@admin_required
+def download_sample_excel(request):
+    """Download sample Excel template for program import - Simplified"""
+    sample_data = {
+        'prog_type': ['UG', 'PG', 'UG'],
+        'prog_category': ['Science', 'Arts', 'Science'],
+        'degree': ['B.Sc', 'M.A', 'B.Com'],
+        'branch': ['Computer Science', 'English', 'Commerce'],
+        'prog_code': ['BSC-CS', 'MA-ENG', 'BCOM']
+    }
+    
+    df = pd.DataFrame(sample_data)
+    
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name='Programs', index=False)
+    
+    output.seek(0)
+    
+    response = HttpResponse(
+        output,
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+    response['Content-Disposition'] = 'attachment; filename="Program_Sample.xlsx"'
+    return response
 
 
 @admin_required
-def delete_program(request, id):
-    program = get_object_or_404(Program, id=id)
-    program.delete()
-    messages.success(request, "Program deleted successfully!")
-    return redirect("program_manage:program_management")
+def download_programs_excel(request):
+    """Download all programs as Excel"""
+    programs = Program.objects.filter(is_active=True).order_by('prog_code')
+    
+    program_data = []
+    for program in programs:
+        program_data.append({
+            'Program Type': program.get_prog_type_display(),
+            'Program Category': program.get_prog_category_display(),
+            'Degree': program.degree,
+            'Branch': program.branch,
+            'Program Code': program.prog_code,
+        })
+    
+    df = pd.DataFrame(program_data)
+    
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name='All_Programs', index=False)
+    
+    output.seek(0)
+    
+    response = HttpResponse(
+        output,
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="Programs_List.xlsx"'
+    return response
 
 
 @admin_required
-def bulk_upload(request):
-    if request.method == "POST":
-        excel_file = request.FILES.get("excel_file")
-
-        if not excel_file:
-            messages.error(
-                request,
-                "Please select an Excel file before uploading."
-            )
-            return redirect("program_manage:bulk_upload")
-
-        if not excel_file.name.endswith((".xlsx", ".xls")):
-            messages.error(
-                request,
-                "Invalid file type. Please upload an Excel file (.xlsx or .xls)."
-            )
-            return redirect("program_manage:bulk_upload")
-
-        try:
-            workbook = openpyxl.load_workbook(excel_file)
-            sheet = workbook.active
-        except Exception as exc:
-            messages.error(
-                request,
-                f"Could not read file: {exc}"
-            )
-            return redirect("program_manage:bulk_upload")
-
-        rows = list(sheet.iter_rows(values_only=True))
-
-        if not rows:
-            messages.error(
-                request,
-                "The uploaded Excel file is empty."
-            )
-            return redirect("program_manage:bulk_upload")
-
-        headers = [
-            str(value).strip().lower() if value is not None else ""
-            for value in rows[0]
-        ]
-
-        missing_cols = [
-            col
-            for col in PROGRAM_BULK_REQUIRED_COLUMNS
-            if col not in headers
-        ]
-
-        if missing_cols:
-            messages.error(
-                request,
-                f"Missing columns: {', '.join(missing_cols)}"
-            )
-            return redirect("program_manage:bulk_upload")
-
-        data_rows = [
-            row
-            for row in rows[1:]
-            if any(value not in (None, "") for value in row)
-        ]
-
-        if not data_rows:
-            messages.error(
-                request,
-                "No data rows found in the file."
-            )
-            return redirect("program_manage:bulk_upload")
-
-        success_count = 0
-        error_rows = []
-        uploaded_codes = set()
-
-        for index, row in enumerate(data_rows, start=2):
-
-            row_data = dict(zip(headers, row))
-
-            prog_type = str(
-                row_data.get("prog_type") or ""
-            ).strip().upper()
-
-            prog_category = str(
-                row_data.get("prog_category") or ""
-            ).strip().title()
-
-            degree = str(
-                row_data.get("degree") or ""
-            ).strip()
-
-            branch = str(
-                row_data.get("branch") or ""
-            ).strip()
-
-            prog_code = str(
-                row_data.get("prog_code") or ""
-            ).strip().upper().replace(" ", "")
-
-            # Required field validation
-            if not all([
-                prog_type,
-                prog_category,
-                degree,
-                branch,
-                prog_code
-            ]):
-                error_rows.append(
-                    f"Row {index}: All fields are required."
-                )
+@require_http_methods(["POST"])
+def upload_programs_excel(request):
+    """Handle Excel file upload for bulk program import"""
+    try:
+        if 'excel_file' not in request.FILES:
+            return JsonResponse({'success': False, 'error': 'No file uploaded.'})
+        
+        excel_file = request.FILES['excel_file']
+        
+        if not excel_file.name.endswith(('.xlsx', '.xls')):
+            return JsonResponse({'success': False, 'error': 'Please upload an Excel file (.xlsx or .xls).'})
+        
+        df = pd.read_excel(excel_file)
+        
+        required_columns = ['prog_type', 'prog_category', 'degree', 'branch', 'prog_code']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            return JsonResponse({
+                'success': False,
+                'error': f'Missing required columns: {", ".join(missing_columns)}'
+            })
+        
+        created_programs = []
+        errors = []
+        
+        for index, row in df.iterrows():
+            prog_type = str(row.get('prog_type', '')).strip().upper()
+            prog_category = str(row.get('prog_category', '')).strip().title()
+            degree = str(row.get('degree', '')).strip()
+            branch = str(row.get('branch', '')).strip()
+            prog_code = str(row.get('prog_code', '')).strip().upper().replace(" ", "")
+            
+            # Validate required fields
+            if not all([prog_type, prog_category, degree, branch, prog_code]):
+                errors.append(f'Row {index + 2}: All fields are required')
                 continue
-
-            # Program Type validation
-            if prog_type not in {"UG", "PG"}:
-                error_rows.append(
-                    f"Row {index}: Invalid Program Type '{prog_type}'."
-                )
+            
+            # Validate program type
+            if prog_type not in ["UG", "PG"]:
+                errors.append(f'Row {index + 2}: Invalid program type "{prog_type}". Must be UG or PG')
                 continue
-
-            # Program Category validation
-            if prog_category not in {"Arts", "Science"}:
-                error_rows.append(
-                    f"Row {index}: Invalid Program Category '{prog_category}'."
-                )
+            
+            # Validate program category
+            if prog_category not in ["Arts", "Science"]:
+                errors.append(f'Row {index + 2}: Invalid program category "{prog_category}". Must be Arts or Science')
                 continue
-
-            # Duplicate inside uploaded file
-            if prog_code in uploaded_codes:
-                error_rows.append(
-                    f"Row {index}: Duplicate Program Code '{prog_code}' in file."
-                )
+            
+            # Check if program exists
+            if Program.objects.filter(prog_code=prog_code).exists():
+                errors.append(f'Row {index + 2}: Program code "{prog_code}" already exists')
                 continue
-
-            uploaded_codes.add(prog_code)
-
-            # Duplicate in database
-            if Program.objects.filter(
-                prog_code=prog_code
-            ).exists():
-                error_rows.append(
-                    f"Row {index}: Program Code '{prog_code}' already exists."
-                )
-                continue
-
+            
             try:
                 Program.objects.create(
                     prog_code=prog_code,
@@ -329,171 +360,19 @@ def bulk_upload(request):
                     branch=branch,
                     prog_type=prog_type,
                     prog_category=prog_category,
+                    is_active=True
                 )
-
-                success_count += 1
-
-            except Exception as exc:
-                error_rows.append(
-                    f"Row {index}: {str(exc)}"
-                )
-
-        if success_count:
-            messages.success(
-                request,
-                f"{success_count} program(s) uploaded successfully."
-            )
-
-        for error in error_rows:
-            messages.warning(request, error)
-
-        if success_count == 0:
-            messages.error(
-                request,
-                "No programs were uploaded."
-            )
-
-        return redirect(
-            "program_manage:program_management"
-        )
-
-    return render(
-        request,
-        "program_bulk_upload.html"
-    )
-    
-
-@admin_required
-def download_template(request):
-    from openpyxl.worksheet.datavalidation import DataValidation
-    from openpyxl.utils import get_column_letter
-    from openpyxl.styles import Alignment, Border, Side
-
-    wb = openpyxl.Workbook()
-
-    # ── Sheet 1: Programs ────────────────────────────────────────────────────
-    ws = wb.active
-    ws.title = "Programs"
-
-    HEADER_BG  = "1E40AF"
-    HEADER_FG  = "FFFFFF"
-    EXAMPLE_BG = "EFF6FF"
-    BORDER_CLR = "CBD5E1"
-
-    thin   = Side(style="thin", color=BORDER_CLR)
-    border = Border(left=thin, right=thin, top=thin, bottom=thin)
-
-    headers    = ["prog_type", "prog_category", "degree", "branch", "prog_code"]
-    col_widths = [16, 20, 24, 36, 20]
-    col_notes  = [
-        "UG or PG only",
-        "Arts or Science only",
-        "e.g. B.Sc, B.A, M.Sc, M.A",
-        "e.g. Computer Science, Mathematics",
-        "e.g. BSC-CS, BA-ENG (auto-uppercased)",
-    ]
-
-    for col, (h, w) in enumerate(zip(headers, col_widths), 1):
-        cell = ws.cell(row=1, column=col, value=h)
-        cell.font      = Font(bold=True, color=HEADER_FG, name="Arial", size=11)
-        cell.fill      = PatternFill("solid", start_color=HEADER_BG)
-        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        cell.border    = border
-        ws.column_dimensions[get_column_letter(col)].width = w
-    ws.row_dimensions[1].height = 30
-
-    for col, note in enumerate(col_notes, 1):
-        cell = ws.cell(row=2, column=col, value=note)
-        cell.font      = Font(italic=True, color="92400E", name="Arial", size=9)
-        cell.fill      = PatternFill("solid", start_color="FEF3C7")
-        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        cell.border    = border
-    ws.row_dimensions[2].height = 28
-
-    examples = [
-        ("UG", "Science", "B.Sc", "Computer Science", "BSC-CS"),
-        ("UG", "Arts",    "B.A",  "English",           "BA-ENG"),
-        ("PG", "Science", "M.Sc", "Mathematics",       "MSC-MATHS"),
-    ]
-    for r, row_data in enumerate(examples, 3):
-        for c, val in enumerate(row_data, 1):
-            cell = ws.cell(row=r, column=c, value=val)
-            cell.font      = Font(name="Arial", size=10, color="1E3A5F")
-            cell.fill      = PatternFill("solid", start_color=EXAMPLE_BG)
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-            cell.border    = border
-
-    for r in range(6, 201):
-        for c in range(1, 6):
-            cell = ws.cell(row=r, column=c)
-            cell.font      = Font(name="Arial", size=10)
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-            cell.border    = border
-
-    ws.freeze_panes = "A3"
-
-    dv_type = DataValidation(
-        type="list", formula1='"UG,PG"', allow_blank=False,
-        showDropDown=False,
-        error="Only UG or PG allowed.", errorTitle="Invalid prog_type",
-        prompt="Select UG or PG", promptTitle="prog_type"
-    )
-    dv_cat = DataValidation(
-        type="list", formula1='"Arts,Science"', allow_blank=False,
-        showDropDown=False,
-        error="Only Arts or Science allowed.", errorTitle="Invalid prog_category",
-        prompt="Select Arts or Science", promptTitle="prog_category"
-    )
-    ws.add_data_validation(dv_type)
-    ws.add_data_validation(dv_cat)
-    dv_type.sqref = "A3:A200"
-    dv_cat.sqref  = "B3:B200"
-
-    # ── Sheet 2: Instructions ────────────────────────────────────────────────
-    wi = wb.create_sheet("Instructions")
-    wi.column_dimensions["A"].width = 22
-    wi.column_dimensions["B"].width = 60
-
-    def ins_row(r, label, value):
-        lc = wi.cell(row=r, column=1, value=label)
-        lc.font      = Font(bold=True, name="Arial", size=10, color="1E40AF")
-        lc.alignment = Alignment(vertical="top")
-        vc = wi.cell(row=r, column=2, value=value)
-        vc.font      = Font(name="Arial", size=10)
-        vc.alignment = Alignment(vertical="top", wrap_text=True)
-        wi.row_dimensions[r].height = 20
-
-    wi.cell(row=1, column=1, value="Program Bulk Upload – Instructions").font = Font(
-        bold=True, size=13, color="1E40AF", name="Arial"
-    )
-    wi.merge_cells("A1:B1")
-    wi.row_dimensions[1].height = 28
-
-    ins_row(3,  "Sheet to edit:",   "Fill data in the 'Programs' sheet only. Do NOT rename columns.")
-    ins_row(4,  "Row 1:",           "Column headers – do not modify.")
-    ins_row(5,  "Row 2:",           "Notes/hints – you may delete this row before uploading.")
-    ins_row(6,  "Rows 3-5:",        "Example data – delete before uploading.")
-    ins_row(7,  "Rows 6+:",         "Enter your program data here.")
-    ins_row(9,  "prog_type",        "Must be exactly: UG  or  PG  (dropdown enforced).")
-    ins_row(10, "prog_category",    "Must be exactly: Arts  or  Science  (dropdown enforced).")
-    ins_row(11, "degree",           "Free text. Examples: B.Sc, B.A, M.Sc, M.A, B.Com, M.Com.")
-    ins_row(12, "branch",           "Full branch/department name. E.g. 'Computer Science', 'Tamil'.")
-    ins_row(13, "prog_code",        "Short unique code. Spaces and lowercase are auto-corrected.")
-    ins_row(15, "Duplicates:",      "Rows where all five fields already exist will be skipped with a warning.")
-    ins_row(16, "Empty rows:",      "Rows where any field is blank will be skipped with a warning.")
-    ins_row(17, "File format:",     "Save as .xlsx or .xls before uploading.")
-    wi.sheet_view.showGridLines = False
-
-    response = HttpResponse(
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-    response["Content-Disposition"] = 'attachment; filename="program_upload_template.xlsx"'
-    wb.save(response)
-    return response
-
-
-@admin_required
-def get_filter_options(request):
-    filters = {field: request.GET.get(field) for field in PROGRAM_FILTER_FIELDS}
-    queryset = Program.objects.filter(is_active=True)
-    return JsonResponse(_build_program_filter_options(queryset, filters))
+                created_programs.append(prog_code)
+            except Exception as e:
+                errors.append(f'Row {index + 2}: Error - {str(e)}')
+        
+        if created_programs:
+            message = f'Successfully imported {len(created_programs)} programs.'
+            if errors:
+                message += f' {len(errors)} errors encountered.'
+            return JsonResponse({'success': True, 'message': message, 'created': len(created_programs), 'errors': errors[:10]})
+        else:
+            return JsonResponse({'success': False, 'error': f'No programs imported. Errors: {", ".join(errors[:5])}'})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

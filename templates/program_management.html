@@ -5,409 +5,535 @@
 
 {% block content %}
 <div class="min-h-screen">
-    <!-- Page Header with Breadcrumb -->
+    <!-- Page Header -->
     <div class="mx-auto mb-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                <h1 class="text-2xl font-bold text-blue-700 flex items-center gap-3">
                     <span class="bg-blue-600 text-white p-3 rounded-xl shadow-lg">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
                     </span>
                     Program Management
                 </h1>
-                <nav class="flex mt-2 text-sm text-gray-500">
-                    <a href="#" class="hover:text-blue-600 transition">Dashboard</a>
-                    <span class="mx-2">/</span>
-                    <span class="text-gray-700 font-medium">Program Management</span>
-                </nav>
+                <p class="text-sm text-slate-500 mt-1">Manage academic programs and courses</p>
             </div>
-            <div class="flex flex-wrap gap-3">
-                <button id="clearFilters" type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Clear All Filters
-                </button>
-                <a href="{% url 'program_manage:bulk_upload' %}" class="inline-flex items-center px-5 py-3 bg-green-600 text-white font-medium rounded-xl shadow-lg hover:bg-green-700 hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                    Bulk Upload
-                </a>
-                <a href="{% url 'program_manage:add_program' %}" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">
+            <div class="flex gap-3">
+                <button onclick="openDrawer('programDrawer')" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
                     Add New Program
-                </a>
+                </button>
+                
+                <!-- Excel Dropdown -->
+                <div class="relative inline-block">
+                    <button onclick="toggleExcelMenu()" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Excel Actions
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div id="excelMenu" class="hidden absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                        <div class="py-1">
+                            <a href="{% url 'program_manage:download_sample' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Download Sample Excel
+                            </a>
+                            <a href="{% url 'program_manage:download_programs' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                                </svg>
+                                Export All Programs
+                            </a>
+                            <div class="border-t border-gray-100"></div>
+                            <button onclick="openDrawer('uploadDrawer')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                                Import Programs from Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Stats Cards -->
-<div class="mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-    <!-- UG Programs -->
-    <div class="bg-white rounded-2xl shadow-md p-6 border-l-4 border-green-500 hover:shadow-lg transition">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">UG Programs</p>
-                <p class="text-3xl font-bold text-gray-900">{{ ug_count }}</p>
+    <div class="mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">UG Programs</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ ug_count }}</p>
+                </div>
+                <div class="bg-green-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+                    </svg>
+                </div>
             </div>
-            <div class="bg-green-100 p-3 rounded-xl">
-                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
-                </svg>
+        </div>
+        
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">PG Programs</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ pg_count }}</p>
+                </div>
+                <div class="bg-yellow-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v8m-4-4h8" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Arts Programs</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ arts_count }}</p>
+                </div>
+                <div class="bg-pink-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6h12M6 12h12M6 18h12" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Science Programs</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ science_count }}</p>
+                </div>
+                <div class="bg-indigo-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12m-9 0a9 9 0 1118 0a9 9 0 11-18 0" />
+                    </svg>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- PG Programs -->
-    <div class="bg-white rounded-2xl shadow-md p-6 border-l-4 border-yellow-500 hover:shadow-lg transition">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">PG Programs</p>
-                <p class="text-3xl font-bold text-gray-900">{{ pg_count }}</p>
-            </div>
-            <div class="bg-yellow-100 p-3 rounded-xl">
-                <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v8m-4-4h8" />
-                </svg>
-            </div>
-        </div>
-    </div>
-
-    <!-- Arts Programs -->
-    <div class="bg-white rounded-2xl shadow-md p-6 border-l-4 border-pink-500 hover:shadow-lg transition">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Arts Programs</p>
-                <p class="text-3xl font-bold text-gray-900">{{ arts_count }}</p>
-            </div>
-            <div class="bg-pink-100 p-3 rounded-xl">
-                <svg class="w-8 h-8 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6h12M6 12h12M6 18h12" />
-                </svg>
-            </div>
-        </div>
-    </div>
-
-    <!-- Science Programs -->
-    <div class="bg-white rounded-2xl shadow-md p-6 border-l-4 border-indigo-500 hover:shadow-lg transition">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Science Programs</p>
-                <p class="text-3xl font-bold text-gray-900">{{ science_count }}</p>
-            </div>
-            <div class="bg-indigo-100 p-3 rounded-xl">
-                <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12m-9 0a9 9 0 1118 0a9 9 0 11-18 0" />
-                </svg>
-            </div>
-        </div>
-    </div>
-
-</div>
-
-    <!-- Filter Card (with border) -->
-    <div class="mx-auto bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-8">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+    <!-- Filter Card -->
+    <div class="mx-auto bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <h2 class="text-base font-semibold text-slate-900 flex items-center gap-2">
                 <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                 </svg>
                 Filter Programs
             </h2>
         </div>
-                            <div class="p-6">
-                                <form method="get" id="filterForm">
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="p-6">
+            <form method="get" id="filterForm" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Programme Type : </label>
-                        <select name="prog_type" id="prog_type" class="border border-gray-200 mt-2 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-lg">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program Type</label>
+                        <select name="prog_type" id="prog_type" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
                             <option value="">All Types</option>
                             {% for prog_type in prog_types %}
-                            <option value="{{ prog_type }}" {% if request.GET.prog_type == prog_type|stringformat:"s" %}selected{% endif %}>{{ prog_type }}</option>
+                            <option value="{{ prog_type }}" {% if request.GET.prog_type == prog_type %}selected{% endif %}>{{ prog_type }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Programme Category : </label>
-                        <select name="prog_category" id="prog_category" class="border border-gray-200 mt-2 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-lg">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program Category</label>
+                        <select name="prog_category" id="prog_category" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
                             <option value="">All Categories</option>
                             {% for prog_category in prog_categories %}
-                            <option value="{{ prog_category }}" {% if request.GET.prog_category == prog_category|stringformat:"s" %}selected{% endif %}>{{ prog_category }}</option>
+                            <option value="{{ prog_category }}" {% if request.GET.prog_category == prog_category %}selected{% endif %}>{{ prog_category }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Degree : </label>
-                        <select name="degree" id="degree" class="border border-gray-200 mt-2 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-lg">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Degree</label>
+                        <select name="degree" id="degree" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
                             <option value="">All Degrees</option>
                             {% for degree in degrees %}
-                            <option value="{{ degree }}" {% if request.GET.degree == degree|stringformat:"s" %}selected{% endif %}>{{ degree }}</option>
+                            <option value="{{ degree }}" {% if request.GET.degree == degree %}selected{% endif %}>{{ degree }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Branch : </label>
-                        <select name="branch" id="branch" class="border border-gray-200 mt-2 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-lg">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Branch</label>
+                        <select name="branch" id="branch" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
                             <option value="">All Branches</option>
-                            {% for b in branches %}
-                            <option value="{{ b }}" {% if request.GET.branch == b %}selected{% endif %}>{{ b }}</option>
+                            {% for branch in branches %}
+                            <option value="{{ branch }}" {% if request.GET.branch == branch %}selected{% endif %}>{{ branch }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Programme Code : </label>
-                        <select name="prog_code" id="prog_code" class="border border-gray-200 mt-2 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-lg">
-                            <option value="">All Programmes</option>
-                            {% for program_code in prog_codes %}
-                            <option value="{{ program_code }}" {% if request.GET.prog_code == program_code|stringformat:"s" %}selected{% endif %}>{{ program_code }}</option>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program Code</label>
+                        <select name="prog_code" id="prog_code" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">All Codes</option>
+                            {% for prog_code in prog_codes %}
+                            <option value="{{ prog_code }}" {% if request.GET.prog_code == prog_code %}selected{% endif %}>{{ prog_code }}</option>
                             {% endfor %}
                         </select>
                     </div>
                 </div>
-                <div class="mt-4 flex justify-end">
-                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition">
-                        Apply Filters
-                    </button>
+                <div class="flex justify-end gap-5">
+                    <button type="button" id="clearFilters" class="px-4 py-2 w-[150px] border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition">Clear All</button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">Apply Filters</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Programs Table Card -->
-    <div class="mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                </svg>
-                Program Directory
-                <span class="ml-2 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">{{ page_obj.paginator.count }} total</span>
-            </h2>
-            <div class="relative">
-                <input type="text" placeholder="Search programs..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-64">
-                <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    <!-- Programs Table -->
+    <div class="mx-auto bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-center gap-2.5">
+                <h2 class="text-base font-semibold text-slate-900">Program Directory</h2>
+                <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600">
+                    {{ page_obj.paginator.count }} total
+                </span>
+            </div>
+            <div class="relative w-full sm:w-64">
+                <input type="text" id="searchInput" placeholder="Search programs..." class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg">
+                <svg class="absolute left-3 top-2.5 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                 </svg>
             </div>
         </div>
+        
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">S No</th>
-                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Type</th>
-                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Category</th>
-                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Degree</th>
-                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Branch</th>
-                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Program Code</th>
-                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
+            <table class="w-full border-collapse text-left text-sm">
+                <thead class="bg-slate-50/90 border-y border-slate-200">
+                    <tr class="text-center text-xs uppercase tracking-wider text-slate-700 font-bold">
+                        <th class="px-6 py-4 w-12">#</th>
+                        <th class="px-6 py-4">Program Type</th>
+                        <th class="px-6 py-4">Category</th>
+                        <th class="px-6 py-4">Degree</th>
+                        <th class="px-6 py-4">Branch</th>
+                        <th class="px-6 py-4">Program Code</th>
+                        <th class="px-6 py-4 text-center">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    {% for p in programs %}
-                    <tr class="hover:bg-gray-50 transition">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ page_obj.start_index|add:forloop.counter0 }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ p.get_prog_type_display }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ p.get_prog_category_display }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ p.degree }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{{ p.branch }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">{{ p.prog_code }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                            <div class="flex justify-center items-center gap-3">
-                                <a href="{% url 'program_manage:edit_program' p.id %}" class="text-blue-600 hover:text-blue-900" title="Edit">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                <tbody class="divide-y divide-slate-100 bg-white">
+                    {% for program in programs %}
+                    <tr class="group hover:bg-slate-50 transition program-row" data-program-code="{{ program.prog_code|lower }}" data-degree="{{ program.degree|lower }}" data-branch="{{ program.branch|lower }}">
+                        <td class="px-6 py-4 text-center text-sm text-slate-500">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+                        <td class="px-6 py-4 text-center">
+                            {% if program.prog_type == "UG" %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-green-50 text-green-700 text-xs font-semibold">UG</span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-yellow-50 text-yellow-700 text-xs font-semibold">PG</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if program.prog_category == "Arts" %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-pink-50 text-pink-700 text-xs font-semibold">Arts</span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-semibold">Science</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center font-medium text-slate-900">{{ program.degree }}</td>
+                        <td class="px-6 py-4 text-center text-slate-600">{{ program.branch }}</td>
+                        <td class="px-6 py-4 text-center font-mono font-bold text-blue-600">{{ program.prog_code }}</td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="editProgram({{ program.id }})" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
                                     </svg>
-                                </a>
-                                <button onclick="confirmDelete({{ p.id }})" class="text-red-600 hover:text-red-900" title="Delete">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </button>
+                                <button onclick="confirmDelete({{ program.id }}, '{{ program.prog_code }}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                                     </svg>
                                 </button>
                             </div>
                         </td>
-                    </tr>
+                     </tr>
                     {% empty %}
                     <tr>
                         <td colspan="7" class="px-6 py-12 text-center">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                            </svg>
-                            <h3 class="mt-2 text-sm font-medium text-gray-900">No programs found</h3>
-                            <p class="mt-2 text-sm text-gray-500">Get started by adding a new program.</p>
+                            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                </svg>
+                            </div>
+                            <h3 class="mt-4 text-sm font-bold text-slate-900">No programs found</h3>
+                            <p class="mt-1 text-xs text-slate-400">Get started by adding a new program.</p>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-
-        <!-- Pagination Footer: always shows record count; nav only when multiple pages -->
-        <div class="px-6 py-3 bg-gray-50 border-t border-gray-200">
-            <div class="flex items-center justify-between">
-                <!-- Record count: always visible -->
-                <p class="text-sm text-gray-600">
-                    Showing <span class="font-medium">{{ page_obj.start_index }}</span> to
-                    <span class="font-medium">{{ page_obj.end_index }}</span> of
+        
+        <!-- Pagination -->
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p class="text-sm text-slate-600">
+                    Showing <span class="font-medium">{{ page_obj.start_index }}</span> to 
+                    <span class="font-medium">{{ page_obj.end_index }}</span> of 
                     <span class="font-medium">{{ page_obj.paginator.count }}</span> results
                 </p>
-                <!-- Prev/Next nav: only when multiple pages -->
-                {% if page_obj.has_other_pages %}
-                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                    {% if page_obj.has_previous %}
-                    <a href="?page={{ page_obj.previous_page_number }}{% if pagination_query %}&{{ pagination_query }}{% endif %}"
-                        class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                        <span class="sr-only">Previous</span>
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                        </svg>
-                    </a>
-                    {% endif %}
-                    {% for num in page_obj.paginator.page_range %}
-                        {% if page_obj.number == num %}
-                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">{{ num }}</span>
-                        {% else %}
-                        <a href="?page={{ num }}{% if pagination_query %}&{{ pagination_query }}{% endif %}"
-                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">{{ num }}</a>
-                        {% endif %}
-                    {% endfor %}
-                    {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% if pagination_query %}&{{ pagination_query }}{% endif %}"
-                        class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                        <span class="sr-only">Next</span>
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                        </svg>
-                    </a>
-                    {% endif %}
-                </nav>
-                {% endif %}
-            </div>
-            <div class="mt-3 flex items-center justify-end">
-                <label class="text-sm text-gray-600 mr-2">Items per page:</label>
-                <select id="perPageSelect" class="p-2 border border-gray-300 rounded-lg" aria-label="Items per page">
-                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
-                    <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
-                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
-                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
-                </select>
-            </div>
-        </div>
-    </div>
-
-<!-- Delete Confirmation Modal -->
-<div id="deleteConfirmModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex min-h-screen items-center justify-center p-4">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeModal('deleteConfirmModal')"></div>
-        <div class="relative transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all sm:max-w-md sm:w-full">
-            <div class="px-6 py-4 text-center">
-                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                </div>
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2">Confirm Delete</h3>
-                <p class="text-sm text-gray-500 mb-4">Are you sure you want to delete this program? This action cannot be undone.</p>
-                <form method="POST" id="deleteForm" action="">
-                    {% csrf_token %}
-                    <div class="flex justify-center gap-3">
-                        <button type="button" onclick="closeModal('deleteConfirmModal')" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">Cancel</button>
-                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">Delete</button>
+                
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-slate-600">Items per page:</label>
+                        <select id="perPageSelect" class="p-1.5 border border-slate-200 rounded-lg text-sm">
+                            <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                            <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                            <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                        </select>
                     </div>
-                </form>
+                    
+                    {% if page_obj.has_other_pages %}
+                    <nav class="flex gap-1">
+                        {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}{% if pagination_query %}&{{ pagination_query }}{% endif %}" class="px-3 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition">Previous</a>
+                        {% endif %}
+                        <span class="px-3 py-1 bg-blue-600 text-white rounded-lg">{{ page_obj.number }}</span>
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}{% if pagination_query %}&{{ pagination_query }}{% endif %}" class="px-3 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition">Next</a>
+                        {% endif %}
+                    </nav>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-    const programFilterConfig = {
-        prog_type: { key: 'prog_types', defaultLabel: 'All Types' },
-        prog_category: { key: 'prog_categories', defaultLabel: 'All Categories' },
-        degree: { key: 'degrees', defaultLabel: 'All Degrees' },
-        branch: { key: 'branches', defaultLabel: 'All Branches' },
-        prog_code: { key: 'prog_codes', defaultLabel: 'All Programmes' },
-    };
+<!-- ADD/EDIT PROGRAM DRAWER -->
+<div id="programDrawer" class="drawer fixed inset-0 z-50 hidden" aria-labelledby="drawer-title" role="dialog">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] transition-opacity" onclick="closeDrawer('programDrawer')"></div>
+    
+    <div class="drawer-scrollable absolute inset-y-0 right-0 w-full max-w-2xl bg-slate-50 shadow-2xl overflow-y-auto transform transition-transform duration-300">
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+            <div>
+                <h2 id="drawer-title" class="text-xl font-bold text-blue-900">New Program</h2>
+                <p id="drawer-subtitle" class="text-md text-slate-500 mt-0.5">Fields marked with <span class="text-rose-500 font-bold">*</span> are required.</p>
+            </div>
+            <button onclick="closeDrawer('programDrawer')" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        
+        <form id="programForm" class="px-6 pb-6 space-y-6">
+            {% csrf_token %}
+            <input type="hidden" name="program_id" id="editProgramId" value="">
+            
+            <div class="bg-white rounded-xl border border-blue-100 shadow-sm overflow-hidden">
+                <div class="flex items-center gap-2 bg-blue-50/60 px-5 py-3 border-b border-blue-100/50">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    <h3 class="font-bold text-xs tracking-wider text-blue-900 uppercase">Program Information</h3>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Program Type <span class="text-rose-500">*</span></label>
+                        <select name="prog_type" id="progType" required class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">Select Type</option>
+                            <option value="UG">UG (Undergraduate)</option>
+                            <option value="PG">PG (Postgraduate)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Program Category <span class="text-rose-500">*</span></label>
+                        <select name="prog_category" id="progCategory" required class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">Select Category</option>
+                            <option value="Arts">Arts</option>
+                            <option value="Science">Science</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Degree <span class="text-rose-500">*</span></label>
+                        <input type="text" name="degree" id="degree" required placeholder="e.g., B.Sc, B.A, M.Sc" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Branch <span class="text-rose-500">*</span></label>
+                        <input type="text" name="branch" id="branch" required placeholder="e.g., Computer Science, Mathematics" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Program Code <span class="text-rose-500">*</span></label>
+                        <input type="text" name="prog_code" id="progCode" required placeholder="e.g., BSC-CS, BA-ENG" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white font-mono">
+                        <p class="text-xs text-slate-400 mt-1">Unique identifier (auto-uppercased, spaces removed)</p>
+                    </div>
+                </div>
+            </div>
+        </form>
+        
+        <div class="px-6 pb-6 flex gap-3 sticky bottom-0 bg-slate-50 pt-4 border-t border-slate-200">
+            <button onclick="closeDrawer('programDrawer')" class="flex-1 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-sm rounded-xl border border-slate-200">Cancel</button>
+            <button type="submit" form="programForm" class="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+                Save Program
+            </button>
+        </div>
+    </div>
+</div>
 
-    function populateProgramSelect(selectId, values, selectedValue, config) {
-        const select = document.getElementById(selectId);
-        if (!select) return;
+<!-- DELETE CONFIRMATION DRAWER -->
+<div id="deleteDrawer" class="drawer fixed inset-0 z-50 hidden" role="dialog">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onclick="closeDrawer('deleteDrawer')"></div>
+    
+    <div class="absolute inset-y-0 right-0 w-full max-w-xl bg-slate-50 shadow-2xl flex flex-col h-full overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+            <div>
+                <h2 class="text-xl font-bold text-rose-600">Delete Program</h2>
+                <p class="text-sm text-slate-500 mt-0.5">This action cannot be undone.</p>
+            </div>
+            <button onclick="closeDrawer('deleteDrawer')" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-8 text-center">
+                <div class="flex items-center justify-center h-14 w-14 rounded-full bg-rose-50 mx-auto mb-4">
+                    <svg class="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h3 class="text-base font-bold text-slate-900">Delete this program permanently?</h3>
+                <p class="text-sm text-slate-500 mt-2">Program code : <span id="deleteProgramCode" class="font-mono font-bold text-rose-600"></span></p>
+                <div class="mt-6 flex justify-center gap-3">
+                    <button onclick="closeDrawer('deleteDrawer')" class="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50">Cancel</button>
+                    <button id="confirmDeleteBtn" class="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-        select.innerHTML = '';
+<!-- UPLOAD EXCEL DRAWER -->
+<div id="uploadDrawer" class="drawer fixed inset-0 z-50 hidden" role="dialog">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onclick="closeDrawer('uploadDrawer')"></div>
+    
+    <div class="absolute inset-y-0 right-0 w-full max-w-xl bg-slate-50 shadow-2xl flex flex-col h-full overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+            <div>
+                <h2 class="text-xl font-bold text-green-700">Import Programs from Excel</h2>
+                <p class="text-sm text-slate-500 mt-0.5">Bulk import programs using Excel file</p>
+            </div>
+            <button onclick="closeDrawer('uploadDrawer')" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p class="text-sm text-blue-800 font-semibold mb-2">Instructions:</p>
+                <ul class="text-sm text-blue-700 space-y-1 list-disc list-inside">
+                    <li>Download the sample Excel file first</li>
+                    <li>Fill in program details (all fields are required)</li>
+                    <li>Program Type: UG or PG only</li>
+                    <li>Program Category: Arts or Science only</li>
+                    <li>Program Code must be unique</li>
+                </ul>
+            </div>
+            
+            <form id="uploadForm" enctype="multipart/form-data" class="space-y-5">
+                {% csrf_token %}
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-4">Select Excel File <span class="text-rose-500">*</span></label>
+                    
+                    <div class="relative group flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-8 text-center hover:border-blue-400 transition">
+                        <input type="file" name="excel_file" id="excelFile" accept=".xlsx,.xls" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                        
+                        <div id="fileEmptyState" class="space-y-2 pointer-events-none">
+                            <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-white text-slate-400">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                                </svg>
+                            </div>
+                            <div class="text-xs font-medium text-slate-600">
+                                <span class="font-semibold text-blue-600">Click to upload</span> or drag and drop
+                            </div>
+                            <p class="text-[11px] text-slate-400">Supported formats: .xlsx, .xls</p>
+                        </div>
+                        
+                        <div id="fileSelectedState" class="hidden space-y-2">
+                            <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                </svg>
+                            </div>
+                            <div id="fileNameDisplay" class="text-xs font-semibold text-slate-800 truncate max-w-[240px] px-2">No file selected</div>
+                            <button type="button" id="removeFileBtn" class="text-[11px] font-medium text-slate-400 hover:text-rose-500">Remove file</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <div class="px-6 pb-6 flex gap-3 bg-slate-50 shrink-0 pt-4 border-t border-slate-200">
+            <button onclick="closeDrawer('uploadDrawer')" class="flex-1 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-sm rounded-xl border border-slate-200">Cancel</button>
+            <button type="submit" form="uploadForm" class="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                Upload & Import
+            </button>
+        </div>
+    </div>
+</div>
 
-        const defaultOption = document.createElement('option');
-        defaultOption.value = '';
-        defaultOption.textContent = config.defaultLabel;
-        if (config.keepPlaceholderDisabled) {
-            defaultOption.disabled = true;
-        }
-        if (!selectedValue) {
-            defaultOption.selected = true;
-        }
-        select.appendChild(defaultOption);
+<!-- Toast Notification -->
+<div id="toast" class="fixed bottom-4 right-4 z-50 hidden transform transition-all duration-300">
+    <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <span id="toastMessage">Success!</span>
+    </div>
+</div>
 
-        values.forEach((item) => {
-            const option = document.createElement('option');
-            option.value = item;
-            option.textContent = item;
-            if (item === selectedValue) {
-                option.selected = true;
-            }
-            select.appendChild(option);
-        });
+<script src="{% static 'js/program_management.js' %}"></script>
 
-        const hasSelectedOption = Array.from(select.options).some((option) => option.value === selectedValue);
-        if (selectedValue && !hasSelectedOption) {
-            select.value = '';
-        }
+<style>
+    .drawer .absolute.inset-y-0.right-0 {
+        transform: translateX(0);
+        transition: transform 0.3s ease-in-out;
     }
-
-    async function refreshProgramFilters() {
-        const form = document.getElementById('filterForm');
-        const params = new URLSearchParams(new FormData(form));
-        const response = await fetch(`{% url 'program_manage:get_filter_options' %}?${params.toString()}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-
-        if (!response.ok) {
-            return;
-        }
-
-        const data = await response.json();
-        Object.entries(programFilterConfig).forEach(([selectId, config]) => {
-            const selectedValue = form.elements[selectId]?.value || '';
-            populateProgramSelect(selectId, data[config.key] || [], selectedValue, config);
-        });
+    
+    .drawer.hidden .absolute.inset-y-0.right-0 {
+        transform: translateX(100%);
     }
-
-    function openModal(modalId) {
-        document.getElementById(modalId).classList.remove('hidden');
+    
+    .drawer-scrollable {
+        scrollbar-width: thin;
     }
-    function closeModal(modalId) {
-        document.getElementById(modalId).classList.add('hidden');
+    
+    .drawer-scrollable::-webkit-scrollbar {
+        width: 6px;
     }
-    let currentDeleteProgramId = null;
-    function confirmDelete(programId) {
-        currentDeleteProgramId = programId;
-        const deleteForm = document.getElementById('deleteForm');
-        deleteForm.action = "{% url 'program_manage:delete_program' 0 %}".replace('0', programId);
-        openModal('deleteConfirmModal');
+    
+    .drawer-scrollable::-webkit-scrollbar-track {
+        background: #f1f1f1;
     }
+    
+    .drawer-scrollable::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+</style>
 
-    document.getElementById('clearFilters').addEventListener('click', function() {
-        document.querySelectorAll('#filterForm select').forEach(select => select.value = '');
-        document.getElementById('filterForm').submit();
-    });
-
-    document.querySelectorAll('#filterForm select').forEach((select) => {
-        select.addEventListener('change', refreshProgramFilters);
-    });
-
-    refreshProgramFilters();
-</script>
 {% endblock %}

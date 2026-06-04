@@ -7,9 +7,10 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.db.models import Q
 
 from modules.program_manage.models import Program, normalize_program_code, normalize_program_value
-from modules.upload_center.models import CourseContent, CourseStr, normalize_course_code
+from .models import CourseStructure, CourseSyllabus, normalize_course_code
 
 
 REQUIRED_COLUMNS = [
@@ -59,114 +60,25 @@ def _distinct_non_empty(queryset, field_name):
     )
 
 
-def _program_key_from_values(prog_type, prog_category, branch, prog_code):
-    return (
-        normalize_program_value(prog_type).upper(),
-        normalize_program_value(prog_category).title(),
-        normalize_program_value(branch),
-        normalize_program_code(prog_code),
-    )
-
-
-def _program_degree_lookup():
-    lookup = {}
-    branch_lookup = {}
-    code_lookup = {}
-
-    for program in Program.objects.filter(is_active=True):
-        key = _program_key_from_values(
-            program.prog_type,
-            program.prog_category,
-            program.branch,
-            program.prog_code,
-        )
-        degree = program.degree or ""
-        lookup[key] = degree
-        branch_lookup[(normalize_program_code(program.prog_code), normalize_program_value(program.branch))] = degree
-        code_lookup.setdefault(normalize_program_code(program.prog_code), set()).add(degree)
-
-    unique_code_lookup = {
-        prog_code: next(iter(degrees))
-        for prog_code, degrees in code_lookup.items()
-        if len(degrees) == 1
-    }
-
-    return {
-        "full": lookup,
-        "branch": branch_lookup,
-        "code": unique_code_lookup,
-    }
-
-
-def _course_program_key(course):
-    return _program_key_from_values(
-        course.prog_type,
-        course.prog_category,
-        course.branch,
-        course.prog_code,
-    )
-
-
-def _resolved_course_degree(course, program_degree_lookup):
-    stored_degree = normalize_program_value(getattr(course, 'degree', ''))
-    if stored_degree:
-        return stored_degree
-
-    derived_degree = program_degree_lookup["full"].get(_course_program_key(course), "")
-    if derived_degree:
-        return derived_degree
-
-    derived_degree = program_degree_lookup["branch"].get(
-        (normalize_program_code(course.prog_code), normalize_program_value(course.branch)),
-        "",
-    )
-    if derived_degree:
-        return derived_degree
-
-    return program_degree_lookup["code"].get(normalize_program_code(course.prog_code), "")
-
-
-# def _matching_course_ids_for_degree(queryset, degree):
-#     if not degree:
-#         return None
-
-def _matching_course_ids_for_degree(queryset, degree):
-    if not degree:
-        return None
-
-    degree_normalized = normalize_program_value(degree)
-    program_degree_lookup = _program_degree_lookup()
-    matching_ids = []
-    for course in queryset.only('id', 'degree', 'prog_type', 'prog_category', 'branch', 'prog_code'):
-        resolved = _resolved_course_degree(course, program_degree_lookup)
-        # Normalize both sides before comparing
-        if normalize_program_value(resolved) == degree_normalized:
-            matching_ids.append(course.id)
-    return matching_ids
-    program_degree_lookup = _program_degree_lookup()
-    matching_ids = []
-    for course in queryset.only('id', 'degree', 'prog_type', 'prog_category', 'branch', 'prog_code'):
-        if _resolved_course_degree(course, program_degree_lookup) == degree:
-            matching_ids.append(course.id)
-    return matching_ids
-
-
 def _apply_course_filters(queryset, filters, exclude_field=None):
     for field in COURSE_FILTER_FIELDS:
         if field == exclude_field:
             continue
-
-        if field == 'degree':
-            continue
-
         value = filters.get(field)
         if value:
-            queryset = queryset.filter(**{field: value})
-
-    if exclude_field != 'degree' and filters.get('degree'):
-        matching_ids = _matching_course_ids_for_degree(queryset, filters['degree'])
-        queryset = queryset.filter(id__in=matching_ids or [])
-
+            if field == 'degree':
+                # Filter by program's degree
+                queryset = queryset.filter(program__degree=value)
+            elif field == 'prog_type':
+                queryset = queryset.filter(program__prog_type=value)
+            elif field == 'prog_category':
+                queryset = queryset.filter(program__prog_category=value)
+            elif field == 'prog_code':
+                queryset = queryset.filter(program__prog_code=value)
+            elif field == 'branch':
+                queryset = queryset.filter(program__branch=value)
+            else:
+                queryset = queryset.filter(**{field: value})
     return queryset
 
 
@@ -204,10 +116,6 @@ def _build_course_filter_options(base_queryset, filters):
     }
 
 
-def _program_exists_for_course(program_data):
-    return Program.objects.filter(is_active=True, **program_data).exists()
-
-
 def home(request):
     return redirect('course_manage:course_management')
 
@@ -238,7 +146,7 @@ def bulk_upload(request):
             return redirect('course_manage:bulk_upload')
 
         if df.empty:
-            messages.error(request, "The uploaded Excel file is empty. Please add data and try again.")
+            messages.error(request, "The uploaded Excel file is empty.")
             return redirect('course_manage:bulk_upload')
 
         df.columns = [col.strip().lower() for col in df.columns]
@@ -265,7 +173,7 @@ def bulk_upload(request):
             row_num = index + 2
             course_code = normalize_course_code(row.get('course_code', ''))
             if not course_code:
-                error_rows.append(f"Row {row_num}: Missing course_code â€” skipped.")
+                error_rows.append(f"Row {row_num}: Missing course_code — skipped.")
                 skip_count += 1
                 continue
 
@@ -279,20 +187,15 @@ def bulk_upload(request):
             course_category = str(row.get('course_category', '') or '').strip()
             course_title = str(row.get('course_title', '') or '').strip()
 
-            if not _program_exists_for_course(
-                {
-                    'prog_type': prog_type,
-                    'prog_category': prog_category,
-                    'degree': degree,
-                    'branch': branch,
-                    'prog_code': prog_code,
-                }
-            ):
-                error_rows.append(
-                    f"Row {row_num}: Program {prog_type} / {prog_category} / {degree} / {branch} / {prog_code} is not in Program Management â€” skipped."
-                )
-                skip_count += 1
-                continue
+            # Find or create program
+            program, created = Program.objects.get_or_create(
+                prog_code=prog_code,
+                degree=degree,
+                branch=branch,
+                prog_type=prog_type,
+                prog_category=prog_category,
+                defaults={'is_active': True}
+            )
 
             hrs_per_week = to_decimal(row.get('hrs_per_week'))
             credit = to_decimal(row.get('credit'))
@@ -300,35 +203,33 @@ def bulk_upload(request):
             marks_ese = to_decimal(row.get('marks_ese'))
             total_marks = to_decimal(row.get('total_marks'))
 
-            if CourseStr.objects.filter(course_code=course_code).exists():
-                error_rows.append(f"Row {row_num}: course_code '{course_code}' already exists â€” skipped.")
+            # Check if course already exists
+            if CourseStructure.objects.filter(program=program, course_code=course_code).exists():
+                error_rows.append(f"Row {row_num}: course_code '{course_code}' already exists for this program — skipped.")
                 skip_count += 1
                 continue
 
-            CourseStr.objects.create(
-                prog_code=prog_code,
-                degree=degree,
-                prog_type=prog_type,
-                prog_category=prog_category,
-                branch=branch,
-                sem=sem,
+            CourseStructure.objects.create(
+                program=program,
                 course_code=course_code,
+                course_title=course_title,
+                sem=sem,
                 part=part,
                 course_category=course_category,
-                course_title=course_title,
                 hrs_per_week=hrs_per_week,
                 credit=credit,
                 marks_cia=marks_cia,
                 marks_ese=marks_ese,
                 total_marks=total_marks,
                 is_finalized=True,
+                is_saved=True
             )
             success_count += 1
 
         if success_count:
             messages.success(request, f"Successfully uploaded {success_count} course(s).")
         if error_rows:
-            for err in error_rows:
+            for err in error_rows[:10]:  # Show first 10 errors
                 messages.warning(request, err)
         if success_count == 0 and not error_rows:
             messages.error(request, "No courses were uploaded. Please check your file.")
@@ -340,17 +241,21 @@ def bulk_upload(request):
 
 def course_management(request):
     filters = {field: request.GET.get(field) for field in COURSE_FILTER_FIELDS}
-    base_queryset = CourseStr.objects.filter(is_finalized=True)
-    course_queryset = _apply_course_filters(base_queryset, filters).order_by('id')
-    program_degree_lookup = _program_degree_lookup()
+    base_queryset = CourseStructure.objects.filter(is_finalized=True).select_related('program')
+    course_queryset = _apply_course_filters(base_queryset, filters).order_by('-created_at')
+    
     courses = []
-
     for course in course_queryset:
-        course.display_degree = _resolved_course_degree(course, program_degree_lookup)
+        # Add program fields to course object for template
+        course.prog_code = course.program.prog_code
+        course.prog_type = course.program.prog_type
+        course.prog_category = course.program.prog_category
+        course.degree = course.program.degree
+        course.branch = course.program.branch
         courses.append(course)
 
     filter_options = _build_course_filter_options(base_queryset, filters)
-    # items per page configurable via ?per_page=10|20|50|100 (defaults to 10)
+    
     per_page_default = 10
     allowed_per_page = {10, 20, 50, 100}
     try:
@@ -363,35 +268,39 @@ def course_management(request):
     paginator = Paginator(courses, per_page)
     page_obj = paginator.get_page(request.GET.get('page'))
     page_courses = list(page_obj.object_list)
+    
     course_codes = [course.course_code for course in page_courses if course.course_code]
-    pdf_contents = {
-        content.course_code: content
-        for content in CourseContent.objects.filter(course_code__in=course_codes)
+    syllabus_contents = {
+        syllabus.course_code: syllabus
+        for syllabus in CourseSyllabus.objects.filter(course_code__in=course_codes)
     }
 
     for course in page_courses:
-        content = pdf_contents.get(course.course_code)
+        syllabus = syllabus_contents.get(course.course_code)
         course.has_pdf = bool(
-            content
-            and content.pdf
-            and content.pdf.name
-            and content.pdf.storage.exists(content.pdf.name)
+            syllabus
+            and syllabus.pdf
+            and syllabus.pdf.name
+            and syllabus.pdf.storage.exists(syllabus.pdf.name)
         )
 
     query_params = request.GET.copy()
     query_params.pop('page', None)
 
+    # Calculate stats
+    all_courses = CourseStructure.objects.filter(is_finalized=True).select_related('program')
+    
     context = {
         'courses': page_obj,
         'page_obj': page_obj,
         'per_page': per_page,
         'pagination_query': query_params.urlencode(),
         **filter_options,
-        'total_count': base_queryset.count(),
-        'arts_count': base_queryset.filter(prog_category='Arts').count(),
-        'science_count': base_queryset.filter(prog_category='Science').count(),
-        'ug_count': base_queryset.filter(prog_type='UG').count(),
-        'pg_count': base_queryset.filter(prog_type='PG').count(),
+        'total_count': all_courses.count(),
+        'arts_count': all_courses.filter(program__prog_category='Arts').count(),
+        'science_count': all_courses.filter(program__prog_category='Science').count(),
+        'ug_count': all_courses.filter(program__prog_type='UG').count(),
+        'pg_count': all_courses.filter(program__prog_type='PG').count(),
     }
 
     return render(request, 'cou_manage.html', context)
@@ -400,19 +309,19 @@ def course_management(request):
 def view_course_pdf(request, course_code):
     course_code = normalize_course_code(course_code)
     try:
-        course = CourseContent.objects.get(course_code=course_code)
-    except CourseContent.DoesNotExist:
-        raise Http404("Course not found")
+        syllabus = CourseSyllabus.objects.get(course_code=course_code)
+    except CourseSyllabus.DoesNotExist:
+        raise Http404("Syllabus not found for this course")
 
-    if not course.pdf:
+    if not syllabus.pdf:
         raise Http404("PDF not uploaded for this course")
 
-    if not course.pdf.storage.exists(course.pdf.name):
+    if not syllabus.pdf.storage.exists(syllabus.pdf.name):
         raise Http404("PDF file not found on server")
 
-    filename = os.path.basename(course.pdf.name)
+    filename = os.path.basename(syllabus.pdf.name)
     response = FileResponse(
-        course.pdf.open("rb"),
+        syllabus.pdf.open("rb"),
         content_type="application/pdf",
         filename=filename,
         as_attachment=False,
@@ -421,26 +330,214 @@ def view_course_pdf(request, course_code):
     return response
 
 
-def debug_pdf_path(request, course_code):
-    code = normalize_course_code(course_code)
-    course_content = get_object_or_404(CourseContent, course_code__iexact=code)
-    path_in_db = course_content.pdf.name
-    full_path = os.path.join(settings.MEDIA_ROOT, path_in_db)
-    return HttpResponse(f"""
-    <h2>DEBUG INFO for {course_code}</h2>
-    <p>DB Path: <strong>{path_in_db}</strong></p>
-    <p>MEDIA_ROOT: <strong>{settings.MEDIA_ROOT}</strong></p>
-    <p>Full Path: <strong>{full_path}</strong></p>
-    <p>File Exists: <strong>{os.path.exists(full_path)}</strong></p>
-    """)
-
-
-# def get_filter_options(request):
-#     filters = {field: request.GET.get(field) for field in COURSE_FILTER_FIELDS}
-#     queryset = CourseStr.objects.filter(is_finalized=True)
-#     return JsonResponse(_build_course_filter_options(queryset, filters))
-
 def get_filter_options(request):
     filters = {field: request.GET.get(field, '').strip() for field in COURSE_FILTER_FIELDS}
-    queryset = CourseStr.objects.filter(is_finalized=True)
+    queryset = CourseStructure.objects.filter(is_finalized=True).select_related('program')
     return JsonResponse(_build_course_filter_options(queryset, filters))
+
+
+def add_course(request):
+    if not request.user.is_authenticated:
+        return redirect('/login/')
+
+    if request.method == 'POST':
+        try:
+            prog_code = normalize_program_code(request.POST.get('prog_code', ''))
+            prog_type = request.POST.get('prog_type', '').upper()
+            prog_category = request.POST.get('prog_category', '').title()
+            degree = request.POST.get('degree', '')
+            branch = request.POST.get('branch', '')
+            
+            # Get or create program
+            program, created = Program.objects.get_or_create(
+                prog_code=prog_code,
+                degree=degree,
+                branch=branch,
+                prog_type=prog_type,
+                prog_category=prog_category,
+                defaults={'is_active': True}
+            )
+            
+            course_code = normalize_course_code(request.POST.get('course_code', ''))
+            course_title = request.POST.get('course_title', '')
+            sem = request.POST.get('sem', '')
+            part = request.POST.get('part', '')
+            course_category = request.POST.get('course_category', '')
+            hrs_per_week = to_decimal(request.POST.get('hrs_per_week'))
+            credit = to_decimal(request.POST.get('credit'))
+            marks_cia = to_decimal(request.POST.get('marks_cia'))
+            marks_ese = to_decimal(request.POST.get('marks_ese'))
+            total_marks = to_decimal(request.POST.get('total_marks'))
+            
+            # Check if course already exists
+            if CourseStructure.objects.filter(program=program, course_code=course_code).exists():
+                messages.error(request, f'Course with code {course_code} already exists for this program.')
+                return redirect('course_manage:add_course')
+            
+            course = CourseStructure.objects.create(
+                program=program,
+                course_code=course_code,
+                course_title=course_title,
+                sem=sem,
+                part=part,
+                course_category=course_category,
+                hrs_per_week=hrs_per_week,
+                credit=credit,
+                marks_cia=marks_cia,
+                marks_ese=marks_ese,
+                total_marks=total_marks,
+                is_finalized=True,
+                is_saved=True
+            )
+            
+            # Handle PDF upload
+            if 'pdf_file' in request.FILES:
+                pdf_file = request.FILES['pdf_file']
+                syllabus, _ = CourseSyllabus.objects.get_or_create(course_code=course_code)
+                syllabus.pdf = pdf_file
+                syllabus.save()
+            
+            messages.success(request, 'Course added successfully!')
+            
+            if 'add_next' in request.POST:
+                return redirect('course_manage:add_course')
+            else:
+                return redirect('course_manage:course_management')
+                
+        except Exception as e:
+            messages.error(request, f'Error adding course: {str(e)}')
+            return redirect('course_manage:add_course')
+    
+    # GET request - show form
+    programs = Program.objects.filter(is_active=True).order_by('prog_code')
+    prog_codes = programs.values_list('prog_code', flat=True).distinct()
+    
+    context = {
+        'form_mode': 'add',
+        'prog_codes': prog_codes,
+        'programs': programs,
+        'form_values': {}
+    }
+    return render(request, 'add_course.html', context)
+
+
+def edit_course(request, course_id):
+    course = get_object_or_404(CourseStructure, id=course_id)
+    
+    if request.method == 'POST':
+        try:
+            prog_code = normalize_program_code(request.POST.get('prog_code', ''))
+            prog_type = request.POST.get('prog_type', '').upper()
+            prog_category = request.POST.get('prog_category', '').title()
+            degree = request.POST.get('degree', '')
+            branch = request.POST.get('branch', '')
+            
+            # Get or create program
+            program, created = Program.objects.get_or_create(
+                prog_code=prog_code,
+                degree=degree,
+                branch=branch,
+                prog_type=prog_type,
+                prog_category=prog_category,
+                defaults={'is_active': True}
+            )
+            
+            course.program = program
+            course.course_code = normalize_course_code(request.POST.get('course_code', ''))
+            course.course_title = request.POST.get('course_title', '')
+            course.sem = request.POST.get('sem', '')
+            course.part = request.POST.get('part', '')
+            course.course_category = request.POST.get('course_category', '')
+            course.hrs_per_week = to_decimal(request.POST.get('hrs_per_week'))
+            course.credit = to_decimal(request.POST.get('credit'))
+            course.marks_cia = to_decimal(request.POST.get('marks_cia'))
+            course.marks_ese = to_decimal(request.POST.get('marks_ese'))
+            course.total_marks = to_decimal(request.POST.get('total_marks'))
+            course.save()
+            
+            # Handle PDF upload
+            if 'pdf_file' in request.FILES:
+                syllabus, _ = CourseSyllabus.objects.get_or_create(course_code=course.course_code)
+                syllabus.pdf = request.FILES['pdf_file']
+                syllabus.save()
+            
+            messages.success(request, 'Course updated successfully!')
+            return redirect('course_manage:course_management')
+            
+        except Exception as e:
+            messages.error(request, f'Error updating course: {str(e)}')
+    
+    # GET request - show form with data
+    programs = Program.objects.filter(is_active=True).order_by('prog_code')
+    prog_codes = programs.values_list('prog_code', flat=True).distinct()
+    
+    form_values = {
+        'prog_code': course.program.prog_code,
+        'prog_type': course.program.prog_type,
+        'prog_category': course.program.prog_category,
+        'degree': course.program.degree,
+        'branch': course.program.branch,
+        'course_code': course.course_code,
+        'course_title': course.course_title,
+        'sem': course.sem,
+        'part': course.part,
+        'course_category': course.course_category,
+        'hrs_per_week': course.hrs_per_week,
+        'credit': course.credit,
+        'marks_cia': course.marks_cia,
+        'marks_ese': course.marks_ese,
+        'total_marks': course.total_marks,
+    }
+    
+    context = {
+        'form_mode': 'edit',
+        'prog_codes': prog_codes,
+        'programs': programs,
+        'form_values': form_values,
+        'course_id': course_id
+    }
+    return render(request, 'add_course.html', context)
+
+
+def delete_course(request, course_id):
+    if request.method == 'POST':
+        course = get_object_or_404(CourseStructure, id=course_id)
+        course.delete()
+        messages.success(request, 'Course deleted successfully!')
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+def get_program_details(request):
+    """AJAX endpoint to get program details based on prog_code and branch"""
+    prog_code = request.GET.get('prog_code', '')
+    branch = request.GET.get('branch', '')
+    
+    try:
+        program = Program.objects.get(prog_code=prog_code, branch=branch, is_active=True)
+        data = {
+            'success': True,
+            'program': {
+                'degree': program.degree,
+                'prog_type': program.prog_type,
+                'prog_category': program.prog_category,
+                'prog_code': program.prog_code,
+                'branch': program.branch
+            }
+        }
+        return JsonResponse(data)
+    except Program.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Program not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+def get_branches(request):
+    """AJAX endpoint to get branches for a given prog_code"""
+    prog_code = request.GET.get('prog_code', '')
+    try:
+        programs = Program.objects.filter(prog_code=prog_code, is_active=True)
+        branches = list(programs.values_list('branch', flat=True).distinct())
+        return JsonResponse({'success': True, 'branches': branches})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

@@ -3,6 +3,16 @@ from django.db.models import Q
 from django.conf import settings
 
 # =========================
+# HELPER FUNCTIONS
+# =========================
+
+def normalize_course_value(value):
+    return (value or "").strip()
+
+def normalize_course_code(value):
+    return normalize_course_value(value).upper().replace(" ", "")
+
+# =========================
 # COURSE STRUCTURE
 # =========================
 
