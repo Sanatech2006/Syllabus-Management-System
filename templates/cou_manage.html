@@ -260,198 +260,205 @@
     }
 
     const courseFilterConfig = {
-        degree: { key: 'degrees', defaultLabel: 'Choose a degree', keepPlaceholderDisabled: true },
-        prog_type: { key: 'prog_types', defaultLabel: 'All Types' },
-        prog_category: { key: 'prog_categories', defaultLabel: 'All Categories' },
-        prog_code: { key: 'prog_codes', defaultLabel: 'All Programmes' },
-        branch: { key: 'branches', defaultLabel: 'All Branches' },
-        sem: { key: 'semesters', defaultLabel: 'All Semesters' },
-        part: { key: 'parts', defaultLabel: 'All parts' },
-        course_code: { key: 'course_code_titles', defaultLabel: 'All Courses' },
+        degree:        { key: 'degrees',           defaultLabel: 'Choose a degree',      keepPlaceholderDisabled: true },
+        prog_type:     { key: 'prog_types',         defaultLabel: 'All Types' },
+        prog_category: { key: 'prog_categories',    defaultLabel: 'All Categories' },
+        prog_code:     { key: 'prog_codes',         defaultLabel: 'All Programmes' },
+        branch:        { key: 'branches',           defaultLabel: 'All Branches' },
+        sem:           { key: 'semesters',          defaultLabel: 'All Semesters' },
+        part:          { key: 'parts',              defaultLabel: 'All Parts' },
+        course_code:   { key: 'course_code_titles', defaultLabel: 'All Courses' },
     };
 
-    const courseAutoFields = ['prog_type', 'prog_category', 'prog_code', 'sem', 'part', 'course_code'];
+    const autoFields = ['prog_type', 'prog_category', 'prog_code', 'sem', 'part', 'course_code'];
 
-    function populateCourseSelect(selectId, values, selectedValue, config) {
+    // ── Read current values from DOM into a plain object ─────────────────────
+    function snapshotValues() {
+        const form = document.getElementById('filterForm');
+        const snap = {};
+        snap.degree = form.elements.degree?.value || '';
+        snap.branch = form.elements.branch?.value || '';
+        for (const f of autoFields) {
+            snap[f] = document.getElementById(f)?.value || '';
+        }
+        return snap;
+    }
+
+    // ── Fetch filter options using a plain object (never FormData post-mutation)
+    async function fetchFilterData(snap) {
+        const params = new URLSearchParams();
+        for (const [k, v] of Object.entries(snap)) {
+            if (v) params.set(k, v);
+        }
+        const res = await fetch(
+            `{% url 'course_manage:get_filter_options' %}?${params.toString()}`,
+            { headers: { 'X-Requested-With': 'XMLHttpRequest' } }
+        );
+        if (!res.ok) return null;
+        return res.json();
+    }
+
+    // ── Rebuild a <select> and restore the intended selected value ────────────
+    function repopulateSelect(selectId, values, selectedValue, config) {
         const select = document.getElementById(selectId);
         if (!select) return;
 
         select.innerHTML = '';
 
-        const defaultOption = document.createElement('option');
-        defaultOption.value = '';
-        defaultOption.textContent = config.defaultLabel;
-        if (config.keepPlaceholderDisabled) {
-            defaultOption.disabled = true;
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = config.defaultLabel;
+        if (config.keepPlaceholderDisabled) placeholder.disabled = true;
+        select.appendChild(placeholder);
+
+        for (const item of values) {
+            const opt = document.createElement('option');
+            opt.value = item;
+            opt.textContent = item;
+            select.appendChild(opt);
         }
-        if (!selectedValue) {
-            defaultOption.selected = true;
-        }
-        select.appendChild(defaultOption);
 
-        values.forEach((item) => {
-            const option = document.createElement('option');
-            if (selectId === 'course_code') {
-                option.value = item.course_code;
-                option.textContent = `${item.course_code} - ${item.course_title || ''}`.trim();
-            } else {
-                option.value = item;
-                option.textContent = item;
-            }
-
-            if (option.value === selectedValue) {
-                option.selected = true;
-            }
-
-            select.appendChild(option);
-        });
-
-        const hasSelectedOption = Array.from(select.options).some((option) => option.value === selectedValue);
-        if (selectedValue && !hasSelectedOption) {
-            select.value = '';
-        }
+        // Restore selection — use == not === so "1" matches 1 etc.
+        const match = values.find(v => String(v) === String(selectedValue));
+        select.value = match !== undefined ? selectedValue : '';
     }
 
-    function populateCourseAutoField(fieldId, values, selectedValue, shouldPopulate) {
-        const hiddenInput = document.getElementById(fieldId);
-        const displayInput = document.getElementById(`${fieldId}_display`);
-        if (!hiddenInput || !displayInput) return false;
+    // ── Set a read-only display+hidden field pair ─────────────────────────────
+    function setAutoField(fieldId, value, label) {
+        const hidden  = document.getElementById(fieldId);
+        const display = document.getElementById(`${fieldId}_display`);
+        if (hidden)  hidden.value  = value || '';
+        if (display) display.value = label || value || '';
+    }
 
-        let resolvedValue = '';
-        let displayValue = '';
+    function clearAutoFields() {
+        for (const f of autoFields) setAutoField(f, '', '');
+    }
 
-        if (shouldPopulate) {
-            if (fieldId === 'course_code') {
-                const courseOptions = values.map((item) => ({
-                    value: item.course_code,
-                    label: `${item.course_code} - ${item.course_title || ''}`.trim(),
-                }));
-                const selectedOption = courseOptions.find((item) => item.value === selectedValue);
-                if (selectedOption) {
-                    resolvedValue = selectedOption.value;
-                    displayValue = selectedOption.label;
-                } else if (courseOptions.length === 1) {
-                    resolvedValue = courseOptions[0].value;
-                    displayValue = courseOptions[0].label;
-                }
-            } else {
-                const normalizedValues = values.map((value) => `${value}`);
-                if (selectedValue && normalizedValues.includes(selectedValue)) {
-                    resolvedValue = selectedValue;
-                    displayValue = selectedValue;
-                } else if (normalizedValues.length === 1) {
-                    resolvedValue = normalizedValues[0];
-                    displayValue = normalizedValues[0];
-                }
-            }
+    // ── Resolve what value an auto-field should show ──────────────────────────
+    function resolveAutoField(fieldId, values, currentValue) {
+        if (fieldId === 'course_code') {
+            const match = values.find(item => item.course_code === currentValue);
+            if (match) return { value: match.course_code, label: `${match.course_code} - ${match.course_title || ''}`.trim() };
+            if (values.length === 1) return { value: values[0].course_code, label: `${values[0].course_code} - ${values[0].course_title || ''}`.trim() };
+        } else {
+            const strs = values.map(String);
+            if (currentValue && strs.includes(String(currentValue))) return { value: currentValue, label: currentValue };
+            if (strs.length === 1) return { value: strs[0], label: strs[0] };
         }
-
-        const changed = hiddenInput.value !== resolvedValue || displayInput.value !== displayValue;
-        hiddenInput.value = resolvedValue;
-        displayInput.value = displayValue;
-        return changed;
+        return null;
     }
 
-    function clearCourseAutoFields() {
-        courseAutoFields.forEach((fieldId) => {
-            const hiddenInput = document.getElementById(fieldId);
-            const displayInput = document.getElementById(`${fieldId}_display`);
-            if (hiddenInput) {
-                hiddenInput.value = '';
-            }
-            if (displayInput) {
-                displayInput.value = '';
-            }
-        });
-    }
-
-    async function fetchCourseFilterData(form) {
-        const params = new URLSearchParams(new FormData(form));
-        const response = await fetch(`{% url 'course_manage:get_filter_options' %}?${params.toString()}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-
-        if (!response.ok) {
-            return null;
-        }
-
-        return response.json();
-    }
+    // ── Core refresh logic ────────────────────────────────────────────────────
+    let refreshing = false;
+    let isInitialLoad = true;   // True only for the automatic call on page load
 
     async function refreshCourseFilters() {
-        const form = document.getElementById('filterForm');
-        const degreeValue = form.elements.degree?.value || '';
-        const previousDegreeValue = form.dataset.selectedDegree || '';
-        const previousBranchValue = form.dataset.selectedBranch || '';
-        let branchValue = form.elements.branch?.value || '';
+        if (refreshing) return;
+        refreshing = true;
 
-        if (previousDegreeValue !== degreeValue) {
-            clearCourseAutoFields();
-            if (form.elements.branch) {
-                form.elements.branch.value = '';
+        try {
+            // Snapshot BEFORE any DOM mutation
+            const snap = snapshotValues();
+            const prevDegree = document.getElementById('filterForm').dataset.prevDegree ?? null;
+            const prevBranch = document.getElementById('filterForm').dataset.prevBranch ?? null;
+
+            const degreeChanged = prevDegree !== null && prevDegree !== snap.degree;
+            const branchChanged = prevBranch !== null && prevBranch !== snap.branch;
+
+            // If degree changed by user, wipe everything dependent
+            if (degreeChanged) {
+                clearAutoFields();
+                snap.branch = '';
+                snap.prog_type = snap.prog_category = snap.prog_code = '';
+                snap.sem = snap.part = snap.course_code = '';
+                document.getElementById('branch').value = '';
+            } else if (branchChanged) {
+                clearAutoFields();
+                snap.prog_type = snap.prog_category = snap.prog_code = '';
+                snap.sem = snap.part = snap.course_code = '';
             }
-            branchValue = '';
-        }
 
-        if (previousBranchValue !== branchValue) {
-            clearCourseAutoFields();
-        }
+            document.getElementById('filterForm').dataset.prevDegree = snap.degree;
+            document.getElementById('filterForm').dataset.prevBranch = snap.branch;
 
-        form.dataset.selectedDegree = degreeValue;
-        form.dataset.selectedBranch = branchValue;
+            // Fetch options from backend using the clean snapshot
+            const data = await fetchFilterData(snap);
+            if (!data) return;
 
-        let data = await fetchCourseFilterData(form);
-        if (!data) {
-            return;
-        }
+            // Re-populate branch (safe — does not affect degree element)
+            repopulateSelect('branch', data[courseFilterConfig.branch.key] || [], snap.branch, {
+                ...courseFilterConfig.branch,
+                defaultLabel: snap.degree ? 'Choose a branch' : 'Choose a degree first',
+                keepPlaceholderDisabled: !!snap.degree,
+            });
 
-        populateCourseSelect('branch', data[courseFilterConfig.branch.key] || [], branchValue, {
-            ...courseFilterConfig.branch,
-            defaultLabel: degreeValue ? 'Choose a branch' : 'Choose a degree first',
-            keepPlaceholderDisabled: !!degreeValue,
-        });
-
-        const resolvedBranchValue = form.elements.branch?.value || '';
-        let autoFieldChanged = false;
-        courseAutoFields.forEach((fieldId) => {
-            const selectedValue = form.elements[fieldId]?.value || '';
-            const values = data[courseFilterConfig[fieldId].key] || [];
-            const shouldPopulate = !!degreeValue && (!!resolvedBranchValue || values.length === 1);
-            if (populateCourseAutoField(fieldId, values, selectedValue, shouldPopulate)) {
-                autoFieldChanged = true;
+            // Re-populate degree ONLY on user-triggered calls, not the initial page load.
+            // On page load the server has already rendered the correct selected option —
+            // re-rendering it from AJAX is what was clearing the selection.
+            if (!isInitialLoad) {
+                repopulateSelect('degree', data[courseFilterConfig.degree.key] || [], snap.degree, courseFilterConfig.degree);
             }
-        });
 
-        if (autoFieldChanged) {
-            const refreshedData = await fetchCourseFilterData(form);
-            if (refreshedData) {
-                data = refreshedData;
+            // Populate auto-fields when a degree is selected
+            if (snap.degree) {
+                let anyChanged = false;
+                for (const fieldId of autoFields) {
+                    const values   = data[courseFilterConfig[fieldId]?.key] || [];
+                    const resolved = resolveAutoField(fieldId, values, snap[fieldId] || '');
+                    if (resolved) {
+                        setAutoField(fieldId, resolved.value, resolved.label);
+                        if (snap[fieldId] !== resolved.value) {
+                            snap[fieldId] = resolved.value;
+                            anyChanged = true;
+                        }
+                    } else {
+                        setAutoField(fieldId, '', '');
+                    }
+                }
+
+                // If auto-fields changed, re-fetch so branch list stays consistent
+                if (anyChanged) {
+                    const refreshed = await fetchFilterData(snap);
+                    if (refreshed) {
+                        repopulateSelect('branch', refreshed[courseFilterConfig.branch.key] || [], snap.branch, {
+                            ...courseFilterConfig.branch,
+                            defaultLabel: 'Choose a branch',
+                            keepPlaceholderDisabled: true,
+                        });
+                    }
+                }
+            } else {
+                clearAutoFields();
             }
+
+        } finally {
+            isInitialLoad = false;
+            refreshing = false;
         }
-
-        Object.entries(courseFilterConfig).forEach(([selectId, config]) => {
-            if (selectId === 'branch' || courseAutoFields.includes(selectId)) {
-                return;
-            }
-            const selectedValue = form.elements[selectId]?.value || '';
-            populateCourseSelect(selectId, data[config.key] || [], selectedValue, config);
-        });
     }
 
-    document.getElementById('clearFilters').addEventListener('click', function() {
-        document.querySelectorAll('#filterForm select').forEach(select => select.value = '');
-        document.getElementById('filterForm').submit();
+    // ── Event wiring ──────────────────────────────────────────────────────────
+    document.getElementById('clearFilters').addEventListener('click', function () {
+        const form = document.getElementById('filterForm');
+        form.dataset.prevDegree = '';
+        form.dataset.prevBranch = '';
+        form.querySelectorAll('select').forEach(s => s.value = '');
+        clearAutoFields();
+        form.submit();
     });
 
-    document.querySelectorAll('#filterForm select').forEach((select) => {
+    document.querySelectorAll('#filterForm select').forEach(select => {
         select.addEventListener('change', refreshCourseFilters);
     });
 
+    // Initial call — populates branch options and auto-fields from URL params,
+    // but intentionally skips re-rendering the degree dropdown (isInitialLoad = true)
     refreshCourseFilters();
 
     const perPageSelect = document.getElementById('perPageSelect');
     if (perPageSelect) {
-        perPageSelect.addEventListener('change', function() {
+        perPageSelect.addEventListener('change', function () {
             const params = new URLSearchParams(window.location.search);
             params.set('per_page', this.value);
             params.delete('page');
@@ -461,3 +468,4 @@
 </script>
 
 {% endblock %}
+            

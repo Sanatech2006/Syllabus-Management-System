@@ -126,10 +126,23 @@ def _resolved_course_degree(course, program_degree_lookup):
     return program_degree_lookup["code"].get(normalize_program_code(course.prog_code), "")
 
 
+# def _matching_course_ids_for_degree(queryset, degree):
+#     if not degree:
+#         return None
+
 def _matching_course_ids_for_degree(queryset, degree):
     if not degree:
         return None
 
+    degree_normalized = normalize_program_value(degree)
+    program_degree_lookup = _program_degree_lookup()
+    matching_ids = []
+    for course in queryset.only('id', 'degree', 'prog_type', 'prog_category', 'branch', 'prog_code'):
+        resolved = _resolved_course_degree(course, program_degree_lookup)
+        # Normalize both sides before comparing
+        if normalize_program_value(resolved) == degree_normalized:
+            matching_ids.append(course.id)
+    return matching_ids
     program_degree_lookup = _program_degree_lookup()
     matching_ids = []
     for course in queryset.only('id', 'degree', 'prog_type', 'prog_category', 'branch', 'prog_code'):
@@ -422,7 +435,12 @@ def debug_pdf_path(request, course_code):
     """)
 
 
+# def get_filter_options(request):
+#     filters = {field: request.GET.get(field) for field in COURSE_FILTER_FIELDS}
+#     queryset = CourseStr.objects.filter(is_finalized=True)
+#     return JsonResponse(_build_course_filter_options(queryset, filters))
+
 def get_filter_options(request):
-    filters = {field: request.GET.get(field) for field in COURSE_FILTER_FIELDS}
+    filters = {field: request.GET.get(field, '').strip() for field in COURSE_FILTER_FIELDS}
     queryset = CourseStr.objects.filter(is_finalized=True)
     return JsonResponse(_build_course_filter_options(queryset, filters))

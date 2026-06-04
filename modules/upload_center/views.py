@@ -394,6 +394,38 @@ def add_course(request):
             is_finalized=False,
         )
 
+        # If a PDF was uploaded with the add-course form, save it to CourseContent
+        if request.FILES.get('pdf_file'):
+            pdf_file = request.FILES['pdf_file']
+            safe_code = course_code
+
+            if not safe_code:
+                messages.error(request, 'Missing course code for uploaded PDF.')
+            else:
+                course_content, created = CourseContent.objects.get_or_create(course_code=safe_code)
+
+                if course_content.pdf:
+                    existing_name = course_content.pdf.name
+                    target_name = f'course_pdfs/{safe_code}.pdf'
+                    if existing_name and existing_name != target_name:
+                        course_content.pdf.delete(save=False)
+
+                try:
+                    course_content.pdf = pdf_file
+                    course_content.save()
+                except PermissionError:
+                    messages.error(
+                        request,
+                        f"The existing PDF for {safe_code} is currently open somewhere. Close the PDF tab/viewer or Explorer preview, then upload again."
+                    )
+                else:
+                    # Reset saved/finalized states for this course
+                    CourseStr.objects.filter(course_code=safe_code).update(
+                        is_saved=False,
+                        is_finalized=False
+                    )
+                    messages.success(request, f'PDF queued for {safe_code}.')
+
         if "add_next" in request.POST:
             return redirect('upload_center:add_course')
 
