@@ -186,94 +186,182 @@ def bulk_upload(request):
         excel_file = request.FILES.get("excel_file")
 
         if not excel_file:
-            messages.error(request, "Please select an Excel file before uploading.")
+            messages.error(
+                request,
+                "Please select an Excel file before uploading."
+            )
             return redirect("program_manage:bulk_upload")
 
         if not excel_file.name.endswith((".xlsx", ".xls")):
-            messages.error(request, "Invalid file type. Please upload an Excel file (.xlsx or .xls).")
+            messages.error(
+                request,
+                "Invalid file type. Please upload an Excel file (.xlsx or .xls)."
+            )
             return redirect("program_manage:bulk_upload")
 
         try:
             workbook = openpyxl.load_workbook(excel_file)
             sheet = workbook.active
         except Exception as exc:
-            messages.error(request, f"Could not read file: {exc}")
-            return redirect("program_manage:bulk_upload")
-
-        rows = list(sheet.iter_rows(values_only=True))
-        if not rows:
-            messages.error(request, "The uploaded Excel file is empty. Please add data and try again.")
-            return redirect("program_manage:bulk_upload")
-
-        headers = [str(value).strip().lower() if value is not None else "" for value in rows[0]]
-        missing_cols = [col for col in PROGRAM_BULK_REQUIRED_COLUMNS if col not in headers]
-        if missing_cols:
             messages.error(
                 request,
-                f"Missing columns: {', '.join(missing_cols)}. Required: {', '.join(PROGRAM_BULK_REQUIRED_COLUMNS)}"
+                f"Could not read file: {exc}"
             )
             return redirect("program_manage:bulk_upload")
 
-        data_rows = [row for row in rows[1:] if any(value not in (None, "") for value in row)]
+        rows = list(sheet.iter_rows(values_only=True))
+
+        if not rows:
+            messages.error(
+                request,
+                "The uploaded Excel file is empty."
+            )
+            return redirect("program_manage:bulk_upload")
+
+        headers = [
+            str(value).strip().lower() if value is not None else ""
+            for value in rows[0]
+        ]
+
+        missing_cols = [
+            col
+            for col in PROGRAM_BULK_REQUIRED_COLUMNS
+            if col not in headers
+        ]
+
+        if missing_cols:
+            messages.error(
+                request,
+                f"Missing columns: {', '.join(missing_cols)}"
+            )
+            return redirect("program_manage:bulk_upload")
+
+        data_rows = [
+            row
+            for row in rows[1:]
+            if any(value not in (None, "") for value in row)
+        ]
+
         if not data_rows:
-            messages.error(request, "No data rows found in the file.")
+            messages.error(
+                request,
+                "No data rows found in the file."
+            )
             return redirect("program_manage:bulk_upload")
 
         success_count = 0
         error_rows = []
+        uploaded_codes = set()
 
         for index, row in enumerate(data_rows, start=2):
+
             row_data = dict(zip(headers, row))
 
-            prog_type = str(row_data.get("prog_type") or "").strip().upper()
-            prog_category = str(row_data.get("prog_category") or "").strip().title()
-            degree = str(row_data.get("degree") or "").strip()
-            branch = str(row_data.get("branch") or "").strip()
-            prog_code = str(row_data.get("prog_code") or "").strip().upper().replace(" ", "")
+            prog_type = str(
+                row_data.get("prog_type") or ""
+            ).strip().upper()
 
-            if not all([prog_type, prog_category, degree, branch, prog_code]):
-                error_rows.append(f"Row {index}: All program fields are required — skipped.")
+            prog_category = str(
+                row_data.get("prog_category") or ""
+            ).strip().title()
+
+            degree = str(
+                row_data.get("degree") or ""
+            ).strip()
+
+            branch = str(
+                row_data.get("branch") or ""
+            ).strip()
+
+            prog_code = str(
+                row_data.get("prog_code") or ""
+            ).strip().upper().replace(" ", "")
+
+            # Required field validation
+            if not all([
+                prog_type,
+                prog_category,
+                degree,
+                branch,
+                prog_code
+            ]):
+                error_rows.append(
+                    f"Row {index}: All fields are required."
+                )
                 continue
 
+            # Program Type validation
             if prog_type not in {"UG", "PG"}:
-                error_rows.append(f"Row {index}: Invalid prog_type '{prog_type}' — must be UG or PG. Skipped.")
+                error_rows.append(
+                    f"Row {index}: Invalid Program Type '{prog_type}'."
+                )
                 continue
 
+            # Program Category validation
             if prog_category not in {"Arts", "Science"}:
-                error_rows.append(f"Row {index}: Invalid prog_category '{prog_category}' — must be Arts or Science. Skipped.")
+                error_rows.append(
+                    f"Row {index}: Invalid Program Category '{prog_category}'."
+                )
                 continue
 
+            # Duplicate inside uploaded file
+            if prog_code in uploaded_codes:
+                error_rows.append(
+                    f"Row {index}: Duplicate Program Code '{prog_code}' in file."
+                )
+                continue
+
+            uploaded_codes.add(prog_code)
+
+            # Duplicate in database
             if Program.objects.filter(
-                prog_type=prog_type,
-                prog_category=prog_category,
-                degree=degree,
-                branch=branch,
-                prog_code=prog_code,
+                prog_code=prog_code
             ).exists():
-                error_rows.append(f"Row {index}: Program {prog_code} already exists — skipped.")
+                error_rows.append(
+                    f"Row {index}: Program Code '{prog_code}' already exists."
+                )
                 continue
 
-            Program.objects.create(
-                prog_type=prog_type,
-                prog_category=prog_category,
-                degree=degree,
-                branch=branch,
-                prog_code=prog_code,
-            )
-            success_count += 1
+            try:
+                Program.objects.create(
+                    prog_code=prog_code,
+                    degree=degree,
+                    branch=branch,
+                    prog_type=prog_type,
+                    prog_category=prog_category,
+                )
+
+                success_count += 1
+
+            except Exception as exc:
+                error_rows.append(
+                    f"Row {index}: {str(exc)}"
+                )
 
         if success_count:
-            messages.success(request, f"Successfully uploaded {success_count} program(s).")
-        if error_rows:
-            for error in error_rows:
-                messages.warning(request, error)
-        if success_count == 0 and not error_rows:
-            messages.error(request, "No programs were uploaded. Please check your file.")
+            messages.success(
+                request,
+                f"{success_count} program(s) uploaded successfully."
+            )
 
-        return redirect("program_manage:program_management")
+        for error in error_rows:
+            messages.warning(request, error)
 
-    return render(request, "program_bulk_upload.html")
+        if success_count == 0:
+            messages.error(
+                request,
+                "No programs were uploaded."
+            )
 
+        return redirect(
+            "program_manage:program_management"
+        )
+
+    return render(
+        request,
+        "program_bulk_upload.html"
+    )
+    
 
 @admin_required
 def download_template(request):

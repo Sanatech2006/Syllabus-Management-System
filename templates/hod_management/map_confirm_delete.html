@@ -1,0 +1,66 @@
+{% extends "base_layout.html" %}
+{% load static %}
+
+{% block title %}Delete HOD-Program Mapping{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-md mx-auto">
+    <div class="bg-[#1a1f2e] rounded-xl border border-white/10 p-6">
+        <div class="text-center">
+            <div class="mx-auto w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-4">
+                <i data-lucide="alert-triangle" class="w-6 h-6 text-red-400"></i>
+            </div>
+            <h2 class="text-xl font-bold text-slate-100 mb-2">Confirm Deletion</h2>
+            <p class="text-slate-400 mb-6">
+                Are you sure you want to remove 
+                <span class="text-white font-medium">{{ mapping.user.get_full_name|default:mapping.user.username }}</span> 
+                as HOD for 
+                <span class="text-white font-medium">{{ mapping.program.name }}</span>?
+            </p>
+            
+            <div class="bg-[#0d121f] rounded-lg p-4 mb-6 space-y-2">
+                <div class="flex justify-between text-sm">
+                    <span class="text-slate-400">HOD:</span>
+                    <span class="text-slate-200">{{ mapping.user.get_full_name|default:mapping.user.username }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-slate-400">Email:</span>
+                    <span class="text-slate-200">{{ mapping.user.email }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-slate-400">Program:</span>
+                    <span class="text-slate-200">{{ mapping.program.name }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-slate-400">Code:</span>
+                    <span class="text-slate-200">{{ mapping.program.code }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-slate-400">Created:</span>
+                    <span class="text-slate-200">{{ mapping.created_at|date:"M d, Y" }}</span>
+                </div>
+            </div>
+            
+            <form method="POST" class="flex gap-3">
+                {% csrf_token %}
+                <button type="submit"
+                        class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
+                    Yes, Delete
+                </button>
+                <a href="{% url 'hod_management:hod_program_map_list' %}"
+                   class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors text-center">
+                    Cancel
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
+</script>
+{% endblock %}

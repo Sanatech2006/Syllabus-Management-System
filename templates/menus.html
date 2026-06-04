@@ -71,6 +71,11 @@
                         class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
                     <span class="text-[14px]">User Management</span>
                 </a>
+                <a href="{% url 'hod_management:hod_program_map_list' %}"
+                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'hod_management' %}bg-white/10 text-white{% endif %}">
+                    <i data-lucide="link-2"class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
+                    <span class="text-[14px]">HOD Management</span>
+                </a>
                 <a href="{% url 'reports:work_progress_report' %}"
                     class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white">
                     <i data-lucide="pie-chart" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>

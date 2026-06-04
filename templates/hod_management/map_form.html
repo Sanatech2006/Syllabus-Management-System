@@ -1,0 +1,89 @@
+{% extends "base_layout.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-2xl mx-auto">
+    <div class="mb-6">
+        <a href="{% url 'hod_management:hod_program_map_list' %}" class="text-slate-400 hover:text-white mb-4 inline-flex items-center gap-2">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            Back to Mappings
+        </a>
+        <h1 class="text-2xl font-bold text-slate-100 mt-2">{{ title }}</h1>
+        <p class="text-slate-400 mt-1">
+            {% if mapping %}Update{% else %}Assign{% endif %} a program to a Department Head
+        </p>
+    </div>
+
+    <div class="bg-[#1a1f2e] rounded-xl border border-white/10 p-6">
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- HOD Selection -->
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">
+                    Department Head (HOD) <span class="text-red-400">*</span>
+                </label>
+                <select name="user_id" required
+                        class="w-full px-3 py-2 bg-[#0d121f] border border-white/10 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <option value="">-- Select HOD --</option>
+                    {% for hod in hods %}
+                    <option value="{{ hod.id }}" {% if mapping and mapping.user.id == hod.id %}selected{% endif %}>
+                        {{ hod.get_full_name|default:hod.username }} ({{ hod.email }})
+                    </option>
+                    {% endfor %}
+                </select>
+                {% if not hods %}
+                <p class="text-xs text-yellow-500 mt-2 flex items-center gap-1">
+                    <i data-lucide="alert-triangle" class="w-3 h-3"></i>
+                    No staff users found. Please create staff users in User Management first.
+                </p>
+                {% endif %}
+            </div>
+
+            <!-- Program Selection -->
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">
+                    Program <span class="text-red-400">*</span>
+                </label>
+                <select name="program_id" required
+                        class="w-full px-3 py-2 bg-[#0d121f] border border-white/10 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <option value="">-- Select Program --</option>
+                    {% for program in programs %}
+                    <option value="{{ program.id }}" {% if mapping and mapping.program.id == program.id %}selected{% endif %}>
+                        {{ program.name }} ({{ program.code }})
+                    </option>
+                    {% endfor %}
+                </select>
+                {% if not programs %}
+                <p class="text-xs text-yellow-500 mt-2 flex items-center gap-1">
+                    <i data-lucide="alert-triangle" class="w-3 h-3"></i>
+                    No programs found. Please create programs in Program Management first.
+                </p>
+                {% endif %}
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3 pt-4">
+                <button type="submit"
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium">
+                    {% if mapping %}Update{% else %}Create{% endif %} Mapping
+                </button>
+                <a href="{% url 'hod_management:hod_program_map_list' %}"
+                   class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors text-center">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
+</script>
+{% endblock %}

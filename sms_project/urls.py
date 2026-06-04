@@ -14,6 +14,7 @@ urlpatterns = [
     path('uploads/', include('modules.upload_center.urls', namespace='upload_center')),
     path('users/', include('modules.user_manage.urls', namespace='user_manage')),
     path('reports/', include(('reports.urls', 'reports'), namespace='reports')),
+    path('hod-management/', include('hod_management.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
