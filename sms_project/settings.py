@@ -1,14 +1,25 @@
 from pathlib import Path
 import os
-
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-change-this-in-production-2025'
-DEBUG = True
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+# Add parent directory to sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-for-dev')
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+
+# Parse ALLOWED_HOSTS from environment variable
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -24,13 +35,11 @@ INSTALLED_APPS = [
     'modules.program_manage',
     'modules.login.apps.LoginConfig', 
     'modules.core',
-    
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    # 'sms_project.middleware.LoginProtectionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -44,9 +53,7 @@ ROOT_URLCONF = 'sms_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            BASE_DIR / 'templates',   # → D:\SMS\templates
-        ],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -61,24 +68,23 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'sms_project.wsgi.application'
 
+# Database
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'sms_db',
-        'USER': 'postgres',
-        # 'PASSWORD': 'postgre',
-        'PASSWORD': 'postgre',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME', 'SMS'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
-
+# Internationalization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
@@ -87,18 +93,22 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files (User uploads)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media' 
+MEDIA_ROOT = BASE_DIR / 'media'
 
-# Increase file upload limits
-DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB (default is 2.5MB)
-FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000  
+# File upload limits
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv('DATA_UPLOAD_MAX_MEMORY_SIZE', 10485760))
+FILE_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv('FILE_UPLOAD_MAX_MEMORY_SIZE', 10485760))
+DATA_UPLOAD_MAX_NUMBER_FIELDS = int(os.getenv('DATA_UPLOAD_MAX_NUMBER_FIELDS', 1000))
 
 # Authentication settings
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
-LOGOUT_REDIRECT_URL = '/login/'  # Where to redirect after logout
+LOGOUT_REDIRECT_URL = '/login/'
 
-# Session settings (optional - for better security)
-SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# Session settings
+SESSION_COOKIE_AGE = int(os.getenv('SESSION_COOKIE_AGE', 1209600))
+SESSION_EXPIRE_AT_BROWSER_CLOSE = os.getenv('SESSION_EXPIRE_AT_BROWSER_CLOSE', 'True').lower() == 'true'
+
+# CSRF Trusted Origins
+csrf_origins = os.getenv('CSRF_TRUSTED_ORIGINS', '')
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_origins.split(',')] if csrf_origins else []
