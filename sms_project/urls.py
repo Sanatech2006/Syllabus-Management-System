@@ -11,7 +11,6 @@ urlpatterns = [
     path('dashboard/', include('modules.dashboard.urls')),
     path('programs/', include('modules.program_manage.urls', namespace='program_manage')),
     path('users/', include('modules.user_manage.urls', namespace='user_manage')),
-    # path('reports/', include(('reports.urls', 'reports'), namespace='reports')),
     path('hod-management/', include('hod_management.urls')),
     path('course-management/', include('modules.course_management.urls', namespace='course_management')),
 ]

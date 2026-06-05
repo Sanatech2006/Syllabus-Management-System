@@ -124,7 +124,7 @@ function resetProgramForm() {
 
 // Edit program function
 function editProgram(programId) {
-    fetch(`/program_manage/get-program/${programId}/`)
+    fetch(`/programs/get-program/${programId}/`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -164,7 +164,7 @@ function initializeDeleteButton() {
             if (currentDeleteProgramId) {
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
                 
-                fetch(`/program_manage/delete/${currentDeleteProgramId}/`, {
+                fetch(`/programs/delete/${currentDeleteProgramId}/`, {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': csrfToken,
@@ -199,7 +199,7 @@ function initializeProgramForm() {
             e.preventDefault();
             
             const programId = document.getElementById('editProgramId').value;
-            const url = programId ? `/program_manage/edit/${programId}/` : '/program_manage/add/';
+            const url = programId ? `/programs/edit/${programId}/` : '/programs/add/';
             const formData = new FormData(this);
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
             
@@ -242,7 +242,7 @@ function initializeUploadForm() {
             const formData = new FormData(this);
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
             
-            fetch('/program_manage/upload-programs/', {
+            fetch('/programs/upload-programs/', {
                 method: 'POST',
                 body: formData,
                 headers: { 'X-CSRFToken': csrfToken }
