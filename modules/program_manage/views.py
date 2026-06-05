@@ -68,7 +68,6 @@ def _build_program_filter_options(base_queryset, filters):
 
 @admin_required
 def program_management(request):
-    """Main Program Management page with filters, stats, and pagination"""
     
     # Get pagination and per page parameters
     per_page = int(request.GET.get('per_page', 10))
@@ -111,17 +110,15 @@ def program_management(request):
 
 @admin_required
 def get_filter_options(request):
-    """AJAX endpoint to get filter options dynamically"""
     filters = {field: request.GET.get(field) for field in PROGRAM_FILTER_FIELDS}
     queryset = Program.objects.filter(is_active=True)
     return JsonResponse(_build_program_filter_options(queryset, filters))
 
-
 @admin_required
 def get_program(request, program_id):
-    """AJAX endpoint to get single program details"""
     try:
         program = get_object_or_404(Program, id=program_id)
+        
         data = {
             'success': True,
             'program': {
@@ -131,19 +128,16 @@ def get_program(request, program_id):
                 'branch': program.branch,
                 'prog_type': program.prog_type,
                 'prog_category': program.prog_category,
-                'prog_type_display': program.get_prog_type_display(),
-                'prog_category_display': program.get_prog_category_display(),
             }
         }
         return JsonResponse(data)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-
 @admin_required
 @require_http_methods(["POST"])
 def add_program(request):
-    """AJAX endpoint to add new program"""
+
     try:
         prog_code = request.POST.get("prog_code", "").strip().upper().replace(" ", "")
         degree = request.POST.get("degree", "").strip()
@@ -190,10 +184,9 @@ def add_program(request):
 @admin_required
 @require_http_methods(["POST"])
 def edit_program(request, program_id):
-    """AJAX endpoint to edit program"""
+
     try:
         program = get_object_or_404(Program, id=program_id)
-        
         prog_code = request.POST.get("prog_code", "").strip().upper().replace(" ", "")
         degree = request.POST.get("degree", "").strip()
         branch = request.POST.get("branch", "").strip()
@@ -233,7 +226,6 @@ def edit_program(request, program_id):
 @admin_required
 @require_http_methods(["POST"])
 def delete_program(request, program_id):
-    """AJAX endpoint to delete program"""
     try:
         program = get_object_or_404(Program, id=program_id)
         program.delete()
@@ -244,7 +236,7 @@ def delete_program(request, program_id):
 
 @admin_required
 def download_sample_excel(request):
-    """Download sample Excel template for program import - Simplified"""
+
     sample_data = {
         'prog_type': ['UG', 'PG', 'UG'],
         'prog_category': ['Science', 'Arts', 'Science'],
@@ -265,13 +257,13 @@ def download_sample_excel(request):
         output,
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    response['Content-Disposition'] = 'attachment; filename="Program_Sample.xlsx"'
+    response['Content-Disposition'] = 'attachment; filename="Program Sample.xlsx"'
     return response
 
 
 @admin_required
 def download_programs_excel(request):
-    """Download all programs as Excel"""
+
     programs = Program.objects.filter(is_active=True).order_by('prog_code')
     
     program_data = []
@@ -296,14 +288,14 @@ def download_programs_excel(request):
         output,
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    response['Content-Disposition'] = 'attachment; filename="Programs_List.xlsx"'
+    response['Content-Disposition'] = 'attachment; filename="Programs List.xlsx"'
     return response
 
 
 @admin_required
 @require_http_methods(["POST"])
 def upload_programs_excel(request):
-    """Handle Excel file upload for bulk program import"""
+
     try:
         if 'excel_file' not in request.FILES:
             return JsonResponse({'success': False, 'error': 'No file uploaded.'})

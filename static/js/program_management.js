@@ -116,6 +116,10 @@ function resetProgramForm() {
     if (form) form.reset();
     const editId = document.getElementById('editProgramId');
     if (editId) editId.value = '';
+    const degreeInput = document.getElementById('programDegree');
+    const branchInput = document.getElementById('programBranch');
+    if (degreeInput) degreeInput.value = '';
+    if (branchInput) branchInput.value = '';
     const drawerTitle = document.getElementById('drawer-title');
     if (drawerTitle) drawerTitle.innerText = 'New Program';
     const drawerSubtitle = document.getElementById('drawer-subtitle');
@@ -124,18 +128,26 @@ function resetProgramForm() {
 
 // Edit program function
 function editProgram(programId) {
+
     fetch(`/programs/get-program/${programId}/`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // Set the hidden ID field
                 document.getElementById('editProgramId').value = data.program.id;
+                
+                // Set the form field values (using the NEW IDs)
                 document.getElementById('progType').value = data.program.prog_type;
                 document.getElementById('progCategory').value = data.program.prog_category;
-                document.getElementById('degree').value = data.program.degree;
-                document.getElementById('branch').value = data.program.branch;
+                document.getElementById('programDegree').value = data.program.degree || '';
+                document.getElementById('programBranch').value = data.program.branch || '';
                 document.getElementById('progCode').value = data.program.prog_code;
+                
+                // Update drawer title and subtitle
                 document.getElementById('drawer-title').innerText = 'Edit Program';
                 document.getElementById('drawer-subtitle').innerHTML = 'Update program information below.';
+                
+                // Open the drawer
                 openDrawer('programDrawer');
             } else {
                 showToast('Error loading program data', 'error');

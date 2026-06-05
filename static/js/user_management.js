@@ -261,9 +261,13 @@ function initializeDeleteButton() {
 
 // Handle user form submission (Add/Edit)
 function initializeUserForm() {
+
     const form = document.getElementById('userForm');
+
     if (form) {
+
         form.addEventListener('submit', function(e) {
+            
             e.preventDefault();
             
             const userId = document.getElementById('editUserId').value;

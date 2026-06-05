@@ -236,7 +236,7 @@ def download_sample_mapping_excel(request):
     # Create Excel file in memory
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, sheet_name='Hod Program Mapping', index=False)
+        df.to_excel(writer, sheet_name='Hod Program Sample', index=False)
     
     output.seek(0)
     
@@ -244,7 +244,7 @@ def download_sample_mapping_excel(request):
         output,
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    response['Content-Disposition'] = 'attachment; filename="Hod Program Mapping Sample.xlsx"'
+    response['Content-Disposition'] = 'attachment; filename="Hod Program Sample.xlsx"'
     return response
 
 # ---------------------------------------------------------------------------------------------------

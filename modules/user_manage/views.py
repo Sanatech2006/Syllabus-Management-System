@@ -64,14 +64,19 @@ def add_user(request):
         password = request.POST.get("password", "")
         
         # Validate required fields
-        if not all([username, email, password]):
-            return JsonResponse({'success': False, 'error': 'Username, email, and password are required.'})
-        
-        # Validate email format
-        try:
-            validate_email(email)
-        except ValidationError:
-            return JsonResponse({'success': False, 'error': 'Invalid email format.'})
+        if not all([username, password]):
+            return JsonResponse({'success': False, 'error': 'Username and password are required.'})
+
+        # Validate email format only if provided
+        if email:
+            try:
+                validate_email(email)
+            except ValidationError:
+                return JsonResponse({'success': False, 'error': 'Invalid email format.'})
+            
+            # Check if email exists only if provided
+            if User.objects.filter(email=email).exists():
+                return JsonResponse({'success': False, 'error': 'Email already exists.'})
         
         # Check if username exists
         if User.objects.filter(username=username).exists():
@@ -84,7 +89,7 @@ def add_user(request):
         # Create user
         user = User.objects.create_user(
             username=username,
-            email=email,
+            email=email if email else '',
             password=password,
             first_name=first_name,
             last_name=last_name,
@@ -111,28 +116,29 @@ def edit_user(request, user_id):
         last_name = request.POST.get("last_name", "").strip()
         email = request.POST.get("email", "").strip()
         username = request.POST.get("username", "").strip()
+
+        # Validate required fields 
+        if not username:
+            return JsonResponse({'success': False, 'error': 'Username is required.'})
         
-        # Validate required fields
-        if not all([username, email]):
-            return JsonResponse({'success': False, 'error': 'Username and email are required.'})
-        
-        # Validate email format
-        try:
-            validate_email(email)
-        except ValidationError:
-            return JsonResponse({'success': False, 'error': 'Invalid email format.'})
+        # Validate email format only if provided
+        if email:
+            try:
+                validate_email(email)
+            except ValidationError:
+                return JsonResponse({'success': False, 'error': 'Invalid email format.'})
+            
+            # Check if email exists for other users only if provided
+            if User.objects.exclude(id=user_id).filter(email=email).exists():
+                return JsonResponse({'success': False, 'error': 'Email already exists.'})
         
         # Check if username exists for other users
         if User.objects.exclude(id=user_id).filter(username=username).exists():
             return JsonResponse({'success': False, 'error': 'Username already exists.'})
         
-        # Check if email exists for other users
-        if User.objects.exclude(id=user_id).filter(email=email).exists():
-            return JsonResponse({'success': False, 'error': 'Email already exists.'})
-        
         # Update user fields
         user.username = username
-        user.email = email
+        user.email = email if email else '',
         user.first_name = first_name
         user.last_name = last_name
         
@@ -173,15 +179,13 @@ def download_sample_excel(request):
     
     sample_data = {
         'username': ['john_doe', 'jane_smith', 'mike_wilson'],
-        'email': ['john@example.com', 'jane@example.com', 'mike@example.com'],
         'first_name': ['John', 'Jane', 'Mike'],
-        'last_name': ['Doe', 'Smith', 'Wilson'],
         'password': ['TempPass@123', 'TempPass@123', 'TempPass@123']
     }
     
     df = pd.DataFrame(sample_data)
     
-    # Create Excel file in memory - simple, no styling
+    # Create Excel file in memory
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name='Users', index=False)
@@ -194,30 +198,28 @@ def download_sample_excel(request):
     )
     response['Content-Disposition'] = 'attachment; filename="Users Sample.xlsx"'
     return response
-
 # ---------------------------------------------------------------------------------------------------
 
 @login_required
 def download_users_excel(request):
-
+    
     users = User.objects.all().order_by('username')
     
-    # Prepare data for Excel
+    # Prepare data for Excel with only three columns
     user_data = []
     for user in users:
+
+        plain_password = getattr(user, 'plain_password', 'Not Available')
+        
         user_data.append({
-            'username': user.username,
-            'email': user.email,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'date_joined': user.date_joined.strftime('%Y-%m-%d %H:%M:%S') if user.date_joined else '',
-            'last_login': user.last_login.strftime('%Y-%m-%d %H:%M:%S') if user.last_login else '',
-            'status': 'Active' if user.is_active else 'Inactive'
+            'Username': user.username,
+            'First Name': user.first_name,
+            'Password': plain_password if plain_password else '********'
         })
     
     df = pd.DataFrame(user_data)
     
-    # Create Excel file in memory - simple, no styling
+    # Create Excel file in memory
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name='All_Users', index=False)
@@ -253,7 +255,7 @@ def upload_users_excel(request):
         df = pd.read_excel(excel_file)
         
         # Validate required columns
-        required_columns = ['username', 'email']
+        required_columns = ['username', 'first_name', 'password']
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
             return JsonResponse({
@@ -268,22 +270,13 @@ def upload_users_excel(request):
         
         for index, row in df.iterrows():
             username = str(row.get('username', '')).strip()
-            email = str(row.get('email', '')).strip()
             first_name = str(row.get('first_name', '')).strip() if pd.notna(row.get('first_name')) else ''
-            last_name = str(row.get('last_name', '')).strip() if pd.notna(row.get('last_name')) else ''
             password = str(row.get('password', '')).strip() if pd.notna(row.get('password')) else 'TempPass@123'
             
-            # Skip if username or email is missing
-            if not username or not email:
+            # Skip if username is missing
+            if not username:
                 skipped += 1
-                errors.append(f'Row {index + 2}: Missing username or email')
-                continue
-            
-            # Validate email format
-            try:
-                validate_email(email)
-            except ValidationError:
-                errors.append(f'Row {index + 2}: Invalid email format - {email}')
+                errors.append(f'Row {index + 2}: Missing username')
                 continue
             
             # Check if user already exists
@@ -291,18 +284,16 @@ def upload_users_excel(request):
                 errors.append(f'Row {index + 2}: Username "{username}" already exists - skipped')
                 continue
             
-            if User.objects.filter(email=email).exists():
-                errors.append(f'Row {index + 2}: Email "{email}" already exists - skipped')
-                continue
-            
             try:
-                # Create user
+                # Create user with default email if not provided
+                email = f"{username}@example.com"  
+                
                 user = User.objects.create_user(
                     username=username,
                     email=email,
                     password=password,
                     first_name=first_name,
-                    last_name=last_name,
+                    last_name='',  
                     is_active=True,
                     is_staff=False,
                     is_superuser=False
