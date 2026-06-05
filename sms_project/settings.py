@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'modules.program_manage',
     'modules.login.apps.LoginConfig', 
     'modules.core',
+    'modules.view_syllabus', 
 ]
 
 MIDDLEWARE = [

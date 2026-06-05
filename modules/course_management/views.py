@@ -10,7 +10,6 @@ from django.db import models
 
 from modules.core.decorators import admin_required
 
-# Fix the import based on your project structure
 try:
     from modules.program_manage.models import Program
 except ImportError:
@@ -60,6 +59,7 @@ def _apply_course_filters(queryset, filters, exclude_field=None):
 
 
 def _build_course_filter_options(base_queryset, filters):
+
     option_querysets = {
         field: _apply_course_filters(base_queryset, filters, exclude_field=field)
         for field in COURSE_FILTER_FIELDS
@@ -79,8 +79,7 @@ def _build_course_filter_options(base_queryset, filters):
 
 @admin_required
 def course_management(request):
-    """Main Course Management page with filters, stats, and pagination"""
-    
+
     # Get pagination and per page parameters
     per_page = int(request.GET.get('per_page', 10))
     page = request.GET.get('page', 1)
@@ -138,7 +137,7 @@ def course_management(request):
 
 @admin_required
 def get_filter_options(request):
-    """AJAX endpoint to get filter options dynamically"""
+
     filters = {field: request.GET.get(field) for field in COURSE_FILTER_FIELDS}
     queryset = CourseStructure.objects.select_related('program').all()
     options = _build_course_filter_options(queryset, filters)
@@ -155,7 +154,7 @@ def get_filter_options(request):
 
 @admin_required
 def get_course(request, course_id):
-    """AJAX endpoint to get single course details"""
+
     try:
         course = get_object_or_404(CourseStructure.objects.select_related('program'), id=course_id)
         
@@ -190,7 +189,7 @@ def get_course(request, course_id):
 @admin_required
 @require_http_methods(["POST"])
 def add_course(request):
-    """AJAX endpoint to add new course"""
+
     try:
         program_id = request.POST.get("program_id")
         course_code = request.POST.get("course_code", "").strip().upper().replace(" ", "")
@@ -248,7 +247,7 @@ def add_course(request):
 @admin_required
 @require_http_methods(["POST"])
 def edit_course(request, course_id):
-    """AJAX endpoint to edit course"""
+
     try:
         course = get_object_or_404(CourseStructure, id=course_id)
         
@@ -303,7 +302,7 @@ def edit_course(request, course_id):
 @admin_required
 @require_http_methods(["POST"])
 def delete_course(request, course_id):
-    """AJAX endpoint to delete course"""
+
     try:
         course = get_object_or_404(CourseStructure, id=course_id)
         course.delete()
@@ -314,7 +313,7 @@ def delete_course(request, course_id):
 
 @admin_required
 def download_sample_excel(request):
-    """Download sample Excel template for course import"""
+
     sample_data = {
         'program_code': ['BSC-CS', 'BSC-CS', 'MA-ENG'],
         'course_code': ['CS101', 'CS102', 'ENG101'],
@@ -348,7 +347,7 @@ def download_sample_excel(request):
 
 @admin_required
 def download_courses_excel(request):
-    """Download all courses as Excel"""
+
     courses = CourseStructure.objects.select_related('program').all().order_by('program__prog_code', 'year', 'sem', 'course_code')
     
     course_data = []
@@ -388,7 +387,7 @@ def download_courses_excel(request):
 @admin_required
 @require_http_methods(["POST"])
 def upload_courses_excel(request):
-    """Handle Excel file upload for bulk course import"""
+
     try:
         if 'excel_file' not in request.FILES:
             return JsonResponse({'success': False, 'error': 'No file uploaded.'})
@@ -476,7 +475,7 @@ def upload_courses_excel(request):
 @admin_required
 @require_http_methods(["POST"])
 def upload_syllabus(request, course_id):
-    """Upload syllabus PDF for a course"""
+
     try:
         course = get_object_or_404(CourseStructure, id=course_id)
         
@@ -513,7 +512,7 @@ def upload_syllabus(request, course_id):
 
 @admin_required
 def download_syllabus(request, course_id):
-    """Download syllabus PDF for a course"""
+
     try:
         course = get_object_or_404(CourseStructure, id=course_id)
         syllabus = get_object_or_404(CourseSyllabus, course_code=course.course_code)
@@ -534,7 +533,7 @@ def download_syllabus(request, course_id):
 @admin_required
 @require_http_methods(["POST"])
 def delete_syllabus(request, syllabus_id):
-    """Delete syllabus PDF"""
+
     try:
         syllabus = get_object_or_404(CourseSyllabus, id=syllabus_id)
         

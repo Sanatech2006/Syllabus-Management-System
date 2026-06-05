@@ -1,0 +1,1 @@
+default_app_config = 'modules.view_syllabus.apps.ViewSyllabusConfig'

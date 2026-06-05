@@ -13,6 +13,7 @@ urlpatterns = [
     path('users/', include('modules.user_manage.urls', namespace='user_manage')),
     path('hod-management/', include('hod_management.urls')),
     path('course-management/', include('modules.course_management.urls', namespace='course_management')),
+    path('view-syllabus/', include('modules.view_syllabus.urls', namespace='view_syllabus')), 
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

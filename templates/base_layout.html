@@ -5,7 +5,6 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{% block title %}Syllabus Dashboard{% endblock %}</title>
-
         <link rel="stylesheet" href="{% static 'assets/css/menus.css' %}" />
         <link
             rel="stylesheet"
@@ -18,7 +17,7 @@
     <body class="bg-gray-100">
         <div class="flex h-screen overflow-hidden">
             <!-- Sidebar include -->
-            {% include "menus.html" %}
+            {% include "menu_names.html" %}
 
             <!-- Main content (scrolls independently) -->
             <main class="flex-1 overflow-y-auto bg-gray-100 p-10">
