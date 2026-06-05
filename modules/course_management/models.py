@@ -17,14 +17,13 @@ def normalize_course_code(value):
 # =========================
 
 class CourseStructure(models.Model):
-
     # 📌 COURSE IDENTIFIER (FIRST)
     course_code = models.CharField(max_length=20)
     course_title = models.CharField(max_length=200, blank=True, null=True)
 
-    # 📌 PROGRAM LINK
+    # 📌 PROGRAM LINK - Use 'program_manage.Program' format
     program = models.ForeignKey(
-        'program_manage.Program',
+        'program_manage.Program',  # Changed from 'modules.program_manage.Program'
         on_delete=models.CASCADE,
         related_name="courses"
     )
@@ -45,10 +44,6 @@ class CourseStructure(models.Model):
     marks_ese = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     total_marks = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
 
-    # 📌 STATUS
-    is_saved = models.BooleanField(default=False)
-    is_finalized = models.BooleanField(default=False)
-
     # 📌 TIMESTAMP
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -56,7 +51,7 @@ class CourseStructure(models.Model):
     class Meta:
         db_table = "course_structure"
         ordering = ["-created_at"]
-
+        app_label = 'course_management'
         constraints = [
             models.UniqueConstraint(
                 fields=["program", "course_code"],
@@ -73,12 +68,8 @@ class CourseStructure(models.Model):
 # =========================
 
 class CourseSyllabus(models.Model):
-
     # 📌 COURSE IDENTIFIER (FIRST)
     course_code = models.CharField(max_length=20, unique=True)
-
-    # 📌 CONTENT
-    course_content = models.TextField(blank=True, null=True)
 
     # 📌 PDF FILE
     pdf = models.FileField(
@@ -94,6 +85,7 @@ class CourseSyllabus(models.Model):
     class Meta:
         db_table = "course_syllabus"
         ordering = ["-created_at"]
+        app_label = 'course_management'
 
     def __str__(self):
         return f"{self.course_code} - Syllabus"

@@ -1,0 +1,705 @@
+{% extends "base_layout.html" %}
+{% load static %}
+
+{% block title %}Course Management{% endblock %}
+
+{% block content %}
+<div class="min-h-screen">
+    <!-- Page Header -->
+    <div class="mx-auto mb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-blue-700 flex items-center gap-3">
+                    <span class="bg-blue-600 text-white p-3 rounded-xl shadow-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                    </span>
+                    Course Management
+                </h1>
+                <p class="text-sm text-slate-500 mt-1">Manage courses, syllabi, and course structures</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="openDrawer('courseDrawer')" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add New Course
+                </button>
+                
+                <!-- Excel Dropdown -->
+                <div class="relative inline-block">
+                    <button onclick="toggleExcelMenu()" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Excel Actions
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div id="excelMenu" class="hidden absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                        <div class="py-1">
+                            <a href="{% url 'course_management:download_sample' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Download Sample Excel
+                            </a>
+                            <a href="{% url 'course_management:download_courses' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                                </svg>
+                                Export All Courses
+                            </a>
+                            <div class="border-t border-gray-100"></div>
+                            <button onclick="openDrawer('uploadDrawer')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                                Import Courses from Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Total Courses</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ total_courses }}</p>
+                </div>
+                <div class="bg-blue-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Programs</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ total_programs }}</p>
+                </div>
+                <div class="bg-blue-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Avg Credits</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ avg_credits|floatformat:1 }}</p>
+                </div>
+                <div class="bg-yellow-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">With Syllabus</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ courses_with_syllabus|default:"0" }}</p>
+                </div>
+                <div class="bg-green-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="mx-auto bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <h2 class="text-base font-semibold text-slate-900 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filter Courses
+            </h2>
+        </div>
+        <div class="p-6">
+            <form method="get" id="filterForm" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program</label>
+                        <select name="program" id="program" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">All Programs</option>
+                            {% for program in programs %}
+                            <option value="{{ program.id }}" {% if request.GET.program == program.id|stringformat:"s" %}selected{% endif %}>
+                                {{ program.prog_code }} - {{ program.degree }} ({{ program.branch }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Year</label>
+                        <select name="year" id="year" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">All Years</option>
+                            {% for year in years %}
+                            <option value="{{ year }}" {% if request.GET.year == year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Semester</label>
+                        <select name="sem" id="sem" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">All Semesters</option>
+                            {% for sem in sems %}
+                            <option value="{{ sem }}" {% if request.GET.sem == sem %}selected{% endif %}>{{ sem }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Category</label>
+                        <select name="course_category" id="course_category" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">All Categories</option>
+                            {% for category in course_categories %}
+                            <option value="{{ category }}" {% if request.GET.course_category == category %}selected{% endif %}>{{ category }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Part</label>
+                        <select name="part" id="part" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">All Parts</option>
+                            {% for part in parts %}
+                            <option value="{{ part }}" {% if request.GET.part == part %}selected{% endif %}>{{ part }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-5">
+                    <button type="button" id="clearFilters" class="px-4 py-2 w-[150px] border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition">Clear All</button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Courses Table -->
+    <div class="mx-auto bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-center gap-2.5">
+                <h2 class="text-base font-semibold text-slate-900">Course Directory</h2>
+                <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600">
+                    {{ page_obj.paginator.count }} total
+                </span>
+            </div>
+            <div class="relative w-full sm:w-64">
+                <input type="text" id="searchInput" placeholder="Search courses..." class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg">
+                <svg class="absolute left-3 top-2.5 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+            </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-left text-sm">
+                <thead class="bg-slate-50/90 border-y border-slate-200">
+                    <tr class="text-center text-xs uppercase tracking-wider text-slate-700 font-bold">
+                        <th class="px-6 py-4 w-12">#</th>
+                        <th class="px-6 py-4">Program</th>
+                        <th class="px-6 py-4">Course Code</th>
+                        <th class="px-6 py-4">Course Title</th>
+                        <th class="px-6 py-4">Year</th>
+                        <th class="px-6 py-4">Sem</th>
+                        <th class="px-6 py-4">Credit</th>
+                        <th class="px-6 py-4">Syllabus</th>
+                        <th class="px-6 py-4 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 bg-white">
+                    {% for course in courses %}
+                    <tr class="group hover:bg-slate-50 transition course-row" data-course-code="{{ course.course_code|lower }}" data-course-title="{{ course.course_title|lower }}">
+                        <td class="px-6 py-4 text-center text-sm text-slate-500">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="text-sm font-medium text-slate-900">{{ course.program.prog_code }}</div>
+                            <div class="text-xs text-slate-500">{{ course.program.degree }} - {{ course.program.branch }}</div>
+                        </td>
+                        <td class="px-6 py-4 text-center font-mono font-bold text-blue-600">{{ course.course_code }}</td>
+                        <td class="px-6 py-4 text-center text-slate-700">{{ course.course_title|truncatechars:40 }}</td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">Year {{ course.year }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">Sem {{ course.sem }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center font-semibold">{{ course.credit|default:"-" }}</td>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="manageSyllabus({{ course.id }}, '{{ course.course_code }}')" class="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition" title="Manage Syllabus">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </button>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="editCourse({{ course.id }})" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                                    </svg>
+                                </button>
+                                <button onclick="confirmDelete({{ course.id }}, '{{ course.course_code }}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                     </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="px-6 py-12 text-center">
+                            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                </svg>
+                            </div>
+                            <h3 class="mt-4 text-sm font-bold text-slate-900">No courses found</h3>
+                            <p class="mt-1 text-xs text-slate-400">Get started by adding a new course.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p class="text-sm text-slate-600">
+                    Showing <span class="font-medium">{{ page_obj.start_index }}</span> to 
+                    <span class="font-medium">{{ page_obj.end_index }}</span> of 
+                    <span class="font-medium">{{ page_obj.paginator.count }}</span> results
+                </p>
+                
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-slate-600">Items per page:</label>
+                        <select id="perPageSelect" class="p-1.5 border border-slate-200 rounded-lg text-sm">
+                            <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                            <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                            <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                        </select>
+                    </div>
+                    
+                    {% if page_obj.has_other_pages %}
+                    <nav class="flex gap-1">
+                        {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}{% if pagination_query %}&{{ pagination_query }}{% endif %}" class="px-3 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition">Previous</a>
+                        {% endif %}
+                        <span class="px-3 py-1 bg-blue-600 text-white rounded-lg">{{ page_obj.number }}</span>
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}{% if pagination_query %}&{{ pagination_query }}{% endif %}" class="px-3 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition">Next</a>
+                        {% endif %}
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ADD/EDIT COURSE DRAWER -->
+<div id="courseDrawer" class="drawer fixed inset-0 z-50 hidden" aria-labelledby="drawer-title" role="dialog">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] transition-opacity" onclick="closeDrawer('courseDrawer')"></div>
+    
+    <div class="drawer-scrollable absolute inset-y-0 right-0 w-full max-w-3xl bg-slate-50 shadow-2xl overflow-y-auto transform transition-transform duration-300">
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+            <div>
+                <h2 id="drawer-title" class="text-xl font-bold text-blue-900">New Course</h2>
+                <p id="drawer-subtitle" class="text-md text-slate-500 mt-0.5">Fields marked with <span class="text-rose-500 font-bold">*</span> are required.</p>
+            </div>
+            <button onclick="closeDrawer('courseDrawer')" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        
+        <form id="courseForm" class="px-6 pb-6 space-y-6">
+            {% csrf_token %}
+            <input type="hidden" name="course_id" id="editCourseId" value="">
+            
+            <!-- Basic Information -->
+            <div class="bg-white rounded-xl border border-blue-100 shadow-sm overflow-hidden">
+                <div class="flex items-center gap-2 bg-blue-50/60 px-5 py-3 border-b border-blue-100/50">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 class="font-bold text-xs tracking-wider text-blue-900 uppercase">Basic Information</h3>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Program <span class="text-rose-500">*</span></label>
+                        <select name="program_id" id="programId" required class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">Select Program</option>
+                            {% for program in programs %}
+                            <option value="{{ program.id }}">{{ program.prog_code }} - {{ program.degree }} ({{ program.branch }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Course Code <span class="text-rose-500">*</span></label>
+                        <input type="text" name="course_code" id="courseCode" required placeholder="e.g., CS101, MATH201" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white font-mono">
+                        <p class="text-xs text-slate-400 mt-1">Unique identifier (auto-uppercased)</p>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Course Title <span class="text-rose-500">*</span></label>
+                        <input type="text" name="course_title" id="courseTitle" required placeholder="e.g., Programming Fundamentals" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Year <span class="text-rose-500">*</span></label>
+                        <select name="year" id="yearSelect" required class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">Select Year</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Semester <span class="text-rose-500">*</span></label>
+                        <select name="sem" id="semSelect" required class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">Select Semester</option>
+                            <option value="1">Semester 1</option>
+                            <option value="2">Semester 2</option>
+                            <option value="3">Semester 3</option>
+                            <option value="4">Semester 4</option>
+                            <option value="5">Semester 5</option>
+                            <option value="6">Semester 6</option>
+                            <option value="7">Semester 7</option>
+                            <option value="8">Semester 8</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Course Details -->
+            <div class="bg-white rounded-xl border border-blue-100 shadow-sm overflow-hidden">
+                <div class="flex items-center gap-2 bg-blue-50/60 px-5 py-3 border-b border-blue-100/50">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <h3 class="font-bold text-xs tracking-wider text-blue-900 uppercase">Course Details</h3>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Course Category</label>
+                        <select name="course_category" id="courseCategory" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">Select Category</option>
+                            <option value="Core">Core</option>
+                            <option value="Elective">Elective</option>
+                            <option value="Foundation">Foundation</option>
+                            <option value="Skill">Skill</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Part</label>
+                        <select name="part" id="partSelect" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">Select Part</option>
+                            <option value="I">Part I</option>
+                            <option value="II">Part II</option>
+                            <option value="III">Part III</option>
+                            <option value="IV">Part IV</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Hours/Week</label>
+                        <input type="number" step="0.5" name="hrs_per_week" id="hrsPerWeek" placeholder="e.g., 4" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Credits</label>
+                        <input type="number" step="0.5" name="credit" id="credit" placeholder="e.g., 4" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Marks Distribution -->
+            <div class="bg-white rounded-xl border border-blue-100 shadow-sm overflow-hidden">
+                <div class="flex items-center gap-2 bg-blue-50/60 px-5 py-3 border-b border-blue-100/50">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <h3 class="font-bold text-xs tracking-wider text-blue-900 uppercase">Marks Distribution</h3>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">CIA Marks</label>
+                        <input type="number" step="0.5" name="marks_cia" id="marksCia" placeholder="e.g., 40" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">ESE Marks</label>
+                        <input type="number" step="0.5" name="marks_ese" id="marksEse" placeholder="e.g., 60" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Total Marks</label>
+                        <input type="number" step="0.5" name="total_marks" id="totalMarks" placeholder="e.g., 100" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                    </div>
+                </div>
+            </div>
+        </form>
+        
+        <div class="px-6 pb-6 flex gap-3 sticky bottom-0 bg-slate-50 pt-4 border-t border-slate-200">
+            <button onclick="closeDrawer('courseDrawer')" class="flex-1 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-sm rounded-xl border border-slate-200">Cancel</button>
+            <button type="submit" form="courseForm" class="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+                Save Course
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- SYLLABUS MANAGEMENT DRAWER -->
+<div id="syllabusDrawer" class="drawer fixed inset-0 z-50 hidden" role="dialog">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onclick="closeDrawer('syllabusDrawer')"></div>
+    
+    <div class="absolute inset-y-0 right-0 w-full max-w-xl bg-slate-50 shadow-2xl flex flex-col h-full overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+            <div>
+                <h2 class="text-xl font-bold text-green-700">Manage Syllabus</h2>
+                <p id="syllabusCourseCode" class="text-sm text-slate-500 mt-0.5">Course: Loading...</p>
+            </div>
+            <button onclick="closeDrawer('syllabusDrawer')" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+            <div id="syllabusContent">
+                <div class="bg-white rounded-xl border border-slate-200 p-6 text-center">
+                    <div class="flex items-center justify-center h-14 w-14 rounded-full bg-green-50 mx-auto mb-4">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <h3 id="syllabusStatus" class="text-base font-bold text-slate-900">No Syllabus Uploaded</h3>
+                    <p id="syllabusMessage" class="text-sm text-slate-500 mt-2">Upload a PDF syllabus for this course.</p>
+                    <div id="syllabusActions" class="mt-6 flex justify-center gap-3">
+                        <button id="downloadSyllabusBtn" class="hidden px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Download Syllabus</button>
+                        <button id="deleteSyllabusBtn" class="hidden px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete Syllabus</button>
+                    </div>
+                </div>
+            </div>
+            
+            <form id="syllabusForm" enctype="multipart/form-data" class="space-y-5">
+                {% csrf_token %}
+                <input type="hidden" id="syllabusCourseId" name="course_id">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-4">Upload New Syllabus (PDF)</label>
+                    
+                    <div class="relative group flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-8 text-center hover:border-green-400 transition">
+                        <input type="file" name="syllabus_pdf" id="syllabusPdf" accept=".pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                        
+                        <div id="syllabusFileEmptyState" class="space-y-2 pointer-events-none">
+                            <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-white text-slate-400">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                                </svg>
+                            </div>
+                            <div class="text-xs font-medium text-slate-600">
+                                <span class="font-semibold text-green-600">Click to upload</span> or drag and drop
+                            </div>
+                            <p class="text-[11px] text-slate-400">PDF format only</p>
+                        </div>
+                        
+                        <div id="syllabusFileSelectedState" class="hidden space-y-2">
+                            <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-1.125 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                </svg>
+                            </div>
+                            <div id="syllabusFileNameDisplay" class="text-xs font-semibold text-slate-800 truncate max-w-[240px] px-2">No file selected</div>
+                            <button type="button" id="syllabusRemoveFileBtn" class="text-[11px] font-medium text-slate-400 hover:text-rose-500">Remove file</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <div class="px-6 pb-6 flex gap-3 bg-slate-50 shrink-0 pt-4 border-t border-slate-200">
+            <button onclick="closeDrawer('syllabusDrawer')" class="flex-1 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-sm rounded-xl border border-slate-200">Close</button>
+            <button type="submit" form="syllabusForm" class="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                Upload Syllabus
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- DELETE CONFIRMATION DRAWER -->
+<div id="deleteDrawer" class="drawer fixed inset-0 z-50 hidden" role="dialog">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onclick="closeDrawer('deleteDrawer')"></div>
+    
+    <div class="absolute inset-y-0 right-0 w-full max-w-xl bg-slate-50 shadow-2xl flex flex-col h-full overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+            <div>
+                <h2 class="text-xl font-bold text-rose-600">Delete Course</h2>
+                <p class="text-sm text-slate-500 mt-0.5">This action cannot be undone.</p>
+            </div>
+            <button onclick="closeDrawer('deleteDrawer')" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-8 text-center">
+                <div class="flex items-center justify-center h-14 w-14 rounded-full bg-rose-50 mx-auto mb-4">
+                    <svg class="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h3 class="text-base font-bold text-slate-900">Delete this course permanently?</h3>
+                <p class="text-sm text-slate-500 mt-2">Course code: <span id="deleteCourseCode" class="font-mono font-bold text-rose-600"></span></p>
+                <div class="mt-6 flex justify-center gap-3">
+                    <button onclick="closeDrawer('deleteDrawer')" class="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50">Cancel</button>
+                    <button id="confirmDeleteBtn" class="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- UPLOAD EXCEL DRAWER -->
+<div id="uploadDrawer" class="drawer fixed inset-0 z-50 hidden" role="dialog">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onclick="closeDrawer('uploadDrawer')"></div>
+    
+    <div class="absolute inset-y-0 right-0 w-full max-w-xl bg-slate-50 shadow-2xl flex flex-col h-full overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+            <div>
+                <h2 class="text-xl font-bold text-green-700">Import Courses from Excel</h2>
+                <p class="text-sm text-slate-500 mt-0.5">Bulk import courses using Excel file</p>
+            </div>
+            <button onclick="closeDrawer('uploadDrawer')" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p class="text-sm text-blue-800 font-semibold mb-2">Instructions:</p>
+                <ul class="text-sm text-blue-700 space-y-1 list-disc list-inside">
+                    <li>Download the sample Excel file first</li>
+                    <li>Fill in course details (Program Code, Course Code, Title, Year, Semester are required)</li>
+                    <li>Program Code must exist in the system</li>
+                    <li>Course Code must be unique per program</li>
+                </ul>
+            </div>
+            
+            <form id="uploadForm" enctype="multipart/form-data" class="space-y-5">
+                {% csrf_token %}
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-4">Select Excel File <span class="text-rose-500">*</span></label>
+                    
+                    <div class="relative group flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-8 text-center hover:border-green-400 transition">
+                        <input type="file" name="excel_file" id="excelFile" accept=".xlsx,.xls" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                        
+                        <div id="fileEmptyState" class="space-y-2 pointer-events-none">
+                            <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-white text-slate-400">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                                </svg>
+                            </div>
+                            <div class="text-xs font-medium text-slate-600">
+                                <span class="font-semibold text-green-600">Click to upload</span> or drag and drop
+                            </div>
+                            <p class="text-[11px] text-slate-400">Supported formats: .xlsx, .xls</p>
+                        </div>
+                        
+                        <div id="fileSelectedState" class="hidden space-y-2">
+                            <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-1.125 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                </svg>
+                            </div>
+                            <div id="fileNameDisplay" class="text-xs font-semibold text-slate-800 truncate max-w-[240px] px-2">No file selected</div>
+                            <button type="button" id="removeFileBtn" class="text-[11px] font-medium text-slate-400 hover:text-rose-500">Remove file</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <div class="px-6 pb-6 flex gap-3 bg-slate-50 shrink-0 pt-4 border-t border-slate-200">
+            <button onclick="closeDrawer('uploadDrawer')" class="flex-1 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-sm rounded-xl border border-slate-200">Cancel</button>
+            <button type="submit" form="uploadForm" class="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                Upload & Import
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed bottom-4 right-4 z-50 hidden transform transition-all duration-300">
+    <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <span id="toastMessage">Success!</span>
+    </div>
+</div>
+
+<script src="{% static 'js/course_management.js' %}"></script>
+
+<style>
+    .drawer .absolute.inset-y-0.right-0 {
+        transform: translateX(0);
+        transition: transform 0.3s ease-in-out;
+    }
+    
+    .drawer.hidden .absolute.inset-y-0.right-0 {
+        transform: translateX(100%);
+    }
+    
+    .drawer-scrollable {
+        scrollbar-width: thin;
+    }
+    
+    .drawer-scrollable::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .drawer-scrollable::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .drawer-scrollable::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+</style>
+
+{% endblock %}

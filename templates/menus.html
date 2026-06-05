@@ -18,6 +18,7 @@
 
     <nav class="flex-1 overflow-y-auto px-4 space-y-6 custom-scrollbar">
         {% if user.is_authenticated %}
+        <!-- General Section -->
         <div>
             <p class="px-3 text-[11px] font-bold text-slate-600 uppercase tracking-[0.2em] mb-3">
                 General
@@ -32,16 +33,27 @@
             </div>
         </div>
 
+        <!-- Academic Section -->
         <div>
             <p class="px-3 text-[11px] font-bold text-slate-600 uppercase tracking-[0.2em] mb-3">
                 Academic
             </p>
             <div class="space-y-2">
-                <a href="{% url 'course_manage:course_management' %}"
-                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'course_manage' %}bg-white/10 text-white{% endif %}">
-                    <i data-lucide="book-copy" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
-                    <span class="text-[14px]">View Syllabus
+                <!-- View Syllabus - Using # for now -->
+                <a href="#"
+                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white">
+                    <i data-lucide="eye" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
+                    <span class="text-[14px]">View Syllabus</span>
                 </a>
+                
+                <!-- Course Management -->
+                <a href="{% url 'course_management:course_management' %}"
+                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'course_management' %}bg-white/10 text-white{% endif %}">
+                    <i data-lucide="book-copy" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
+                    <span class="text-[14px]">Course Management</span>
+                </a>
+                
+                <!-- Program Management - Admin only -->
                 {% if user.is_superuser %}
                 <a href="{% url 'program_manage:program_management' %}"
                     class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'program_manage' %}bg-white/10 text-white{% endif %}">
@@ -50,15 +62,10 @@
                     <span class="text-[14px]">Program Management</span>
                 </a>
                 {% endif %}
-                <a href="{% url 'upload_center:upload_center' %}"
-                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'upload_center' %}bg-white/10 text-white{% endif %}">
-                    <i data-lucide="cloud-lightning"
-                        class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
-                    <span class="text-[14px]">Course Management
-                </a>
             </div>
         </div>
 
+        <!-- Administration Section - Admin only -->
         {% if user.is_superuser %}
         <div>
             <p class="px-3 text-[11px] font-bold text-slate-600 uppercase tracking-[0.2em] mb-3">
@@ -73,10 +80,10 @@
                 </a>
                 <a href="{% url 'hod_management:hod_management' %}"
                     class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'hod_management' %}bg-white/10 text-white{% endif %}">
-                    <i data-lucide="link-2"class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
+                    <i data-lucide="link-2" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
                     <span class="text-[14px]">HOD Management</span>
                 </a>
-                <a href="{% url 'reports:work_progress_report' %}"
+                <a href="#"
                     class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white">
                     <i data-lucide="pie-chart" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
                     <span class="text-[14px]">Report Center</span>
@@ -90,8 +97,9 @@
             </div>
         </div>
         {% endif %}
+        
         {% else %}
-        <!-- Limited menu for guests (landing page) -->
+        <!-- Guest Menu (Not Logged In) -->
         <div>
             <p class="px-3 text-[11px] font-bold text-slate-600 uppercase tracking-[0.2em] mb-3">
                 General
@@ -110,9 +118,10 @@
                 Academic
             </p>
             <div class="space-y-2">
-                <a href="{% url 'course_manage:course_management' %}"
+                <!-- View Syllabus - Using # for guests -->
+                <a href="#"
                     class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white">
-                    <i data-lucide="book-copy" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
+                    <i data-lucide="eye" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
                     <span class="text-[14px]">View Syllabus</span>
                 </a>
             </div>
@@ -120,6 +129,7 @@
         {% endif %}
     </nav>
 
+    <!-- User Profile Section -->
     <div class="mt-auto border-t border-white/5 bg-[#0d121f] p-4">
         <div class="relative">
             <button onclick="toggleLoginMenu()"
@@ -127,7 +137,7 @@
                 <div
                     class="h-9 w-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg group-hover:scale-105 transition-transform">
                     {% if user.is_authenticated %}
-                    {{ user.username|first|upper}}
+                    {{ user.username|first|upper }}
                     {% else %}
                     <i data-lucide="user" class="w-4 h-4"></i>
                     {% endif %}
@@ -136,7 +146,7 @@
                     <p class="text-[13px] font-semibold text-slate-200 truncate">
                         {% if user.is_authenticated %}
                         {{ user.username }}
-                        {% else%}
+                        {% else %}
                         Guest Access
                         {% endif %}
                     </p>
@@ -161,19 +171,26 @@
                         Logout
                     </a>
                 </li>
+                <li>
+                    <a href="#"
+                        class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-slate-300 hover:bg-white/5 transition-colors">
+                        <i data-lucide="key" class="w-3.5 h-3.5"></i>
+                        Change Password
+                    </a>
+                </li>
                 {% else %}
                 <li>
                     <a href="{% url 'core:login' %}?role=admin"
                         class="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] hover:bg-white/5 transition-colors">
                         <i data-lucide="key-round" class="w-3.5 h-3.5 text-blue-400"></i>
-                        ADMIN
+                        ADMIN Login
                     </a>
                 </li>
                 <li>
                     <a href="{% url 'core:login' %}?role=hod"
                         class="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] hover:bg-white/5 transition-colors">
                         <i data-lucide="users" class="w-3.5 h-3.5 text-blue-400"></i>
-                        HOD
+                        HOD Login
                     </a>
                 </li>
                 {% endif %}
@@ -193,12 +210,17 @@
 
     function toggleLoginMenu() {
         const menu = document.getElementById("login-submenu");
-        menu.classList.toggle("hidden");
+        if (menu) {
+            menu.classList.toggle("hidden");
+        }
     }
 
     window.onclick = function (event) {
         if (!event.target.closest(".relative")) {
-            document.getElementById("login-submenu").classList.add("hidden");
+            const menu = document.getElementById("login-submenu");
+            if (menu) {
+                menu.classList.add("hidden");
+            }
         }
     };
 </script>

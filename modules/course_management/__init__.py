@@ -1,0 +1,1 @@
+default_app_config = 'modules.course_management.apps.CourseManagementConfig'
