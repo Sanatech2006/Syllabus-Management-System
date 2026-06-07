@@ -245,7 +245,7 @@
                         </td>
                         <td class="px-6 py-4 text-center font-semibold">{{ course.credit|default:"-" }}</td>
                         <td class="px-6 py-4 text-center">
-                            <button onclick="manageSyllabus({{ course.id }}, '{{ course.course_code }}')" class="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition" title="Manage Syllabus">
+                            <button onclick="manageSyllabus({{ course.id }}, '{{ course.course_code }}')" class="p-2 {% if course.has_syllabus_pdf %}text-green-600 bg-green-50 hover:bg-green-100{% else %}text-blue-600 bg-blue-50 hover:bg-blue-100{% endif %} rounded-lg transition" title="Manage Syllabus">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
@@ -500,6 +500,7 @@
                     <h3 id="syllabusStatus" class="text-base font-bold text-slate-900">No Syllabus Uploaded</h3>
                     <p id="syllabusMessage" class="text-sm text-slate-500 mt-2">Upload a PDF syllabus for this course.</p>
                     <div id="syllabusActions" class="mt-6 flex justify-center gap-3">
+                        <button id="viewSyllabusBtn" class="hidden px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">View Syllabus</button>
                         <button id="downloadSyllabusBtn" class="hidden px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Download Syllabus</button>
                         <button id="deleteSyllabusBtn" class="hidden px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete Syllabus</button>
                     </div>

@@ -8,5 +8,6 @@ urlpatterns = [
     path('', views.view_syllabus, name='view_syllabus'),
     
     # Download syllabus
+    path('view/<int:course_id>/', views.view_syllabus_pdf, name='view_syllabus_pdf'),
     path('download/<int:course_id>/', views.download_syllabus, name='download_syllabus'),
 ]

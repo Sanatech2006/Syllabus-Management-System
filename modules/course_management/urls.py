@@ -22,6 +22,7 @@ urlpatterns = [
     
     # Syllabus operations
     path('upload-syllabus/<int:course_id>/', views.upload_syllabus, name='upload_syllabus'),
+    path('view-syllabus/<int:course_id>/', views.view_syllabus, name='view_syllabus'),
     path('download-syllabus/<int:course_id>/', views.download_syllabus, name='download_syllabus'),
-    path('delete-syllabus/<int:syllabus_id>/', views.delete_syllabus, name='delete_syllabus'),
+    path('delete-syllabus/<int:course_id>/', views.delete_syllabus, name='delete_syllabus'),
 ]

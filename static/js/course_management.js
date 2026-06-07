@@ -222,17 +222,20 @@ function manageSyllabus(courseId, courseCode) {
         .then(data => {
             const statusEl = document.getElementById('syllabusStatus');
             const messageEl = document.getElementById('syllabusMessage');
+            const viewBtn = document.getElementById('viewSyllabusBtn');
             const downloadBtn = document.getElementById('downloadSyllabusBtn');
             const deleteBtn = document.getElementById('deleteSyllabusBtn');
             
             if (data.course.has_syllabus) {
                 statusEl.innerText = 'Syllabus Uploaded';
                 messageEl.innerText = 'A syllabus PDF is available for this course.';
+                viewBtn.classList.remove('hidden');
                 downloadBtn.classList.remove('hidden');
                 deleteBtn.classList.remove('hidden');
             } else {
                 statusEl.innerText = 'No Syllabus Uploaded';
                 messageEl.innerText = 'Upload a PDF syllabus for this course.';
+                viewBtn.classList.add('hidden');
                 downloadBtn.classList.add('hidden');
                 deleteBtn.classList.add('hidden');
             }
@@ -242,6 +245,18 @@ function manageSyllabus(courseId, courseCode) {
             console.error('Error:', error);
             showToast('Error checking syllabus', 'error');
         });
+}
+
+// View syllabus
+function initializeViewSyllabus() {
+    const viewBtn = document.getElementById('viewSyllabusBtn');
+    if (viewBtn) {
+        viewBtn.addEventListener('click', function() {
+            if (currentSyllabusCourseId) {
+                window.open(`/course-management/view-syllabus/${currentSyllabusCourseId}/`, '_blank');
+            }
+        });
+    }
 }
 
 // Download syllabus
@@ -261,13 +276,31 @@ function initializeDeleteSyllabus() {
     const deleteSyllabusBtn = document.getElementById('deleteSyllabusBtn');
     if (deleteSyllabusBtn) {
         deleteSyllabusBtn.addEventListener('click', function() {
+            if (!currentSyllabusCourseId) {
+                showToast('No course selected for syllabus deletion', 'error');
+                return;
+            }
+
             if (confirm('Are you sure you want to delete this syllabus?')) {
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
                 
-                fetch(`/course-management/get-course/${currentSyllabusCourseId}/`)  // Changed to hyphen
+                fetch(`/course-management/delete-syllabus/${currentSyllabusCourseId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                })
                     .then(response => response.json())
                     .then(data => {
-                        showToast('Please implement syllabus deletion in the backend', 'error');
+                        if (data.success) {
+                            showToast('Syllabus deleted successfully!');
+                            setTimeout(() => location.reload(), 1500);
+                            closeDrawer('syllabusDrawer');
+                        } else {
+                            showToast(data.error || 'Error deleting syllabus', 'error');
+                        }
                     })
                     .catch(error => {
                         console.error('Error:', error);
@@ -508,6 +541,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializePerPage();
     initializeClearFilters();
     initializeEscapeKey();
+    initializeViewSyllabus();
     initializeDownloadSyllabus();
     initializeDeleteSyllabus();
 });

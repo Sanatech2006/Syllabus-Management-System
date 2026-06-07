@@ -92,7 +92,14 @@ def course_management(request):
             filters[field] = value
     
     base_queryset = CourseStructure.objects.select_related('program').all()
-    courses = _apply_course_filters(base_queryset, filters)
+    courses = _apply_course_filters(base_queryset, filters).annotate(
+        has_syllabus_pdf=models.Exists(
+            CourseSyllabus.objects.filter(
+                course_code=models.OuterRef('course_code'),
+                pdf__isnull=False,
+            ).exclude(pdf='')
+        )
+    )
     
     # Get filter options for dropdowns
     filter_options = _build_course_filter_options(base_queryset, filters)
@@ -511,6 +518,26 @@ def upload_syllabus(request, course_id):
 
 
 @admin_required
+def view_syllabus(request, course_id):
+
+    try:
+        course = get_object_or_404(CourseStructure, id=course_id)
+        syllabus = get_object_or_404(CourseSyllabus, course_code=course.course_code)
+        
+        if not syllabus.pdf:
+            return JsonResponse({'success': False, 'error': 'No syllabus file available.'})
+        
+        response = HttpResponse(syllabus.pdf.read(), content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{course.course_code}_Syllabus.pdf"'
+        return response
+        
+    except CourseSyllabus.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Syllabus not found for this course.'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@admin_required
 def download_syllabus(request, course_id):
 
     try:
@@ -532,13 +559,14 @@ def download_syllabus(request, course_id):
 
 @admin_required
 @require_http_methods(["POST"])
-def delete_syllabus(request, syllabus_id):
+def delete_syllabus(request, course_id):
 
     try:
-        syllabus = get_object_or_404(CourseSyllabus, id=syllabus_id)
+        course = get_object_or_404(CourseStructure, id=course_id)
+        syllabus = get_object_or_404(CourseSyllabus, course_code=course.course_code)
         
         if syllabus.pdf:
-            syllabus.pdf.delete()
+            syllabus.pdf.delete(save=False)
         syllabus.delete()
         
         return JsonResponse({'success': True, 'message': 'Syllabus deleted successfully.'})

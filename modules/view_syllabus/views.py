@@ -16,38 +16,59 @@ def view_syllabus(request):
     program_id = request.GET.get('program')
     year = request.GET.get('year')
     sem = request.GET.get('sem')
+    view_mode = request.GET.get('view_mode', 'syllabus')
     search = request.GET.get('search', '')
+    has_applied_filters = bool(request.GET)
     
-    # Base queryset - only courses that have syllabi
-    all_courses = CourseStructure.objects.select_related('program').all()
+    if view_mode not in ('structure', 'syllabus'):
+        view_mode = 'syllabus'
     
-    # Filter only courses that have syllabi
-    courses_with_syllabus = []
-    for course in all_courses:
-        if CourseSyllabus.objects.filter(course_code=course.course_code).exists():
-            courses_with_syllabus.append(course)
+    # Base queryset
+    all_courses = CourseStructure.objects.select_related('program').annotate(
+        has_syllabus_pdf=models.Exists(
+            CourseSyllabus.objects.filter(
+                course_code=models.OuterRef('course_code'),
+                pdf__isnull=False,
+            ).exclude(pdf='')
+        )
+    )
     
     # Apply filters
-    filtered_courses = courses_with_syllabus
-    if program_id:
-        filtered_courses = [c for c in filtered_courses if str(c.program.id) == program_id]
-    if year:
-        filtered_courses = [c for c in filtered_courses if c.year == year]
-    if sem:
-        filtered_courses = [c for c in filtered_courses if c.sem == sem]
-    if search:
-        filtered_courses = [
-            c for c in filtered_courses 
-            if search.lower() in c.course_code.lower() or 
-               search.lower() in c.course_title.lower()
-        ]
+    if has_applied_filters:
+        filtered_courses = all_courses.filter(has_syllabus_pdf=True)
+        if program_id:
+            filtered_courses = filtered_courses.filter(program_id=program_id)
+        if year:
+            filtered_courses = filtered_courses.filter(year=year)
+        if sem:
+            filtered_courses = filtered_courses.filter(sem=sem)
+        if search:
+            filtered_courses = filtered_courses.filter(
+                models.Q(course_code__icontains=search) |
+                models.Q(course_title__icontains=search)
+            )
+        filtered_courses = filtered_courses.order_by('program__prog_code', 'year', 'sem', 'course_code')
+    else:
+        filtered_courses = CourseStructure.objects.none()
     
     # Get filter options
     programs = Program.objects.filter(is_active=True).order_by('prog_code')
     
-    # Get unique years and semesters from courses with syllabi
-    years = sorted(set([c.year for c in courses_with_syllabus if c.year]))
-    sems = sorted(set([c.sem for c in courses_with_syllabus if c.sem]))
+    # Get unique years and semesters from course structures
+    years = list(
+        CourseStructure.objects.exclude(year__isnull=True)
+        .exclude(year='')
+        .values_list('year', flat=True)
+        .distinct()
+        .order_by('year')
+    )
+    sems = list(
+        CourseStructure.objects.exclude(sem__isnull=True)
+        .exclude(sem='')
+        .values_list('sem', flat=True)
+        .distinct()
+        .order_by('sem')
+    )
     
     context = {
         'courses': filtered_courses,
@@ -57,11 +78,33 @@ def view_syllabus(request):
         'selected_program': program_id,
         'selected_year': year,
         'selected_sem': sem,
+        'selected_view_mode': view_mode,
         'search_query': search,
-        'total_courses': len(filtered_courses),
+        'has_applied_filters': has_applied_filters,
+        'total_courses': filtered_courses.count(),
     }
     
     return render(request, 'view_syllabus.html', context)
+
+
+@login_required
+def view_syllabus_pdf(request, course_id):
+    """Open syllabus PDF inline for a specific course"""
+    try:
+        course = get_object_or_404(CourseStructure, id=course_id)
+        syllabus = get_object_or_404(CourseSyllabus, course_code=course.course_code)
+        
+        if not syllabus.pdf:
+            return JsonResponse({'success': False, 'error': 'No syllabus file available.'})
+        
+        response = HttpResponse(syllabus.pdf.read(), content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{course.course_code}_Syllabus.pdf"'
+        return response
+        
+    except CourseSyllabus.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Syllabus not found for this course.'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 
 @login_required
@@ -74,9 +117,8 @@ def download_syllabus(request, course_id):
         if not syllabus.pdf:
             return JsonResponse({'success': False, 'error': 'No syllabus file available.'})
         
-        # Serve the PDF file
         response = HttpResponse(syllabus.pdf.read(), content_type='application/pdf')
-        response['Content-Disposition'] = f'inline; filename="{course.course_code}_Syllabus.pdf"'
+        response['Content-Disposition'] = f'attachment; filename="{course.course_code}_Syllabus.pdf"'
         return response
         
     except CourseSyllabus.DoesNotExist:
