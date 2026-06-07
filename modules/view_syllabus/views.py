@@ -17,7 +17,6 @@ def view_syllabus(request):
     year = request.GET.get('year')
     sem = request.GET.get('sem')
     view_mode = request.GET.get('view_mode', 'syllabus')
-    search = request.GET.get('search', '')
     has_applied_filters = bool(request.GET)
     
     if view_mode not in ('structure', 'syllabus'):
@@ -42,11 +41,6 @@ def view_syllabus(request):
             filtered_courses = filtered_courses.filter(year=year)
         if sem:
             filtered_courses = filtered_courses.filter(sem=sem)
-        if search:
-            filtered_courses = filtered_courses.filter(
-                models.Q(course_code__icontains=search) |
-                models.Q(course_title__icontains=search)
-            )
         filtered_courses = filtered_courses.order_by('program__prog_code', 'year', 'sem', 'course_code')
     else:
         filtered_courses = CourseStructure.objects.none()
@@ -79,7 +73,6 @@ def view_syllabus(request):
         'selected_year': year,
         'selected_sem': sem,
         'selected_view_mode': view_mode,
-        'search_query': search,
         'has_applied_filters': has_applied_filters,
         'total_courses': filtered_courses.count(),
     }

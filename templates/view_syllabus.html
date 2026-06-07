@@ -40,7 +40,7 @@
         </div>
         <div class="p-6">
             <form method="get" class="space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program</label>
                         <select name="program" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
@@ -77,10 +77,6 @@
                             <option value="syllabus" {% if selected_view_mode == "syllabus" %}selected{% endif %}>Syllabus View</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Search</label>
-                        <input type="text" name="search" value="{{ search_query }}" placeholder="Course code or title..." class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                    </div>
                 </div>
                 <div class="flex justify-end gap-5">
                     <a href="{% url 'view_syllabus:view_syllabus' %}" class="px-4 py-2 w-[150px] border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition text-center">Clear All</a>
@@ -93,6 +89,22 @@
     <!-- Course Results -->
     <div class="mx-auto">
         {% if courses %}
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-5">
+            <div class="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <h2 class="text-base font-semibold text-slate-900">Filtered Courses</h2>
+                    <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600">
+                        {{ total_courses }} shown
+                    </span>
+                </div>
+                <div class="relative w-full sm:w-64">
+                    <input type="text" id="viewSyllabusSearchInput" placeholder="Search courses..." class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg">
+                    <svg class="absolute left-3 top-2.5 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
         {% if selected_view_mode == "structure" %}
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
@@ -110,7 +122,7 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         {% for course in courses %}
-                        <tr class="hover:bg-slate-50 transition">
+                        <tr class="view-syllabus-course-item hover:bg-slate-50 transition" data-course-code="{{ course.course_code|lower }}" data-course-title="{{ course.course_title|lower }}" data-program="{{ course.program.prog_code|lower }}">
                             <td class="px-6 py-4 text-center text-sm text-slate-500">{{ forloop.counter }}</td>
                             <td class="px-6 py-4 text-center">
                                 <div class="text-sm font-medium text-slate-900">{{ course.program.prog_code }}</div>
@@ -134,7 +146,7 @@
         {% else %}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for course in courses %}
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group">
+            <div class="view-syllabus-course-item bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group" data-course-code="{{ course.course_code|lower }}" data-course-title="{{ course.course_title|lower }}" data-program="{{ course.program.prog_code|lower }}">
                 <div class="p-5">
                     <div class="flex items-start justify-between mb-3">
                         <div class="flex-1">
@@ -178,6 +190,10 @@
             {% endfor %}
         </div>
         {% endif %}
+        <div id="viewSyllabusSearchEmpty" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center mt-5">
+            <h3 class="text-lg font-bold text-slate-900">No matching courses</h3>
+            <p class="mt-2 text-sm text-slate-500">Your search only checks the filtered courses currently shown.</p>
+        </div>
         {% else %}
         <!-- No Results -->
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
@@ -197,4 +213,32 @@
         {% endif %}
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('viewSyllabusSearchInput');
+    const emptyState = document.getElementById('viewSyllabusSearchEmpty');
+
+    if (!searchInput) return;
+
+    searchInput.addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        const courseItems = document.querySelectorAll('.view-syllabus-course-item');
+        let visibleCount = 0;
+
+        courseItems.forEach(item => {
+            const courseCode = item.getAttribute('data-course-code') || '';
+            const courseTitle = item.getAttribute('data-course-title') || '';
+            const program = item.getAttribute('data-program') || '';
+            const matches = courseCode.includes(searchTerm) || courseTitle.includes(searchTerm) || program.includes(searchTerm);
+
+            item.style.display = matches ? '' : 'none';
+            if (matches) visibleCount += 1;
+        });
+
+        if (emptyState) {
+            emptyState.classList.toggle('hidden', visibleCount > 0);
+        }
+    });
+});
+</script>
 {% endblock %}
