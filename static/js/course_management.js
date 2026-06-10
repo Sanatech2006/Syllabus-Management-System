@@ -126,6 +126,26 @@ function initializeSearch() {
     }
 }
 
+// Enable filters only after all dropdown values are selected
+function initializeFilterSubmitState() {
+    const form = document.getElementById('filterForm');
+    const applyFiltersBtn = document.getElementById('courseApplyFiltersBtn');
+
+    if (!applyFiltersBtn || !form) return;
+
+    const selects = Array.from(form.querySelectorAll('select'));
+
+    const updateApplyButtonState = () => {
+        // Button enabled only when every select has a non-empty value
+        const allSelected = selects.length > 0 && selects.every(s => s.value && s.value !== '');
+        applyFiltersBtn.disabled = !allSelected;
+    };
+
+    selects.forEach(s => s.addEventListener('change', updateApplyButtonState));
+    // initialize state
+    updateApplyButtonState();
+}
+
 // Drawer functions
 function openDrawer(drawerId) {
     const drawer = document.getElementById(drawerId);
@@ -534,6 +554,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeFileInput();
     initializeSyllabusFileInput();
     initializeSearch();
+    initializeFilterSubmitState();
     initializeDeleteButton();
     initializeCourseForm();
     initializeSyllabusForm();

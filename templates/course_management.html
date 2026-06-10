@@ -139,10 +139,63 @@
         <div class="p-6">
             <form method="get" id="filterForm" class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-6">
+                    <!--Year of syllabus-->
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program</label>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Year of syllabus</label>
+                        <select name="year" id="year" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">choose a year</option>
+                            <option value="__all__" {% if request.GET.year == "__all__" %}selected{% endif %}>All Years</option>
+                            {% for year in years %}
+                            <option value="{{ year }}" {% if request.GET.year == year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!--Program type-->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program type</label>
+                        <select name="prog_type" id="prog_type" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">All Types</option>
+                            <option value="UG" {% if request.GET.prog_type == "UG" %}selected{% endif %}>UG</option>
+                            <option value="PG" {% if request.GET.prog_type == "PG" %}selected{% endif %}>PG</option>
+                        </select>
+                    </div>
+                    <!--Program category-->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
+                            Program category
+                        </label>
+
+                        <select name="prog_category" id="prog_category"
+                                class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">All Categories</option>
+                            <option value="Arts" {% if request.GET.prog_category == "Arts" %}selected{% endif %}>Arts</option>
+                            <option value="Science" {% if request.GET.prog_category == "Science" %}selected{% endif %}>Science</option>
+                        </select>
+                    </div>
+                    <!--Degree-->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Degree</label>
+                        <select name="degree" id="degree" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">All Degrees</option>
+                            {% for degree in degrees %}
+                            <option value="{{ degree }}" {% if request.GET.degree == degree %}selected{% endif %}>
+                                {{ degree }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- Branch -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Branch</label>
+                        <input type="text" name="branch" value="{{ request.GET.branch|default:'' }}"
+                               class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <!--Program code-->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program code</label>
                         <select name="program" id="program" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="">All Programs</option>
+                            <option value="">Select Program code</option>
+                            <option value="__all__" {% if request.GET.program == "__all__" %}selected{% endif %}>All Programs</option>
                             {% for program in programs %}
                             <option value="{{ program.id }}" {% if request.GET.program == program.id|stringformat:"s" %}selected{% endif %}>
                                 {{ program.prog_code }} - {{ program.degree }} ({{ program.branch }})
@@ -150,46 +203,49 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Year</label>
-                        <select name="year" id="year" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="">All Years</option>
-                            {% for year in years %}
-                            <option value="{{ year }}" {% if request.GET.year == year %}selected{% endif %}>{{ year }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                    <!--Semester-->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Semester</label>
                         <select name="sem" id="sem" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="">All Semesters</option>
+                            <option value="">Select Semester</option>
+                            <option value="__all__" {% if request.GET.sem == "__all__" %}selected{% endif %}>All Semesters</option>
                             {% for sem in sems %}
                             <option value="{{ sem }}" {% if request.GET.sem == sem %}selected{% endif %}>{{ sem }}</option>
                             {% endfor %}
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Category</label>
-                        <select name="course_category" id="course_category" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="">All Categories</option>
-                            {% for category in course_categories %}
-                            <option value="{{ category }}" {% if request.GET.course_category == category %}selected{% endif %}>{{ category }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                    <!--Part-->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Part</label>
                         <select name="part" id="part" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="">All Parts</option>
+                            <option value="">Select Part</option>
+                            <option value="__all__" {% if request.GET.part == "__all__" %}selected{% endif %}>All Parts</option>
                             {% for part in parts %}
                             <option value="{{ part }}" {% if request.GET.part == part %}selected{% endif %}>{{ part }}</option>
                             {% endfor %}
                         </select>
                     </div>
-                </div>
-                <div class="flex justify-end gap-5">
+                     <!-- Course Category -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Course category</label>
+                        <select name="course_category" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">All Categories</option>
+                            <option value="Core" {% if request.GET.course_category == "Core" %}selected{% endif %}>Core</option>
+                            <option value="Elective" {% if request.GET.course_category == "Elective" %}selected{% endif %}>Elective</option>
+                            <option value="Allied" {% if request.GET.course_category == "Allied" %}selected{% endif %}>Allied</option>
+                            <option value="Skill Enhancement" {% if request.GET.course_category == "Skill Enhancement" %}selected{% endif %}>Skill Enhancement</option>
+                        </select>
+                    </div>
+                    <!-- Course code with Title -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Course code with title</label>
+                        <input type="text" name="course_title" value="{{ request.GET.course_title|default:'' }}"
+                               class="w-full p-2 border mt-1.5 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                <div class="flex justify-end gap-5 w-full">
                     <button type="button" id="clearFilters" class="px-4 py-2 w-[150px] border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition">Clear All</button>
-                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">Apply Filters</button>
+                    <button type="submit" id="courseApplyFiltersBtn" disabled class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed disabled:hover:bg-slate-300">Apply Filters</button>
                 </div>
             </form>
         </div>

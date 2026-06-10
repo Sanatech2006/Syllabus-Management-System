@@ -50,7 +50,7 @@ def _apply_course_filters(queryset, filters, exclude_field=None):
         if field == exclude_field:
             continue
         value = filters.get(field)
-        if value:
+        if value and value != "__all__":
             if field == "program":
                 queryset = queryset.filter(program_id=value)
             else:
@@ -67,9 +67,17 @@ def _build_course_filter_options(base_queryset, filters):
     
     # Get programs for filter
     programs = Program.objects.filter(is_active=True).order_by('prog_code')
+
+    degrees = (
+    Program.objects.filter(is_active=True)
+    .values_list('degree', flat=True)
+    .distinct()
+    .order_by('degree')
+)
     
     return {
         "programs": programs,
+        "degrees" : degrees,
         "years": _distinct_non_empty(option_querysets["year"], "year"),
         "sems": _distinct_non_empty(option_querysets["sem"], "sem"),
         "course_categories": _distinct_non_empty(option_querysets["course_category"], "course_category"),
@@ -88,7 +96,7 @@ def course_management(request):
     filters = {}
     for field in COURSE_FILTER_FIELDS:
         value = request.GET.get(field)
-        if value:
+        if value and value != "__all__":
             filters[field] = value
     
     base_queryset = CourseStructure.objects.select_related('program').all()

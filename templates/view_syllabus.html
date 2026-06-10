@@ -43,8 +43,9 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program</label>
-                        <select name="program" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="">All Programs</option>
+                        <select id="programFilter" name="program" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">Select Program</option>
+                            <option value="__all__" {% if selected_program == "__all__" %}selected{% endif %}>All Programs</option>
                             {% for program in programs %}
                             <option value="{{ program.id }}" {% if selected_program == program.id|stringformat:"s" %}selected{% endif %}>
                                 {{ program.prog_code }} - {{ program.degree }} ({{ program.branch }})
@@ -54,8 +55,9 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Year</label>
-                        <select name="year" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="">All Years</option>
+                        <select id="yearFilter" name="year" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">Select Year</option>
+                            <option value="__all__" {% if selected_year == "__all__" %}selected{% endif %}>All Years</option>
                             {% for y in years %}
                             <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>Year {{ y }}</option>
                             {% endfor %}
@@ -63,8 +65,9 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Semester</label>
-                        <select name="sem" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="">All Semesters</option>
+                        <select id="semFilter" name="sem" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                            <option value="">Select Semester</option>
+                            <option value="__all__" {% if selected_sem == "__all__" %}selected{% endif %}>All Semesters</option>
                             {% for s in sems %}
                             <option value="{{ s }}" {% if selected_sem == s %}selected{% endif %}>Semester {{ s }}</option>
                             {% endfor %}
@@ -72,7 +75,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">View Mode</label>
-                        <select name="view_mode" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
+                        <select id="viewModeFilter" name="view_mode" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
                             <option value="structure" {% if selected_view_mode == "structure" %}selected{% endif %}>Structure View</option>
                             <option value="syllabus" {% if selected_view_mode == "syllabus" %}selected{% endif %}>Syllabus View</option>
                         </select>
@@ -80,7 +83,7 @@
                 </div>
                 <div class="flex justify-end gap-5">
                     <a href="{% url 'view_syllabus:view_syllabus' %}" class="px-4 py-2 w-[150px] border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition text-center">Clear All</a>
-                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">Apply Filters</button>
+                    <button id="applyFiltersBtn" type="submit" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed disabled:hover:bg-slate-300">Apply Filters</button>
                 </div>
             </form>
         </div>
@@ -215,8 +218,26 @@
 </div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const requiredFilters = [
+        document.getElementById('programFilter'),
+        document.getElementById('yearFilter'),
+        document.getElementById('semFilter'),
+        document.getElementById('viewModeFilter'),
+    ];
+    const applyFiltersBtn = document.getElementById('applyFiltersBtn');
     const searchInput = document.getElementById('viewSyllabusSearchInput');
     const emptyState = document.getElementById('viewSyllabusSearchEmpty');
+
+    if (applyFiltersBtn) {
+        const updateApplyButtonState = () => {
+            applyFiltersBtn.disabled = requiredFilters.some(filter => !filter || !filter.value);
+        };
+
+        requiredFilters.forEach(filter => {
+            if (filter) filter.addEventListener('change', updateApplyButtonState);
+        });
+        updateApplyButtonState();
+    }
 
     if (!searchInput) return;
 

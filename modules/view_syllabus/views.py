@@ -35,11 +35,11 @@ def view_syllabus(request):
     # Apply filters
     if has_applied_filters:
         filtered_courses = all_courses.filter(has_syllabus_pdf=True)
-        if program_id:
+        if program_id and program_id != "__all__":
             filtered_courses = filtered_courses.filter(program_id=program_id)
-        if year:
+        if year and year != "__all__":
             filtered_courses = filtered_courses.filter(year=year)
-        if sem:
+        if sem and sem != "__all__":
             filtered_courses = filtered_courses.filter(sem=sem)
         filtered_courses = filtered_courses.order_by('program__prog_code', 'year', 'sem', 'course_code')
     else:

@@ -16,6 +16,8 @@ class Program(models.Model):
     PROG_CATEGORY_CHOICES = [
         ("Arts", "Arts"),
         ("Science", "Science"),
+        ("UG", "UG"),
+        ("PG", "PG"),
     ]
 
     prog_code = models.CharField(
