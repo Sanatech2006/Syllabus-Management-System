@@ -3,6 +3,45 @@
 
 {% block title %}Program Management{% endblock %}
 
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+<style>
+    /* Styling Tom Select to fit beautiful Tailwind components */
+    .ts-wrapper.single .ts-control {
+        border-radius: 0.5rem !important; /* rounded-lg */
+        border-color: #cbd5e1 !important; /* border-slate-200 */
+        padding: 0.5rem 0.75rem !important; /* px-3 py-2 */
+        font-size: 0.875rem !important; /* text-sm */
+        background-color: #ffffff !important;
+        box-shadow: none !important;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .ts-wrapper.single.focus .ts-control {
+        border-color: #3b82f6 !important; /* focus:border-blue-500 */
+        box-shadow: 0 0 0 1px #3b82f6 !important;
+    }
+    .ts-dropdown {
+        border-radius: 0.5rem !important;
+        margin-top: 2px !important;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+        border-color: #e2e8f0 !important;
+        z-index: 100 !important;
+    }
+    .ts-dropdown .active {
+        background-color: #eff6ff !important;
+        color: #1e3a8a !important;
+    }
+    .ts-dropdown .option {
+        padding: 0.5rem 0.75rem !important;
+    }
+    /* Fix clipping in drawers/containers */
+    .ts-wrapper {
+        position: relative;
+        z-index: 10;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="min-h-screen">
     <!-- Page Header -->
@@ -210,40 +249,40 @@
         </div>
         
         <div class="overflow-x-auto">
-            <table class="w-full border-collapse text-left text-sm">
+            <table class="w-full min-w-full border-collapse text-left text-sm">
                 <thead class="bg-slate-50/90 border-y border-slate-200">
                     <tr class="text-center text-xs uppercase tracking-wider text-slate-700 font-bold">
-                        <th class="px-6 py-4 w-12">#</th>
-                        <th class="px-6 py-4">Program Type</th>
-                        <th class="px-6 py-4">Category</th>
-                        <th class="px-6 py-4">Degree</th>
-                        <th class="px-6 py-4">Branch</th>
-                        <th class="px-6 py-4">Program Code</th>
-                        <th class="px-6 py-4 text-center">Actions</th>
+                        <th class="px-6 py-4 w-12 whitespace-nowrap">#</th>
+                        <th class="px-6 py-4 whitespace-nowrap">Program Type</th>
+                        <th class="px-6 py-4 whitespace-nowrap">Category</th>
+                        <th class="px-6 py-4 whitespace-nowrap">Degree</th>
+                        <th class="px-6 py-4 whitespace-nowrap">Branch</th>
+                        <th class="px-6 py-4 whitespace-nowrap">Program Code</th>
+                        <th class="px-6 py-4 text-center whitespace-nowrap">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
                     {% for program in programs %}
-                    <tr class="group hover:bg-slate-50 transition program-row" data-program-code="{{ program.prog_code|lower }}" data-degree="{{ program.degree|lower }}" data-branch="{{ program.branch|lower }}">
-                        <td class="px-6 py-4 text-center text-sm text-slate-500">{{ page_obj.start_index|add:forloop.counter0 }}</td>
-                        <td class="px-6 py-4 text-center">
+                    <tr class="group hover:bg-slate-50 transition program-row" data-program-code="{{ program.prog_code|lower }}" data-degree="{{ program.degree|lower }}" data-branch="{{ program.branch|lower }}" data-prog-type="{{ program.prog_type|lower }}" data-prog-category="{{ program.prog_category|lower }}">
+                        <td class="px-6 py-4 text-center text-sm text-slate-500 whitespace-nowrap">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+                        <td class="px-6 py-4 text-center whitespace-nowrap">
                             {% if program.prog_type == "UG" %}
                             <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-green-50 text-green-700 text-xs font-semibold">UG</span>
                             {% else %}
                             <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-yellow-50 text-yellow-700 text-xs font-semibold">PG</span>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-4 text-center">
+                        <td class="px-6 py-4 text-center whitespace-nowrap">
                             {% if program.prog_category == "Arts" %}
                             <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-pink-50 text-pink-700 text-xs font-semibold">Arts</span>
                             {% else %}
                             <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-semibold">Science</span>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-4 text-center font-medium text-slate-900">{{ program.degree }}</td>
-                        <td class="px-6 py-4 text-center text-slate-600">{{ program.branch }}</td>
-                        <td class="px-6 py-4 text-center font-mono font-bold text-blue-600">{{ program.prog_code }}</td>
-                        <td class="px-6 py-4 text-center">
+                        <td class="px-6 py-4 text-center font-medium text-slate-900 whitespace-nowrap">{{ program.degree }}</td>
+                        <td class="px-6 py-4 text-center text-slate-600 whitespace-nowrap">{{ program.branch }}</td>
+                        <td class="px-6 py-4 text-center font-mono font-bold text-blue-600 whitespace-nowrap">{{ program.prog_code }}</td>
+                        <td class="px-6 py-4 text-center whitespace-nowrap">
                             <div class="flex items-center justify-center gap-2">
                                 <button onclick="editProgram({{ program.id }})" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,6 +331,7 @@
                             <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
                             <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
                             <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                            <option value="all" {% if per_page == all_count %}selected{% endif %}>All</option>
                         </select>
                     </div>
                     
@@ -509,9 +549,50 @@
                     </div>
                 </div>
             </form>
+
+            <!-- Upload Progress Bar -->
+            <div id="uploadProgressContainer" class="hidden bg-white border border-slate-200 rounded-xl p-5 space-y-2">
+                <div class="flex items-center justify-between text-xs font-medium text-slate-600">
+                    <span id="uploadProgressText">Uploading...</span>
+                    <span id="uploadProgressPercent">0%</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div id="uploadProgressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Upload Results Summary -->
+            <div id="uploadResultContainer" class="hidden bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+                <div class="flex items-center gap-3">
+                    <div id="uploadResultIcon" class="p-2 rounded-lg">
+                    </div>
+                    <div>
+                        <h3 id="uploadResultTitle" class="font-bold text-sm text-slate-900">Upload Status</h3>
+                        <p id="uploadResultMessage" class="text-xs text-slate-500"></p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-green-50 border border-green-100 rounded-lg p-3 text-center">
+                        <span class="block text-xs font-semibold text-green-800 uppercase">Success</span>
+                        <span id="uploadSuccessCount" class="text-2xl font-bold text-green-700">0</span>
+                    </div>
+                    <div class="bg-rose-50 border border-rose-100 rounded-lg p-3 text-center">
+                        <span class="block text-xs font-semibold text-rose-800 uppercase">Errors</span>
+                        <span id="uploadErrorCount" class="text-2xl font-bold text-rose-700">0</span>
+                    </div>
+                </div>
+                <div id="uploadErrorsListContainer" class="hidden space-y-2">
+                    <span class="block text-xs font-semibold text-slate-600 uppercase">Error Details (First 10):</span>
+                    <div id="uploadErrorsList" class="max-h-40 overflow-y-auto text-xs text-rose-600 bg-rose-50/50 border border-rose-100/50 rounded-lg p-3 font-mono space-y-1">
+                    </div>
+                </div>
+                <button type="button" id="closeUploadResultBtn" class="w-full px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition-colors">
+                    Close & Reload
+                </button>
+            </div>
         </div>
         
-        <div class="px-6 pb-6 flex gap-4 bg-slate-50 shrink-0 pt-6 border-t border-slate-200">
+        <div id="uploadDrawerFooter" class="px-6 pb-6 flex gap-4 bg-slate-50 shrink-0 pt-6 border-t border-slate-200">
             <button onclick="closeDrawer('uploadDrawer')" class="flex-1 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-sm rounded-xl border border-slate-200">Cancel</button>
             <button type="submit" form="uploadForm" class="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -533,6 +614,7 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <script src="{% static 'js/program_management.js' %}"></script>
 
 <style>

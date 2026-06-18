@@ -39,47 +39,116 @@
             </h2>
         </div>
         <div class="p-6">
-            <form method="get" class="space-y-4">
+            <form method="get" id="filterForm" class="space-y-4">
+                <!-- Hidden inputs that carry the actual submitted values -->
+                <input type="hidden" id="programValue" name="program" value="{{ selected_program|default:'' }}">
+                <input type="hidden" id="yearValue" name="year" value="{{ selected_year|default:'' }}">
+                <input type="hidden" id="semValue" name="sem" value="{{ selected_sem|default:'' }}">
+                <input type="hidden" id="viewModeValue" name="view_mode" value="{{ selected_view_mode|default:'structure' }}">
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+
+                    <!-- Program Dropdown -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program</label>
-                        <select id="programFilter" name="program" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="">Select Program</option>
-                            <option value="__all__" {% if selected_program == "__all__" %}selected{% endif %}>All Programs</option>
-                            {% for program in programs %}
-                            <option value="{{ program.id }}" {% if selected_program == program.id|stringformat:"s" %}selected{% endif %}>
-                                {{ program.prog_code }} - {{ program.degree }} ({{ program.branch }})
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="sms-dropdown relative" id="programDropdown">
+                            <button type="button" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-left flex items-center justify-between gap-2 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <span class="sms-label truncate text-slate-400">Select Program</span>
+                                <svg class="sms-chevron w-4 h-4 text-slate-400 shrink-0 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div class="sms-panel hidden absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <div class="p-2 border-b border-slate-100">
+                                    <input type="text" class="sms-search w-full text-sm px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400" placeholder="Search...">
+                                </div>
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Program</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Programs</li>
+                                    {% for program in programs %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ program.id }}">{{ program.prog_code }} - {{ program.degree }} ({{ program.branch }})</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Year Dropdown -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Year</label>
-                        <select id="yearFilter" name="year" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="">Select Year</option>
-                            <option value="__all__" {% if selected_year == "__all__" %}selected{% endif %}>All Years</option>
-                            {% for y in years %}
-                            <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>Year {{ y }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="sms-dropdown relative" id="yearDropdown">
+                            <button type="button" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-left flex items-center justify-between gap-2 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <span class="sms-label truncate text-slate-400">Select Year</span>
+                                <svg class="sms-chevron w-4 h-4 text-slate-400 shrink-0 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div class="sms-panel hidden absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <div class="p-2 border-b border-slate-100">
+                                    <input type="text" class="sms-search w-full text-sm px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400" placeholder="Search...">
+                                </div>
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Year</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Years</li>
+                                    {% for y in years %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ y }}">Year {{ y }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Semester Dropdown -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Semester</label>
-                        <select id="semFilter" name="sem" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="">Select Semester</option>
-                            <option value="__all__" {% if selected_sem == "__all__" %}selected{% endif %}>All Semesters</option>
-                            {% for s in sems %}
-                            <option value="{{ s }}" {% if selected_sem == s %}selected{% endif %}>Semester {{ s }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="sms-dropdown relative" id="semDropdown">
+                            <button type="button" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-left flex items-center justify-between gap-2 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <span class="sms-label truncate text-slate-400">Select Semester</span>
+                                <svg class="sms-chevron w-4 h-4 text-slate-400 shrink-0 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div class="sms-panel hidden absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <div class="p-2 border-b border-slate-100">
+                                    <input type="text" class="sms-search w-full text-sm px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400" placeholder="Search...">
+                                </div>
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Semester</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Semesters</li>
+                                    {% for s in sems %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ s }}">Semester {{ s }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- View Mode Dropdown -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">View Mode</label>
-                        <select id="viewModeFilter" name="view_mode" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="structure" {% if selected_view_mode == "structure" %}selected{% endif %}>Structure View</option>
-                            <option value="syllabus" {% if selected_view_mode == "syllabus" %}selected{% endif %}>Syllabus View</option>
-                        </select>
+                        <div class="sms-dropdown relative" id="viewModeDropdown">
+                            <button type="button" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-left flex items-center justify-between gap-2 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <span class="sms-label truncate text-slate-400">Select View Mode</span>
+                                <svg class="sms-chevron w-4 h-4 text-slate-400 shrink-0 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div class="sms-panel hidden absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <div class="p-2 border-b border-slate-100">
+                                    <input type="text" class="sms-search w-full text-sm px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400" placeholder="Search...">
+                                </div>
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="structure">Structure View</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="syllabus">Syllabus View</li>
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
                     </div>
+
                 </div>
                 <div class="flex justify-end gap-5">
                     <a href="{% url 'view_syllabus:view_syllabus' %}" class="px-4 py-2 w-[150px] border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition text-center">Clear All</a>
@@ -216,49 +285,152 @@
         {% endif %}
     </div>
 </div>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const requiredFilters = [
-        document.getElementById('programFilter'),
-        document.getElementById('yearFilter'),
-        document.getElementById('semFilter'),
-        document.getElementById('viewModeFilter'),
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* ── Searchable dropdown setup ── */
+    const dropdownConfigs = [
+        { dropdownId: 'programDropdown',  hiddenId: 'programValue',  placeholder: 'Select Program' },
+        { dropdownId: 'yearDropdown',     hiddenId: 'yearValue',     placeholder: 'Select Year' },
+        { dropdownId: 'semDropdown',      hiddenId: 'semValue',      placeholder: 'Select Semester' },
+        { dropdownId: 'viewModeDropdown', hiddenId: 'viewModeValue', placeholder: 'Select View Mode' },
     ];
-    const applyFiltersBtn = document.getElementById('applyFiltersBtn');
-    const searchInput = document.getElementById('viewSyllabusSearchInput');
-    const emptyState = document.getElementById('viewSyllabusSearchEmpty');
 
-    if (applyFiltersBtn) {
-        const updateApplyButtonState = () => {
-            applyFiltersBtn.disabled = requiredFilters.some(filter => !filter || !filter.value);
-        };
+    dropdownConfigs.forEach(({ dropdownId, hiddenId, placeholder }) => {
+        const dropdown  = document.getElementById(dropdownId);
+        const hidden    = document.getElementById(hiddenId);
+        const trigger   = dropdown.querySelector('.sms-trigger');
+        const label     = dropdown.querySelector('.sms-label');
+        const chevron   = dropdown.querySelector('.sms-chevron');
+        const panel     = dropdown.querySelector('.sms-panel');
+        const search    = dropdown.querySelector('.sms-search');
+        const list      = dropdown.querySelector('.sms-list');
+        const emptyMsg  = dropdown.querySelector('.sms-empty');
+        const options   = Array.from(dropdown.querySelectorAll('.sms-option'));
 
-        requiredFilters.forEach(filter => {
-            if (filter) filter.addEventListener('change', updateApplyButtonState);
+        /* Pre-select on page load if hidden input already has a value */
+        const currentVal = hidden.value;
+        if (currentVal) {
+            const match = options.find(o => o.dataset.value === currentVal);
+            if (match) {
+                label.textContent = match.textContent.trim();
+                label.classList.remove('text-slate-400');
+                label.classList.add('text-slate-700');
+                markSelected(match);
+            }
+        }
+
+        function markSelected(selectedOption) {
+            options.forEach(o => {
+                o.classList.remove('bg-blue-50', 'text-blue-700', 'font-medium');
+                o.classList.add('text-slate-700');
+            });
+            selectedOption.classList.add('bg-blue-50', 'text-blue-700', 'font-medium');
+            selectedOption.classList.remove('text-slate-700');
+        }
+
+        function openPanel() {
+            panel.classList.remove('hidden');
+            chevron.classList.add('rotate-180');
+            search.value = '';
+            filterOptions('');
+            search.focus();
+        }
+
+        function closePanel() {
+            panel.classList.add('hidden');
+            chevron.classList.remove('rotate-180');
+        }
+
+        function filterOptions(term) {
+            const lower = term.toLowerCase().trim();
+            let visible = 0;
+            options.forEach(o => {
+                const matches = o.textContent.toLowerCase().includes(lower);
+                o.style.display = matches ? '' : 'none';
+                if (matches) visible++;
+            });
+            emptyMsg.classList.toggle('hidden', visible > 0);
+        }
+
+        trigger.addEventListener('click', () => {
+            const isOpen = !panel.classList.contains('hidden');
+            /* Close all other dropdowns first */
+            document.querySelectorAll('.sms-dropdown').forEach(d => {
+                if (d !== dropdown) {
+                    d.querySelector('.sms-panel').classList.add('hidden');
+                    d.querySelector('.sms-chevron').classList.remove('rotate-180');
+                }
+            });
+            isOpen ? closePanel() : openPanel();
         });
-        updateApplyButtonState();
+
+        search.addEventListener('input', () => filterOptions(search.value));
+
+        /* Prevent the search input click from bubbling to the document close handler */
+        search.addEventListener('click', e => e.stopPropagation());
+
+        list.addEventListener('click', e => {
+            const option = e.target.closest('.sms-option');
+            if (!option) return;
+            const val  = option.dataset.value;
+            const text = option.textContent.trim();
+            hidden.value = val;
+            label.textContent = val ? text : placeholder;
+            if (val) {
+                label.classList.remove('text-slate-400');
+                label.classList.add('text-slate-700');
+            } else {
+                label.classList.add('text-slate-400');
+                label.classList.remove('text-slate-700');
+            }
+            markSelected(option);
+            closePanel();
+            updateApplyButtonState();
+        });
+
+        /* Close panel when clicking outside */
+        document.addEventListener('click', e => {
+            if (!dropdown.contains(e.target)) closePanel();
+        });
+    });
+
+    /* ── Apply Filters button state ── */
+    const hiddenInputIds = ['programValue', 'yearValue', 'semValue', 'viewModeValue'];
+    const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+
+    function updateApplyButtonState() {
+        const allFilled = hiddenInputIds.every(id => {
+            const el = document.getElementById(id);
+            return el && el.value !== '';
+        });
+        applyFiltersBtn.disabled = !allFilled;
     }
+
+    updateApplyButtonState();
+
+    /* ── Course search (unchanged) ── */
+    const searchInput = document.getElementById('viewSyllabusSearchInput');
+    const emptyState  = document.getElementById('viewSyllabusSearchEmpty');
 
     if (!searchInput) return;
 
-    searchInput.addEventListener('keyup', function() {
+    searchInput.addEventListener('keyup', function () {
         const searchTerm = this.value.toLowerCase().trim();
         const courseItems = document.querySelectorAll('.view-syllabus-course-item');
         let visibleCount = 0;
 
         courseItems.forEach(item => {
-            const courseCode = item.getAttribute('data-course-code') || '';
+            const courseCode  = item.getAttribute('data-course-code') || '';
             const courseTitle = item.getAttribute('data-course-title') || '';
-            const program = item.getAttribute('data-program') || '';
+            const program     = item.getAttribute('data-program') || '';
             const matches = courseCode.includes(searchTerm) || courseTitle.includes(searchTerm) || program.includes(searchTerm);
-
             item.style.display = matches ? '' : 'none';
-            if (matches) visibleCount += 1;
+            if (matches) visibleCount++;
         });
 
-        if (emptyState) {
-            emptyState.classList.toggle('hidden', visibleCount > 0);
-        }
+        if (emptyState) emptyState.classList.toggle('hidden', visibleCount > 0);
     });
 });
 </script>

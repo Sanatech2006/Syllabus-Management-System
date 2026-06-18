@@ -3,6 +3,45 @@
 
 {% block title %}Course Management{% endblock %}
 
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+<style>
+    /* Styling Tom Select to fit beautiful Tailwind components */
+    .ts-wrapper {
+        width: 100% !important;
+    }
+    .ts-control {
+        border: 1px solid #cbd5e1 !important; /* border-slate-300 */
+        border-radius: 0.5rem !important; /* rounded-lg */
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.875rem !important; /* text-sm */
+        background-color: #ffffff !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .ts-wrapper.focus .ts-control {
+        border-color: #3b82f6 !important; /* focus:ring-blue-500 focus:border-blue-500 */
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+    }
+    .ts-dropdown {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 0.5rem !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+        background: #ffffff !important;
+        z-index: 1000 !important;
+    }
+    .ts-dropdown .active {
+        background-color: #eff6ff !important; /* bg-blue-50 */
+        color: #1d4ed8 !important; /* text-blue-700 */
+    }
+    .ts-dropdown .option {
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.875rem !important;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="min-h-screen">
     <!-- Page Header -->
@@ -556,9 +595,9 @@
                     <h3 id="syllabusStatus" class="text-base font-bold text-slate-900">No Syllabus Uploaded</h3>
                     <p id="syllabusMessage" class="text-sm text-slate-500 mt-2">Upload a PDF syllabus for this course.</p>
                     <div id="syllabusActions" class="mt-6 flex justify-center gap-3">
-                        <button id="viewSyllabusBtn" class="hidden px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">View Syllabus</button>
-                        <button id="downloadSyllabusBtn" class="hidden px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Download Syllabus</button>
-                        <button id="deleteSyllabusBtn" class="hidden px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete Syllabus</button>
+                        <button type="button" id="viewSyllabusBtn" class="hidden px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">View Syllabus</button>
+                        <button type="button" id="downloadSyllabusBtn" class="hidden px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Download Syllabus</button>
+                        <button type="button" id="deleteSyllabusBtn" class="hidden px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete Syllabus</button>
                     </div>
                 </div>
             </div>
@@ -729,7 +768,122 @@
     </div>
 </div>
 
+<!-- Load Tom Select complete JS library -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <script src="{% static 'js/course_management.js' %}"></script>
+
+<script>
+    // Helper function to set select values programmatically, handling Tom Select instances
+    function setSelectValue(id, value) {
+        const el = document.getElementById(id);
+        if (el) {
+            if (el.tomselect) {
+                el.tomselect.setValue(value);
+            } else {
+                el.value = value;
+            }
+            // Trigger the native change event
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+
+    // Override editCourse to support Tom Select
+    const originalEditCourse = window.editCourse;
+    window.editCourse = function(courseId) {
+        fetch(`/course-management/get-course/${courseId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('editCourseId').value = data.course.id;
+                    setSelectValue('programId', data.course.program_id);
+                    document.getElementById('courseCode').value = data.course.course_code;
+                    document.getElementById('courseTitle').value = data.course.course_title;
+                    setSelectValue('yearSelect', data.course.year);
+                    setSelectValue('semSelect', data.course.sem);
+                    setSelectValue('courseCategory', data.course.course_category);
+                    setSelectValue('partSelect', data.course.part);
+                    document.getElementById('hrsPerWeek').value = data.course.hrs_per_week;
+                    document.getElementById('credit').value = data.course.credit;
+                    document.getElementById('marksCia').value = data.course.marks_cia;
+                    document.getElementById('marksEse').value = data.course.marks_ese;
+                    document.getElementById('totalMarks').value = data.course.total_marks;
+                    document.getElementById('drawer-title').innerText = 'Edit Course';
+                    document.getElementById('drawer-subtitle').innerHTML = 'Update course information below.';
+                    openDrawer('courseDrawer');
+                } else {
+                    showToast('Error loading course data', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error loading course data', 'error');
+            });
+    };
+
+    // Override resetCourseForm to support Tom Select
+    window.resetCourseForm = function() {
+        const form = document.getElementById('courseForm');
+        if (form) {
+            form.reset();
+            form.querySelectorAll('select').forEach(select => {
+                if (select.tomselect) {
+                    select.tomselect.setValue('');
+                }
+            });
+        }
+        const editId = document.getElementById('editCourseId');
+        if (editId) editId.value = '';
+        const drawerTitle = document.getElementById('drawer-title');
+        if (drawerTitle) drawerTitle.innerText = 'New Course';
+        const drawerSubtitle = document.getElementById('drawer-subtitle');
+        if (drawerSubtitle) drawerSubtitle.innerHTML = 'Fields marked with <span class="text-rose-500 font-bold">*</span> are required.';
+    };
+
+    // Override clearFilters to support Tom Select
+    const originalInitializeClearFilters = window.initializeClearFilters;
+    window.initializeClearFilters = function() {
+        const clearBtn = document.getElementById('clearFilters');
+        if (clearBtn) {
+            // Remove existing listeners by replacing the element or adding a new listener
+            const newClearBtn = clearBtn.cloneNode(true);
+            clearBtn.parentNode.replaceChild(newClearBtn, clearBtn);
+            newClearBtn.addEventListener('click', function() {
+                document.querySelectorAll('#filterForm select').forEach(select => {
+                    if (select.tomselect) {
+                        select.tomselect.setValue('');
+                    } else {
+                        select.value = '';
+                    }
+                });
+                document.getElementById('filterForm').submit();
+            });
+        }
+    };
+
+    // Initialize Tom Select on all filters and course form dropdowns on DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Dropdowns in Filter Form
+        const filterSelects = document.querySelectorAll('#filterForm select');
+        filterSelects.forEach(select => {
+            new TomSelect(select, {
+                create: false,
+                placeholder: select.options[0]?.text || "Select..."
+            });
+        });
+
+        // Dropdowns in Course Add/Edit Form
+        const courseSelects = document.querySelectorAll('#courseForm select');
+        courseSelects.forEach(select => {
+            new TomSelect(select, {
+                create: false,
+                placeholder: select.options[0]?.text || "Select..."
+            });
+        });
+
+        // Re-run the cleared filters setup to bind the new listener
+        window.initializeClearFilters();
+    });
+</script>
 
 <style>
     .drawer .absolute.inset-y-0.right-0 {

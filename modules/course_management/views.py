@@ -502,18 +502,23 @@ def upload_syllabus(request, course_id):
         if not pdf_file.name.endswith('.pdf'):
             return JsonResponse({'success': False, 'error': 'Please upload a PDF file.'})
         
-        # Check if syllabus already exists
-        syllabus, created = CourseSyllabus.objects.get_or_create(
-            course_code=course.course_code,
-            defaults={'pdf': pdf_file}
-        )
+        # Rename the file using course code before saving
+        pdf_file.name = f"{course.course_code}.pdf"
         
-        if not created:
-            # Delete old file and update
+        # Ensure that the course code remains unique in the syllabus table and prevent duplicate entries
+        syllabus = CourseSyllabus.objects.filter(course_code=course.course_code).first()
+        if syllabus:
+            # Delete old file and update existing record (preventing duplicates)
             if syllabus.pdf:
                 syllabus.pdf.delete(save=False)
             syllabus.pdf = pdf_file
             syllabus.save()
+        else:
+            # Create a new unique record
+            CourseSyllabus.objects.create(
+                course_code=course.course_code,
+                pdf=pdf_file
+            )
         
         return JsonResponse({
             'success': True,
@@ -535,8 +540,9 @@ def view_syllabus(request, course_id):
         if not syllabus.pdf:
             return JsonResponse({'success': False, 'error': 'No syllabus file available.'})
         
-        response = HttpResponse(syllabus.pdf.read(), content_type='application/pdf')
-        response['Content-Disposition'] = f'inline; filename="{course.course_code}_Syllabus.pdf"'
+        with syllabus.pdf.open('rb') as f:
+            response = HttpResponse(f.read(), content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{course.course_code}.pdf"'
         return response
         
     except CourseSyllabus.DoesNotExist:
@@ -555,8 +561,9 @@ def download_syllabus(request, course_id):
         if not syllabus.pdf:
             return JsonResponse({'success': False, 'error': 'No syllabus file available.'})
         
-        response = HttpResponse(syllabus.pdf.read(), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{course.course_code}_Syllabus.pdf"'
+        with syllabus.pdf.open('rb') as f:
+            response = HttpResponse(f.read(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{course.course_code}.pdf"'
         return response
         
     except CourseSyllabus.DoesNotExist:
@@ -571,11 +578,13 @@ def delete_syllabus(request, course_id):
 
     try:
         course = get_object_or_404(CourseStructure, id=course_id)
-        syllabus = get_object_or_404(CourseSyllabus, course_code=course.course_code)
-        
-        if syllabus.pdf:
-            syllabus.pdf.delete(save=False)
-        syllabus.delete()
+        try:
+            syllabus = CourseSyllabus.objects.get(course_code=course.course_code)
+            if syllabus.pdf:
+                syllabus.pdf.delete(save=False)
+            syllabus.delete()
+        except CourseSyllabus.DoesNotExist:
+            pass
         
         return JsonResponse({'success': True, 'message': 'Syllabus deleted successfully.'})
         
