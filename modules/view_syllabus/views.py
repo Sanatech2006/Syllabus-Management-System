@@ -4,8 +4,8 @@ from django.db import models
 from django.contrib.auth.decorators import login_required
 
 # Import models from other apps
-from modules.program_manage.models import Program
-from modules.course_management.models import CourseStructure, CourseSyllabus
+from modules.course_management.access import get_accessible_courses, get_accessible_programs
+from modules.course_management.models import CourseSyllabus
 
 
 @login_required
@@ -23,7 +23,7 @@ def view_syllabus(request):
         view_mode = 'syllabus'
     
     # Base queryset
-    all_courses = CourseStructure.objects.select_related('program').annotate(
+    all_courses = get_accessible_courses(request.user).annotate(
         has_syllabus_pdf=models.Exists(
             CourseSyllabus.objects.filter(
                 course_code=models.OuterRef('course_code'),
@@ -43,21 +43,21 @@ def view_syllabus(request):
             filtered_courses = filtered_courses.filter(sem=sem)
         filtered_courses = filtered_courses.order_by('program__prog_code', 'year', 'sem', 'course_code')
     else:
-        filtered_courses = CourseStructure.objects.none()
+        filtered_courses = all_courses.none()
     
     # Get filter options
-    programs = Program.objects.filter(is_active=True).order_by('prog_code')
+    programs = get_accessible_programs(request.user).order_by('prog_code')
     
     # Get unique years and semesters from course structures
     years = list(
-        CourseStructure.objects.exclude(year__isnull=True)
+        get_accessible_courses(request.user).exclude(year__isnull=True)
         .exclude(year='')
         .values_list('year', flat=True)
         .distinct()
         .order_by('year')
     )
     sems = list(
-        CourseStructure.objects.exclude(sem__isnull=True)
+        get_accessible_courses(request.user).exclude(sem__isnull=True)
         .exclude(sem='')
         .values_list('sem', flat=True)
         .distinct()
@@ -84,7 +84,7 @@ def view_syllabus(request):
 def view_syllabus_pdf(request, course_id):
     """Open syllabus PDF inline for a specific course"""
     try:
-        course = get_object_or_404(CourseStructure, id=course_id)
+        course = get_object_or_404(get_accessible_courses(request.user), id=course_id)
         syllabus = get_object_or_404(CourseSyllabus, course_code=course.course_code)
         
         if not syllabus.pdf:
@@ -104,7 +104,7 @@ def view_syllabus_pdf(request, course_id):
 def download_syllabus(request, course_id):
     """Download syllabus PDF for a specific course"""
     try:
-        course = get_object_or_404(CourseStructure, id=course_id)
+        course = get_object_or_404(get_accessible_courses(request.user), id=course_id)
         syllabus = get_object_or_404(CourseSyllabus, course_code=course.course_code)
         
         if not syllabus.pdf:

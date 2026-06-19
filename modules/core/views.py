@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from modules.dashboard.views import dashboard as dashboard_view
+from modules.course_management.access import is_hod_user
 
 
 def _get_role_home(user):
@@ -18,7 +19,7 @@ def _role_matches_user(role, user):
     if role == 'admin':
         return user.is_superuser
     if role == 'hod':
-        return user.is_staff and not user.is_superuser
+        return is_hod_user(user) or (user.is_staff and not user.is_superuser)
     return False
 
 

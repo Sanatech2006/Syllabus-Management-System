@@ -33,11 +33,11 @@ class CourseStructure(models.Model):
     sem = models.CharField(max_length=10, blank=True, null=True)
 
     # 📌 COURSE INFO
-    course_category = models.CharField(max_length=20, blank=True, null=True)
+    course_category = models.CharField(max_length=40, blank=True, null=True)
     part = models.CharField(max_length=10, blank=True, null=True)
 
     hrs_per_week = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    credit = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    credit = models.IntegerField(blank=True, null=True)
 
     # 📌 MARKS
     marks_cia = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)

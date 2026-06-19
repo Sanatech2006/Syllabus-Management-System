@@ -3,18 +3,19 @@ import pandas as pd
 from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
-from django.core.files.base import ContentFile
 from django.db import models
 
-from modules.core.decorators import admin_required
+from modules.course_management.access import (
+    course_management_access_required,
+    get_accessible_courses,
+    get_accessible_programs,
+)
 
 try:
     from modules.program_manage.models import Program
 except ImportError:
     from program_manage.models import Program
-
 from .models import CourseStructure, CourseSyllabus
 
 
@@ -24,6 +25,11 @@ COURSE_FILTER_FIELDS = (
     "sem",
     "course_category",
     "part",
+    "degree",
+    "branch",
+    "prog_type",
+    "prog_category",
+    "course_title",
 )
 
 COURSE_BULK_REQUIRED_COLUMNS = (
@@ -33,6 +39,41 @@ COURSE_BULK_REQUIRED_COLUMNS = (
     "year",
     "sem",
 )
+
+
+def _optional_float_from_excel(value, field_label, row_number):
+    if pd.isna(value):
+        return None
+
+    if isinstance(value, str):
+        value = value.strip()
+        if value in ("", "-", "--"):
+            return None
+
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"Row {row_number}: {field_label} must be a number or blank")
+
+
+def _optional_integer_from_excel(value, field_label, row_number):
+    if pd.isna(value):
+        return None
+
+    if isinstance(value, str):
+        value = value.strip()
+        if value in ("", "-", "--"):
+            return None
+
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"Row {row_number}: {field_label} must be a whole number or blank")
+
+    if not number.is_integer():
+        raise ValueError(f"Row {row_number}: {field_label} must be a whole number")
+
+    return int(number)
 
 
 def _distinct_non_empty(queryset, field_name):
@@ -53,31 +94,41 @@ def _apply_course_filters(queryset, filters, exclude_field=None):
         if value and value != "__all__":
             if field == "program":
                 queryset = queryset.filter(program_id=value)
+            elif field == "degree":
+                queryset = queryset.filter(program__degree=value)
+            elif field == "branch":
+                queryset = queryset.filter(program__branch__iexact=value)
+            elif field == "prog_type":
+                queryset = queryset.filter(program__prog_type=value)
+            elif field == "prog_category":
+                queryset = queryset.filter(program__prog_category=value)
+            elif field == "course_title":
+                queryset = queryset.filter(
+                    models.Q(course_title__icontains=value) | models.Q(course_code__icontains=value)
+                )
             else:
                 queryset = queryset.filter(**{field: value})
     return queryset
 
 
-def _build_course_filter_options(base_queryset, filters):
+def _build_course_filter_options(base_queryset, filters, programs_queryset):
 
     option_querysets = {
         field: _apply_course_filters(base_queryset, filters, exclude_field=field)
         for field in COURSE_FILTER_FIELDS
     }
     
-    # Get programs for filter
-    programs = Program.objects.filter(is_active=True).order_by('prog_code')
-
+    programs = programs_queryset.order_by('prog_code')
     degrees = (
-    Program.objects.filter(is_active=True)
-    .values_list('degree', flat=True)
-    .distinct()
-    .order_by('degree')
-)
-    
+        programs_queryset
+        .values_list('degree', flat=True)
+        .distinct()
+        .order_by('degree')
+    )
+
     return {
         "programs": programs,
-        "degrees" : degrees,
+        "degrees": degrees,
         "years": _distinct_non_empty(option_querysets["year"], "year"),
         "sems": _distinct_non_empty(option_querysets["sem"], "sem"),
         "course_categories": _distinct_non_empty(option_querysets["course_category"], "course_category"),
@@ -85,7 +136,27 @@ def _build_course_filter_options(base_queryset, filters):
     }
 
 
-@admin_required
+def _whole_number_or_none(value, field_label):
+    value = (value or "").strip()
+    if not value:
+        return None
+
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_label} must be a whole number")
+
+    if not number.is_integer():
+        raise ValueError(f"{field_label} must be a whole number")
+
+    return int(number)
+
+
+def _get_course_scope(user):
+    return get_accessible_courses(user)
+
+
+@course_management_access_required
 def course_management(request):
 
     # Get pagination and per page parameters
@@ -99,7 +170,8 @@ def course_management(request):
         if value and value != "__all__":
             filters[field] = value
     
-    base_queryset = CourseStructure.objects.select_related('program').all()
+    scoped_programs = get_accessible_programs(request.user)
+    base_queryset = _get_course_scope(request.user)
     courses = _apply_course_filters(base_queryset, filters).annotate(
         has_syllabus_pdf=models.Exists(
             CourseSyllabus.objects.filter(
@@ -110,7 +182,7 @@ def course_management(request):
     )
     
     # Get filter options for dropdowns
-    filter_options = _build_course_filter_options(base_queryset, filters)
+    filter_options = _build_course_filter_options(base_queryset, filters, scoped_programs)
     
     # Pagination
     paginator = Paginator(courses.order_by('program__prog_code', 'year', 'sem', 'course_code'), per_page)
@@ -122,7 +194,7 @@ def course_management(request):
     
     # Calculate stats - Handle cases where there are no courses
     total_courses = base_queryset.count()
-    total_programs = Program.objects.filter(is_active=True).count()
+    total_programs = scoped_programs.count()
     
     # Calculate average credits safely
     avg_credits = 0
@@ -131,7 +203,9 @@ def course_management(request):
         avg_credits = avg_credits_result.get('avg_credits') or 0
     
     # Count courses with syllabus
-    courses_with_syllabus = CourseSyllabus.objects.count()
+    courses_with_syllabus = CourseSyllabus.objects.filter(
+        course_code__in=base_queryset.values_list("course_code", flat=True).distinct()
+    ).count()
     
     stats = {
         'total_courses': total_courses,
@@ -150,12 +224,12 @@ def course_management(request):
     }
     return render(request, "course_management.html", context)
 
-@admin_required
+@course_management_access_required
 def get_filter_options(request):
 
     filters = {field: request.GET.get(field) for field in COURSE_FILTER_FIELDS}
-    queryset = CourseStructure.objects.select_related('program').all()
-    options = _build_course_filter_options(queryset, filters)
+    queryset = _get_course_scope(request.user)
+    options = _build_course_filter_options(queryset, filters, get_accessible_programs(request.user))
     
     # Convert programs to dict for JSON
     options['programs_list'] = [
@@ -167,11 +241,11 @@ def get_filter_options(request):
     return JsonResponse(options)
 
 
-@admin_required
+@course_management_access_required
 def get_course(request, course_id):
 
     try:
-        course = get_object_or_404(CourseStructure.objects.select_related('program'), id=course_id)
+        course = get_object_or_404(_get_course_scope(request.user), id=course_id)
         
         # Check if syllabus exists
         has_syllabus = CourseSyllabus.objects.filter(course_code=course.course_code).exists()
@@ -201,7 +275,7 @@ def get_course(request, course_id):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
-@admin_required
+@course_management_access_required
 @require_http_methods(["POST"])
 def add_course(request):
 
@@ -224,8 +298,9 @@ def add_course(request):
             return JsonResponse({'success': False, 'error': 'Program, Course Code, Course Title, Year, and Semester are required.'})
         
         # Get program
+        allowed_programs = get_accessible_programs(request.user)
         try:
-            program = Program.objects.get(id=program_id, is_active=True)
+            program = allowed_programs.get(id=program_id)
         except Program.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Selected program does not exist.'})
         
@@ -243,12 +318,14 @@ def add_course(request):
             course_category=course_category if course_category else None,
             part=part if part else None,
             hrs_per_week=float(hrs_per_week) if hrs_per_week else None,
-            credit=float(credit) if credit else None,
+            credit=_whole_number_or_none(credit, "Credit"),
             marks_cia=float(marks_cia) if marks_cia else None,
             marks_ese=float(marks_ese) if marks_ese else None,
             total_marks=float(total_marks) if total_marks else None,
         )
         
+        CourseSyllabus.objects.get_or_create(course_code=course.course_code)
+
         return JsonResponse({
             'success': True,
             'message': 'Course created successfully.',
@@ -259,12 +336,13 @@ def add_course(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
-@admin_required
+@course_management_access_required
 @require_http_methods(["POST"])
 def edit_course(request, course_id):
 
     try:
-        course = get_object_or_404(CourseStructure, id=course_id)
+        course = get_object_or_404(_get_course_scope(request.user), id=course_id)
+        old_course_code = course.course_code
         
         program_id = request.POST.get("program_id")
         course_code = request.POST.get("course_code", "").strip().upper().replace(" ", "")
@@ -284,8 +362,9 @@ def edit_course(request, course_id):
             return JsonResponse({'success': False, 'error': 'Program, Course Code, Course Title, Year, and Semester are required.'})
         
         # Get program
+        allowed_programs = get_accessible_programs(request.user)
         try:
-            program = Program.objects.get(id=program_id, is_active=True)
+            program = allowed_programs.get(id=program_id)
         except Program.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Selected program does not exist.'})
         
@@ -302,35 +381,50 @@ def edit_course(request, course_id):
         course.course_category = course_category if course_category else None
         course.part = part if part else None
         course.hrs_per_week = float(hrs_per_week) if hrs_per_week else None
-        course.credit = float(credit) if credit else None
+        course.credit = _whole_number_or_none(credit, "Credit")
         course.marks_cia = float(marks_cia) if marks_cia else None
         course.marks_ese = float(marks_ese) if marks_ese else None
         course.total_marks = float(total_marks) if total_marks else None
         course.save()
-        
+
+        CourseSyllabus.objects.get_or_create(course_code=course.course_code)
+        if old_course_code != course.course_code and not CourseStructure.objects.filter(course_code=old_course_code).exists():
+            CourseSyllabus.objects.filter(course_code=old_course_code).delete()
+
         return JsonResponse({'success': True, 'message': 'Course updated successfully.'})
         
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
 
-@admin_required
+@course_management_access_required
 @require_http_methods(["POST"])
 def delete_course(request, course_id):
 
     try:
-        course = get_object_or_404(CourseStructure, id=course_id)
+        course = get_object_or_404(_get_course_scope(request.user), id=course_id)
+        course_code = course.course_code
         course.delete()
+
+        if not CourseStructure.objects.filter(course_code=course_code).exists():
+            CourseSyllabus.objects.filter(course_code=course_code).delete()
+
         return JsonResponse({'success': True, 'message': 'Course deleted successfully.'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
 
-@admin_required
+@course_management_access_required
 def download_sample_excel(request):
 
+    scoped_programs = list(get_accessible_programs(request.user).values_list('prog_code', flat=True)[:3])
+    if scoped_programs:
+        sample_program_codes = (scoped_programs * 3)[:3]
+    else:
+        sample_program_codes = ['BSC-CS', 'BSC-CS', 'MA-ENG']
+
     sample_data = {
-        'program_code': ['BSC-CS', 'BSC-CS', 'MA-ENG'],
+        'program_code': sample_program_codes,
         'course_code': ['CS101', 'CS102', 'ENG101'],
         'course_title': ['Programming Fundamentals', 'Data Structures', 'Literary Theory'],
         'year': ['1', '1', '1'],
@@ -360,10 +454,10 @@ def download_sample_excel(request):
     return response
 
 
-@admin_required
+@course_management_access_required
 def download_courses_excel(request):
 
-    courses = CourseStructure.objects.select_related('program').all().order_by('program__prog_code', 'year', 'sem', 'course_code')
+    courses = _get_course_scope(request.user).order_by('program__prog_code', 'year', 'sem', 'course_code')
     
     course_data = []
     for course in courses:
@@ -377,7 +471,7 @@ def download_courses_excel(request):
             'Category': course.course_category or '',
             'Part': course.part or '',
             'Hours/Week': course.hrs_per_week or '',
-            'Credit': course.credit or '',
+            'Credit': int(course.credit) if course.credit is not None else '',
             'CIA Marks': course.marks_cia or '',
             'ESE Marks': course.marks_ese or '',
             'Total Marks': course.total_marks or '',
@@ -399,7 +493,7 @@ def download_courses_excel(request):
     return response
 
 
-@admin_required
+@course_management_access_required
 @require_http_methods(["POST"])
 def upload_courses_excel(request):
 
@@ -424,6 +518,7 @@ def upload_courses_excel(request):
         
         created_courses = []
         errors = []
+        allowed_programs = get_accessible_programs(request.user)
         
         for index, row in df.iterrows():
             program_code = str(row.get('program_code', '')).strip().upper().replace(" ", "")
@@ -433,11 +528,15 @@ def upload_courses_excel(request):
             sem = str(row.get('sem', '')).strip()
             course_category = str(row.get('course_category', '')).strip() if pd.notna(row.get('course_category')) else None
             part = str(row.get('part', '')).strip() if pd.notna(row.get('part')) else None
-            hrs_per_week = float(row.get('hrs_per_week')) if pd.notna(row.get('hrs_per_week')) else None
-            credit = float(row.get('credit')) if pd.notna(row.get('credit')) else None
-            marks_cia = float(row.get('marks_cia')) if pd.notna(row.get('marks_cia')) else None
-            marks_ese = float(row.get('marks_ese')) if pd.notna(row.get('marks_ese')) else None
-            total_marks = float(row.get('total_marks')) if pd.notna(row.get('total_marks')) else None
+            try:
+                hrs_per_week = _optional_float_from_excel(row.get('hrs_per_week'), 'Hours Per Week', index + 2)
+                credit = _optional_integer_from_excel(row.get('credit'), 'Credit', index + 2)
+                marks_cia = _optional_float_from_excel(row.get('marks_cia'), 'CIA Marks', index + 2)
+                marks_ese = _optional_float_from_excel(row.get('marks_ese'), 'ESE Marks', index + 2)
+                total_marks = _optional_float_from_excel(row.get('total_marks'), 'Total Marks', index + 2)
+            except ValueError as e:
+                errors.append(str(e))
+                continue
             
             # Validate required fields
             if not all([program_code, course_code, course_title, year, sem]):
@@ -446,7 +545,7 @@ def upload_courses_excel(request):
             
             # Get program
             try:
-                program = Program.objects.get(prog_code=program_code, is_active=True)
+                program = allowed_programs.get(prog_code=program_code)
             except Program.DoesNotExist:
                 errors.append(f'Row {index + 2}: Program with code "{program_code}" not found')
                 continue
@@ -471,6 +570,7 @@ def upload_courses_excel(request):
                     marks_ese=marks_ese,
                     total_marks=total_marks,
                 )
+                CourseSyllabus.objects.get_or_create(course_code=course_code)
                 created_courses.append(f"{program_code}-{course_code}")
             except Exception as e:
                 errors.append(f'Row {index + 2}: Error - {str(e)}')
@@ -487,12 +587,12 @@ def upload_courses_excel(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
-@admin_required
+@course_management_access_required
 @require_http_methods(["POST"])
 def upload_syllabus(request, course_id):
 
     try:
-        course = get_object_or_404(CourseStructure, id=course_id)
+        course = get_object_or_404(_get_course_scope(request.user), id=course_id)
         
         if 'syllabus_pdf' not in request.FILES:
             return JsonResponse({'success': False, 'error': 'No PDF file uploaded.'})
@@ -530,11 +630,11 @@ def upload_syllabus(request, course_id):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
-@admin_required
+@course_management_access_required
 def view_syllabus(request, course_id):
 
     try:
-        course = get_object_or_404(CourseStructure, id=course_id)
+        course = get_object_or_404(_get_course_scope(request.user), id=course_id)
         syllabus = get_object_or_404(CourseSyllabus, course_code=course.course_code)
         
         if not syllabus.pdf:
@@ -551,11 +651,11 @@ def view_syllabus(request, course_id):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
-@admin_required
+@course_management_access_required
 def download_syllabus(request, course_id):
 
     try:
-        course = get_object_or_404(CourseStructure, id=course_id)
+        course = get_object_or_404(_get_course_scope(request.user), id=course_id)
         syllabus = get_object_or_404(CourseSyllabus, course_code=course.course_code)
         
         if not syllabus.pdf:
@@ -572,12 +672,12 @@ def download_syllabus(request, course_id):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
-@admin_required
+@course_management_access_required
 @require_http_methods(["POST"])
 def delete_syllabus(request, course_id):
 
     try:
-        course = get_object_or_404(CourseStructure, id=course_id)
+        course = get_object_or_404(_get_course_scope(request.user), id=course_id)
         try:
             syllabus = CourseSyllabus.objects.get(course_code=course.course_code)
             if syllabus.pdf:

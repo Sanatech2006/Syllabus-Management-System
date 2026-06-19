@@ -129,6 +129,7 @@ function openDrawer(drawerId) {
             if (fileInput && emptyState && selectedState && nameDisplay) {
                 resetFileInput(fileInput, emptyState, selectedState, nameDisplay);
             }
+            resetUploadFeedback();
         }
     }
 }
@@ -153,6 +154,7 @@ function closeDrawer(drawerId) {
             if (fileInput && emptyState && selectedState && nameDisplay) {
                 resetFileInput(fileInput, emptyState, selectedState, nameDisplay);
             }
+            resetUploadFeedback();
         }
     }
 }
@@ -309,6 +311,75 @@ function initializeUserForm() {
     }
 }
 
+function resetUploadFeedback() {
+    const progressContainer = document.getElementById('uploadProgressContainer');
+    const progressText = document.getElementById('uploadProgressText');
+    const progressPercent = document.getElementById('uploadProgressPercent');
+    const progressBar = document.getElementById('uploadProgressBar');
+    const resultContainer = document.getElementById('uploadResultContainer');
+    const resultTitle = document.getElementById('uploadResultTitle');
+    const resultMessage = document.getElementById('uploadResultMessage');
+    const resultIcon = document.getElementById('uploadResultIcon');
+    const successCount = document.getElementById('uploadSuccessCount');
+    const errorCount = document.getElementById('uploadErrorCount');
+    const errorsListContainer = document.getElementById('uploadErrorsListContainer');
+    const errorsList = document.getElementById('uploadErrorsList');
+
+    if (progressContainer) progressContainer.classList.add('hidden');
+    if (progressText) progressText.innerText = 'Uploading...';
+    if (progressPercent) progressPercent.innerText = '0%';
+    if (progressBar) progressBar.style.width = '0%';
+    if (resultContainer) resultContainer.classList.add('hidden');
+    if (resultTitle) resultTitle.innerText = 'Upload Status';
+    if (resultMessage) resultMessage.innerText = '';
+    if (resultIcon) resultIcon.className = 'p-2 rounded-lg';
+    if (successCount) successCount.innerText = '0';
+    if (errorCount) errorCount.innerText = '0';
+    if (errorsListContainer) errorsListContainer.classList.add('hidden');
+    if (errorsList) errorsList.innerHTML = '';
+}
+
+function updateUploadProgress(percent) {
+    const progressContainer = document.getElementById('uploadProgressContainer');
+    const progressText = document.getElementById('uploadProgressText');
+    const progressPercent = document.getElementById('uploadProgressPercent');
+    const progressBar = document.getElementById('uploadProgressBar');
+
+    if (progressContainer) progressContainer.classList.remove('hidden');
+    if (progressText) progressText.innerText = percent >= 100 ? 'Processing response...' : 'Uploading...';
+    if (progressPercent) progressPercent.innerText = `${Math.min(percent, 100)}%`;
+    if (progressBar) progressBar.style.width = `${Math.min(percent, 100)}%`;
+}
+
+function showUploadResult(data, isSuccess) {
+    const progressContainer = document.getElementById('uploadProgressContainer');
+    const resultContainer = document.getElementById('uploadResultContainer');
+    const resultTitle = document.getElementById('uploadResultTitle');
+    const resultMessage = document.getElementById('uploadResultMessage');
+    const resultIcon = document.getElementById('uploadResultIcon');
+    const successCount = document.getElementById('uploadSuccessCount');
+    const errorCount = document.getElementById('uploadErrorCount');
+    const errorsListContainer = document.getElementById('uploadErrorsListContainer');
+    const errorsList = document.getElementById('uploadErrorsList');
+    const createdCount = Number(data?.created || 0);
+    const errors = Array.isArray(data?.errors) ? data.errors : [];
+
+    if (progressContainer) progressContainer.classList.add('hidden');
+    if (resultContainer) resultContainer.classList.remove('hidden');
+    if (resultTitle) resultTitle.innerText = isSuccess ? 'Upload completed' : 'Upload finished with errors';
+    if (resultMessage) resultMessage.innerText = data?.message || data?.error || '';
+    if (resultIcon) {
+        resultIcon.className = `p-2 rounded-lg ${isSuccess ? 'bg-green-50 text-green-600' : 'bg-rose-50 text-rose-600'}`;
+        resultIcon.innerHTML = isSuccess
+            ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
+            : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86l-8.1 14.04A2 2 0 003.92 21h16.16a2 2 0 001.73-3.1l-8.1-14.04a2 2 0 00-3.46 0z"/></svg>';
+    }
+    if (successCount) successCount.innerText = String(createdCount);
+    if (errorCount) errorCount.innerText = String(errors.length);
+    if (errorsListContainer) errorsListContainer.classList.toggle('hidden', errors.length === 0);
+    if (errorsList) errorsList.innerHTML = errors.slice(0, 10).map(error => `<div>${error}</div>`).join('');
+}
+
 // Handle Excel upload
 function initializeUploadForm() {
     const form = document.getElementById('uploadForm');
@@ -323,38 +394,54 @@ function initializeUploadForm() {
             }
             
             const formData = new FormData(this);
-            const progressDiv = document.getElementById('uploadProgress');
-            if (progressDiv) progressDiv.classList.remove('hidden');
-            
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-            
-            // CHANGE THIS LINE - add /users/ prefix
-            fetch('/users/upload-users/', {  // ← FIXED URL
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': csrfToken
+            const submitButton = document.querySelector('button[type="submit"][form="uploadForm"]');
+            if (submitButton) submitButton.disabled = true;
+            resetUploadFeedback();
+            updateUploadProgress(0);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/users/upload-users/', true);
+            if (csrfToken) xhr.setRequestHeader('X-CSRFToken', csrfToken);
+
+            xhr.upload.onprogress = function(event) {
+                if (event.lengthComputable) {
+                    updateUploadProgress(Math.round((event.loaded / event.total) * 100));
+                } else {
+                    updateUploadProgress(85);
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (progressDiv) progressDiv.classList.add('hidden');
-                
-                if (data.success) {
+            };
+
+            xhr.onload = function() {
+                if (submitButton) submitButton.disabled = false;
+                updateUploadProgress(100);
+
+                let data = {};
+                try {
+                    data = JSON.parse(xhr.responseText || '{}');
+                } catch (error) {
+                    console.error('Error parsing upload response:', error);
+                    showToast('Error uploading file', 'error');
+                    return;
+                }
+
+                const isSuccess = xhr.status >= 200 && xhr.status < 300 && data.success;
+                showUploadResult(data, isSuccess);
+
+                if (isSuccess) {
                     showToast(data.message || 'Users imported successfully!');
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                    closeDrawer('uploadDrawer');
                 } else {
                     showToast(data.error || 'Error uploading file', 'error');
                 }
-            })
-            .catch(error => {
-                if (progressDiv) progressDiv.classList.add('hidden');
-                console.error('Error:', error);
+            };
+
+            xhr.onerror = function() {
+                if (submitButton) submitButton.disabled = false;
+                resetUploadFeedback();
                 showToast('Error uploading file', 'error');
-            });
+            };
+
+            xhr.send(formData);
         });
     }
 }
@@ -442,6 +529,13 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeUserForm();
     initializeUploadForm();
     initializeEscapeKey();
+    const closeUploadResultBtn = document.getElementById('closeUploadResultBtn');
+    if (closeUploadResultBtn) {
+        closeUploadResultBtn.addEventListener('click', function() {
+            closeDrawer('uploadDrawer');
+            location.reload();
+        });
+    }
     fixDropdownPosition();
     
     // Re-fix dropdown position on window resize
