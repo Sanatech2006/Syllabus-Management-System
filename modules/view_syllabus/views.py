@@ -15,7 +15,7 @@ def view_syllabus(request):
     program_id = request.GET.get('program')
     year = request.GET.get('year')
     sem = request.GET.get('sem')
-    view_mode = request.GET.get('view_mode', 'syllabus')
+    view_mode = request.GET.get('view_mode', 'structure')
     has_applied_filters = bool(request.GET)
     
     if view_mode not in ('structure', 'syllabus'):

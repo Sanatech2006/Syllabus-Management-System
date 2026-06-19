@@ -324,7 +324,7 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
                     {% for course in courses %}
-                    <tr class="group hover:bg-slate-50 transition course-row" data-course-code="{{ course.course_code|lower }}" data-course-title="{{ course.course_title|lower }}">
+                    <tr class="group hover:bg-slate-50 transition course-row" data-course-code="{{ course.course_code|lower }}" data-course-title="{{ course.course_title|lower }}" data-program="{{ course.program.prog_code|lower }}" data-year="{{ course.year|default:''|lower }}" data-sem="{{ course.sem|default:''|lower }}">
                         <td class="px-6 py-4 text-center text-sm text-slate-500">{{ page_obj.start_index|add:forloop.counter0 }}</td>
                         <td class="px-6 py-4 text-center">
                             <div class="text-sm font-medium text-slate-900">{{ course.program.prog_code }}</div>

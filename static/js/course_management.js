@@ -109,18 +109,25 @@ function initializeSearch() {
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('keyup', function() {
-            const searchTerm = this.value.toLowerCase();
+            const searchTerm = (this.value || '').toLowerCase().trim();
             const rows = document.querySelectorAll('.course-row');
-            
+
             rows.forEach(row => {
-                const courseCode = row.getAttribute('data-course-code') || '';
-                const courseTitle = row.getAttribute('data-course-title') || '';
-                
-                if (courseCode.includes(searchTerm) || courseTitle.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
+                const courseCode = (row.getAttribute('data-course-code') || '').toLowerCase();
+                const courseTitle = (row.getAttribute('data-course-title') || '').toLowerCase();
+                const program = (row.getAttribute('data-program') || '').toLowerCase();
+                const year = (row.getAttribute('data-year') || '').toLowerCase();
+                const sem = (row.getAttribute('data-sem') || '').toLowerCase();
+
+                const matches = !searchTerm || (
+                    courseCode.includes(searchTerm) ||
+                    courseTitle.includes(searchTerm) ||
+                    program.includes(searchTerm) ||
+                    year.includes(searchTerm) ||
+                    sem.includes(searchTerm)
+                );
+
+                row.style.display = matches ? '' : 'none';
             });
         });
     }
