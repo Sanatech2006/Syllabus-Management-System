@@ -178,7 +178,7 @@
                 {% endif %}
 
                 <!-- Login Form - Fresh Styling -->
-                <form method="post" action="{% url 'core:login' %}" class="space-y-6">
+                <form id="loginForm" method="post" action="{% url 'core:login' %}" class="space-y-6">
                     {% csrf_token %}
                     <input type="hidden" name="next" value="{{ next }}">
                     <input type="hidden" name="role" value="{{ role }}">

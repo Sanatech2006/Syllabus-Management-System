@@ -28,6 +28,7 @@ class ProgramManageTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["page_obj"].paginator.count, 1)
         self.assertEqual(response.context["page_obj"].object_list[0].prog_code, "BAENG")
+        self.assertEqual(len(response.context["all_programs_for_search"]), 1)
 
     def test_get_filter_options_limits_related_program_filters_by_degree(self):
         Program.objects.create(degree="B.A English", prog_type="UG", prog_category="Arts", prog_code="BAENG", branch="English")

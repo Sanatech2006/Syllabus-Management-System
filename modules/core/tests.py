@@ -84,6 +84,26 @@ class RoleAccessTests(TestCase):
 
         self.assertRedirects(response, "/dashboard/")
 
+    def test_hod_role_login_allows_standard_user_accounts(self):
+        standard_user = User.objects.create_user(
+            username="hod_like_user",
+            password="secret123",
+            is_superuser=False,
+            is_staff=False,
+        )
+
+        response = self.client.post(
+            reverse("core:login"),
+            {
+                "username": standard_user.username,
+                "password": "secret123",
+                "role": "hod",
+                "next": "/dashboard/",
+            },
+        )
+
+        self.assertRedirects(response, "/dashboard/")
+
     def test_hod_cannot_sign_in_through_admin_role(self):
         response = self.client.post(
             reverse("core:login"),

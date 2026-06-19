@@ -322,7 +322,7 @@
                         <th class="px-6 py-4 text-center">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 bg-white">
+                <tbody id="courseTableBody" class="divide-y divide-slate-100 bg-white">
                     {% for course in courses %}
                     <tr class="group hover:bg-slate-50 transition course-row" data-course-code="{{ course.course_code|lower }}" data-course-title="{{ course.course_title|lower }}" data-program="{{ course.program.prog_code|lower }}" data-year="{{ course.year|default:''|lower }}" data-sem="{{ course.sem|default:''|lower }}">
                         <td class="px-6 py-4 text-center text-sm text-slate-500">{{ page_obj.start_index|add:forloop.counter0 }}</td>
@@ -381,9 +381,9 @@
         </div>
         
         <!-- Pagination -->
-        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200">
+        <div id="coursePagination" class="px-6 py-4 bg-slate-50 border-t border-slate-200">
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p class="text-sm text-slate-600">
+                <p id="courseResultsSummary" class="text-sm text-slate-600">
                     Showing <span class="font-medium">{{ page_obj.start_index }}</span> to 
                     <span class="font-medium">{{ page_obj.end_index }}</span> of 
                     <span class="font-medium">{{ page_obj.paginator.count }}</span> results
@@ -416,6 +416,8 @@
         </div>
     </div>
 </div>
+
+{{ all_courses_for_search|json_script:"course-search-data" }}
 
 <!-- ADD/EDIT COURSE DRAWER -->
 <div id="courseDrawer" class="drawer fixed inset-0 z-50 hidden" aria-labelledby="drawer-title" role="dialog">
@@ -515,10 +517,11 @@
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Part</label>
                         <select name="part" id="partSelect" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
                             <option value="">Select Part</option>
-                            <option value="I">Part I</option>
-                            <option value="II">Part II</option>
-                            <option value="III">Part III</option>
-                            <option value="IV">Part IV</option>
+                            <option value="1">Part 1</option>
+                            <option value="2">Part 2</option>
+                            <option value="3">Part 3</option>
+                            <option value="4">Part 4</option>
+                            <option value="5">Part 5</option>
                         </select>
                     </div>
                     <div>
@@ -764,6 +767,36 @@
                 </div>
                 <div id="uploadProgressDetails" class="text-[11px] text-slate-500 font-medium text-right">
                     0 of 0 records uploaded
+                </div>
+            </div>
+
+            <div id="uploadResultContainer" class="hidden bg-white border border-slate-200 rounded-xl p-5 shadow-sm mt-4 space-y-4">
+                <div class="flex items-start gap-3">
+                    <div id="uploadResultIcon" class="p-2 rounded-lg bg-green-50 text-green-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 id="uploadResultTitle" class="text-base font-bold text-slate-900">Upload Status</h3>
+                        <p id="uploadResultMessage" class="text-sm text-slate-500 mt-1"></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="rounded-xl border border-emerald-100 bg-emerald-50/80 p-4 text-center">
+                        <div class="text-xs font-bold uppercase tracking-wide text-emerald-700">Success</div>
+                        <div id="uploadSuccessCount" class="mt-1 text-3xl font-black text-emerald-700">0</div>
+                    </div>
+                    <div class="rounded-xl border border-rose-100 bg-rose-50/80 p-4 text-center">
+                        <div class="text-xs font-bold uppercase tracking-wide text-rose-700">Errors</div>
+                        <div id="uploadErrorCount" class="mt-1 text-3xl font-black text-rose-700">0</div>
+                    </div>
+                </div>
+
+                <div id="uploadErrorsListContainer" class="hidden">
+                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500 mb-2">Error details (first 10):</p>
+                    <div id="uploadErrorsList" class="max-h-48 overflow-y-auto rounded-xl border border-rose-100 bg-rose-50/50 p-4 space-y-2 text-sm font-mono text-rose-700"></div>
                 </div>
             </div>
         </div>

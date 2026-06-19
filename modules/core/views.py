@@ -18,7 +18,7 @@ def _role_matches_user(role, user):
     if role == 'admin':
         return user.is_superuser
     if role == 'hod':
-        return user.is_staff and not user.is_superuser
+        return not user.is_superuser
     return False
 
 

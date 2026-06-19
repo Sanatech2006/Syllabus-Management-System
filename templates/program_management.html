@@ -261,7 +261,7 @@
                         <th class="px-6 py-4 text-center whitespace-nowrap">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 bg-white">
+                <tbody id="programTableBody" class="divide-y divide-slate-100 bg-white">
                     {% for program in programs %}
                     <tr class="group hover:bg-slate-50 transition program-row" data-program-code="{{ program.prog_code|lower }}" data-degree="{{ program.degree|lower }}" data-branch="{{ program.branch|lower }}" data-prog-type="{{ program.prog_type|lower }}" data-prog-category="{{ program.prog_category|lower }}">
                         <td class="px-6 py-4 text-center text-sm text-slate-500 whitespace-nowrap">{{ page_obj.start_index|add:forloop.counter0 }}</td>
@@ -315,9 +315,9 @@
         </div>
         
         <!-- Pagination -->
-        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200">
+        <div id="programPagination" class="px-6 py-4 bg-slate-50 border-t border-slate-200">
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p class="text-sm text-slate-600">
+                <p id="programResultsSummary" class="text-sm text-slate-600">
                     Showing <span class="font-medium">{{ page_obj.start_index }}</span> to 
                     <span class="font-medium">{{ page_obj.end_index }}</span> of 
                     <span class="font-medium">{{ page_obj.paginator.count }}</span> results
@@ -351,6 +351,8 @@
         </div>
     </div>
 </div>
+
+{{ all_programs_for_search|json_script:"program-search-data" }}
 
 <!-- ADD/EDIT PROGRAM DRAWER -->
 <div id="programDrawer" class="drawer fixed inset-0 z-50 hidden" aria-labelledby="drawer-title" role="dialog">

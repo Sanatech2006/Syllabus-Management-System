@@ -86,6 +86,16 @@ def program_management(request):
     # Pagination
     paginator = Paginator(programs.order_by('prog_code'), per_page)
     page_obj = paginator.get_page(page)
+    all_programs_for_search = list(
+        programs.values(
+            "id",
+            "prog_code",
+            "degree",
+            "branch",
+            "prog_type",
+            "prog_category",
+        )
+    )
     
     # Preserve query parameters for pagination
     query_params = request.GET.copy()
@@ -104,6 +114,7 @@ def program_management(request):
         "page_obj": page_obj,
         "per_page": per_page,
         "pagination_query": query_params.urlencode(),
+        "all_programs_for_search": all_programs_for_search,
         **filter_options,
         **stats,
     }

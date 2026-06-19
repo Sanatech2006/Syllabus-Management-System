@@ -104,33 +104,278 @@ function resetSyllabusFileInput(fileInput, emptyState, selectedState, nameDispla
     if (emptyState) emptyState.classList.remove('hidden');
 }
 
+const courseSearchState = {
+    active: false,
+    term: '',
+    page: 1,
+    perPage: 10,
+    data: [],
+    serverRowsHtml: '',
+    serverPaginationHtml: '',
+    serverSummaryHtml: '',
+};
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function getCourseSearchData() {
+    if (courseSearchState.data.length > 0) return courseSearchState.data;
+    const dataElement = document.getElementById('course-search-data');
+    if (!dataElement) return [];
+
+    try {
+        courseSearchState.data = JSON.parse(dataElement.textContent || '[]');
+    } catch (error) {
+        console.error('Error parsing course search data:', error);
+        courseSearchState.data = [];
+    }
+
+    return courseSearchState.data;
+}
+
+function normalizeCourseField(value) {
+    return String(value ?? '').toLowerCase();
+}
+
+function courseMatchesSearch(course, searchTerm) {
+    if (!searchTerm) return true;
+    const lowered = searchTerm.toLowerCase();
+    return [
+        course.course_code,
+        course.course_title,
+        course.program__prog_code,
+        course.program__degree,
+        course.program__branch,
+        course.year,
+        course.sem,
+        course.part,
+    ].some(field => normalizeCourseField(field).includes(lowered));
+}
+
+function buildCourseRow(course, displayNumber) {
+    const courseTitle = course.course_title ? escapeHtml(course.course_title) : '—';
+    const programCode = course.program__prog_code ? escapeHtml(course.program__prog_code) : '—';
+    const programDegree = course.program__degree ? escapeHtml(course.program__degree) : '';
+    const programBranch = course.program__branch ? escapeHtml(course.program__branch) : '';
+    const courseCode = escapeHtml(course.course_code || '—');
+    const year = escapeHtml(course.year || '—');
+    const sem = escapeHtml(course.sem || '—');
+    const credit = course.credit === null || course.credit === undefined || course.credit === '' ? '—' : escapeHtml(course.credit);
+    const syllabusClass = course.has_syllabus_pdf ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-blue-600 bg-blue-50 hover:bg-blue-100';
+
+    return `
+        <tr class="group hover:bg-slate-50 transition">
+            <td class="px-6 py-4 text-center text-sm text-slate-500">${displayNumber}</td>
+            <td class="px-6 py-4 text-center">
+                <div class="text-sm font-medium text-slate-900">${programCode}</div>
+                <div class="text-xs text-slate-500">${programDegree}${programDegree && programBranch ? ' - ' : ''}${programBranch}</div>
+            </td>
+            <td class="px-6 py-4 text-center font-mono font-bold text-blue-600">${courseCode}</td>
+            <td class="px-6 py-4 text-center text-slate-700">${courseTitle}</td>
+            <td class="px-6 py-4 text-center">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">Year ${year}</span>
+            </td>
+            <td class="px-6 py-4 text-center">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">Sem ${sem}</span>
+            </td>
+            <td class="px-6 py-4 text-center font-semibold">${credit}</td>
+            <td class="px-6 py-4 text-center">
+                <button onclick='manageSyllabus(${course.id}, ${JSON.stringify(course.course_code || '')})' class="p-2 ${syllabusClass} rounded-lg transition" title="Manage Syllabus">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </button>
+            </td>
+            <td class="px-6 py-4 text-center">
+                <div class="flex items-center justify-center gap-2">
+                    <button onclick="editCourse(${course.id})" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                        </svg>
+                    </button>
+                    <button onclick='confirmDelete(${course.id}, ${JSON.stringify(course.course_code || '')})' class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+function renderCourseSearchPagination(totalResults, page, perPage) {
+    const paginationContainer = document.getElementById('coursePagination');
+    if (!paginationContainer) return;
+
+    const totalPages = Math.max(1, Math.ceil(totalResults / perPage));
+    const start = totalResults === 0 ? 0 : ((page - 1) * perPage) + 1;
+    const end = totalResults === 0 ? 0 : Math.min(page * perPage, totalResults);
+
+    paginationContainer.innerHTML = `
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p id="courseResultsSummary" class="text-sm text-slate-600">
+                Showing <span class="font-medium">${start}</span> to
+                <span class="font-medium">${end}</span> of
+                <span class="font-medium">${totalResults}</span> results
+            </p>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <label class="text-sm text-slate-600">Items per page:</label>
+                    <select id="perPageSelect" class="p-1.5 border border-slate-200 rounded-lg text-sm">
+                        <option value="10"${perPage === 10 ? ' selected' : ''}>10</option>
+                        <option value="20"${perPage === 20 ? ' selected' : ''}>20</option>
+                        <option value="50"${perPage === 50 ? ' selected' : ''}>50</option>
+                        <option value="100"${perPage === 100 ? ' selected' : ''}>100</option>
+                    </select>
+                </div>
+                ${totalPages > 1 ? `
+                <nav class="flex gap-1">
+                    <button type="button" data-course-search-page="${Math.max(1, page - 1)}" ${page <= 1 ? 'disabled' : ''} class="px-3 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+                    <span class="px-3 py-1 bg-blue-600 text-white rounded-lg">${page}</span>
+                    <button type="button" data-course-search-page="${Math.min(totalPages, page + 1)}" ${page >= totalPages ? 'disabled' : ''} class="px-3 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+                </nav>` : ''}
+            </div>
+        </div>
+    `;
+
+    attachSearchPaginationHandlers();
+    attachSearchPerPageHandler();
+}
+
+function restoreCourseServerView() {
+    const tableBody = document.getElementById('courseTableBody');
+    const paginationContainer = document.getElementById('coursePagination');
+    const summary = document.getElementById('courseResultsSummary');
+
+    if (tableBody && courseSearchState.serverRowsHtml) tableBody.innerHTML = courseSearchState.serverRowsHtml;
+    if (paginationContainer && courseSearchState.serverPaginationHtml) paginationContainer.innerHTML = courseSearchState.serverPaginationHtml;
+    if (summary && courseSearchState.serverSummaryHtml) summary.innerHTML = courseSearchState.serverSummaryHtml;
+
+    courseSearchState.active = false;
+    courseSearchState.term = '';
+    courseSearchState.page = 1;
+    attachSearchPaginationHandlers();
+    attachSearchPerPageHandler();
+}
+
+function renderCourseSearchResults() {
+    const tableBody = document.getElementById('courseTableBody');
+    const searchInput = document.getElementById('searchInput');
+    if (!tableBody || !searchInput) return;
+
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    const allCourses = getCourseSearchData();
+    const perPage = Number(document.getElementById('perPageSelect')?.value || courseSearchState.perPage || 10);
+
+    courseSearchState.perPage = perPage;
+
+    if (!searchTerm) {
+        restoreCourseServerView();
+        return;
+    }
+
+    const filtered = allCourses.filter(course => courseMatchesSearch(course, searchTerm));
+    const totalResults = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalResults / perPage));
+    const page = Math.min(courseSearchState.page || 1, totalPages);
+    const startIndex = (page - 1) * perPage;
+    const pageItems = filtered.slice(startIndex, startIndex + perPage);
+
+    courseSearchState.active = true;
+    courseSearchState.term = searchTerm;
+    courseSearchState.page = page;
+
+    if (pageItems.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="9" class="px-6 py-16 text-center bg-gradient-to-b from-slate-50 to-white">
+                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400 border border-slate-200">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="mt-4 text-sm font-bold text-slate-900">No courses found</h3>
+                    <p class="mt-1 text-xs text-slate-400">Try a different search term.</p>
+                </td>
+            </tr>
+        `;
+    } else {
+        tableBody.innerHTML = pageItems.map((course, index) => buildCourseRow(course, startIndex + index + 1)).join('');
+    }
+
+    renderCourseSearchPagination(totalResults, page, perPage);
+}
+
+function attachSearchPaginationHandlers() {
+    const paginationContainer = document.getElementById('coursePagination');
+    if (!paginationContainer) return;
+
+    paginationContainer.querySelectorAll('[data-course-search-page]').forEach(button => {
+        button.addEventListener('click', function() {
+            courseSearchState.page = Number(this.getAttribute('data-course-search-page')) || 1;
+            renderCourseSearchResults();
+        });
+    });
+}
+
+function attachSearchPerPageHandler() {
+    const perPageSelect = document.getElementById('perPageSelect');
+    if (!perPageSelect) return;
+
+    perPageSelect.onchange = function() {
+        if (courseSearchState.active) {
+            courseSearchState.page = 1;
+            renderCourseSearchResults();
+            return;
+        }
+
+        const url = new URL(window.location.href);
+        url.searchParams.set('per_page', this.value);
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+    };
+}
+
 // Search functionality
 function initializeSearch() {
     const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('keyup', function() {
-            const searchTerm = (this.value || '').toLowerCase().trim();
-            const rows = document.querySelectorAll('.course-row');
+    const tableBody = document.getElementById('courseTableBody');
+    const paginationContainer = document.getElementById('coursePagination');
+    const summary = document.getElementById('courseResultsSummary');
 
-            rows.forEach(row => {
-                const courseCode = (row.getAttribute('data-course-code') || '').toLowerCase();
-                const courseTitle = (row.getAttribute('data-course-title') || '').toLowerCase();
-                const program = (row.getAttribute('data-program') || '').toLowerCase();
-                const year = (row.getAttribute('data-year') || '').toLowerCase();
-                const sem = (row.getAttribute('data-sem') || '').toLowerCase();
+    if (!searchInput || !tableBody || !paginationContainer || !summary) return;
 
-                const matches = !searchTerm || (
-                    courseCode.includes(searchTerm) ||
-                    courseTitle.includes(searchTerm) ||
-                    program.includes(searchTerm) ||
-                    year.includes(searchTerm) ||
-                    sem.includes(searchTerm)
-                );
+    courseSearchState.serverRowsHtml = tableBody.innerHTML;
+    courseSearchState.serverPaginationHtml = paginationContainer.innerHTML;
+    courseSearchState.serverSummaryHtml = summary.innerHTML;
 
-                row.style.display = matches ? '' : 'none';
-            });
-        });
-    }
+    let searchTimer = null;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            courseSearchState.page = 1;
+            renderCourseSearchResults();
+        }, 250);
+    });
+
+    searchInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            clearTimeout(searchTimer);
+            courseSearchState.page = 1;
+            renderCourseSearchResults();
+        }
+    });
+
+    attachSearchPaginationHandlers();
+    attachSearchPerPageHandler();
 }
 
 // Enable filters only after all dropdown values are selected
@@ -458,6 +703,80 @@ function initializeSyllabusForm() {
 }
 
 // Handle Excel upload - UPDATED WITH CORRECT URL
+function resetUploadFeedback() {
+    const progressContainer = document.getElementById('uploadProgressContainer');
+    const progressText = document.getElementById('uploadProgressText');
+    const progressPercent = document.getElementById('uploadProgressPercent');
+    const progressBar = document.getElementById('uploadProgressBar');
+    const resultContainer = document.getElementById('uploadResultContainer');
+    const resultTitle = document.getElementById('uploadResultTitle');
+    const resultMessage = document.getElementById('uploadResultMessage');
+    const resultIcon = document.getElementById('uploadResultIcon');
+    const successCount = document.getElementById('uploadSuccessCount');
+    const errorCount = document.getElementById('uploadErrorCount');
+    const errorsListContainer = document.getElementById('uploadErrorsListContainer');
+    const errorsList = document.getElementById('uploadErrorsList');
+
+    if (progressContainer) progressContainer.classList.add('hidden');
+    if (progressText) progressText.innerText = 'Importing records...';
+    if (progressPercent) progressPercent.innerText = '0%';
+    if (progressBar) progressBar.style.width = '0%';
+    if (resultContainer) resultContainer.classList.add('hidden');
+    if (resultTitle) resultTitle.innerText = 'Upload Status';
+    if (resultMessage) resultMessage.innerText = '';
+    if (resultIcon) resultIcon.className = 'p-2 rounded-lg';
+    if (successCount) successCount.innerText = '0';
+    if (errorCount) errorCount.innerText = '0';
+    if (errorsListContainer) errorsListContainer.classList.add('hidden');
+    if (errorsList) errorsList.innerHTML = '';
+}
+
+function updateUploadProgress(percent) {
+    const progressContainer = document.getElementById('uploadProgressContainer');
+    const progressText = document.getElementById('uploadProgressText');
+    const progressPercent = document.getElementById('uploadProgressPercent');
+    const progressBar = document.getElementById('uploadProgressBar');
+
+    if (progressContainer) progressContainer.classList.remove('hidden');
+    if (progressText) progressText.innerText = percent >= 100 ? 'Processing response...' : 'Importing records...';
+    if (progressPercent) progressPercent.innerText = `${Math.min(percent, 100)}%`;
+    if (progressBar) progressBar.style.width = `${Math.min(percent, 100)}%`;
+}
+
+function showUploadResult(data, isSuccess) {
+    const progressContainer = document.getElementById('uploadProgressContainer');
+    const resultContainer = document.getElementById('uploadResultContainer');
+    const resultTitle = document.getElementById('uploadResultTitle');
+    const resultMessage = document.getElementById('uploadResultMessage');
+    const resultIcon = document.getElementById('uploadResultIcon');
+    const successCount = document.getElementById('uploadSuccessCount');
+    const errorCount = document.getElementById('uploadErrorCount');
+    const errorsListContainer = document.getElementById('uploadErrorsListContainer');
+    const errorsList = document.getElementById('uploadErrorsList');
+    const createdCount = Number(data?.created || 0);
+    const errors = Array.isArray(data?.errors) ? data.errors : [];
+    const message = data?.message || data?.error || '';
+
+    if (progressContainer) progressContainer.classList.add('hidden');
+    if (resultContainer) resultContainer.classList.remove('hidden');
+    if (resultTitle) resultTitle.innerText = isSuccess ? 'Upload completed' : 'Upload finished with errors';
+    if (resultMessage) resultMessage.innerText = message;
+    if (resultIcon) {
+        resultIcon.className = `p-2 rounded-lg ${isSuccess ? 'bg-green-50 text-green-600' : 'bg-rose-50 text-rose-600'}`;
+        resultIcon.innerHTML = isSuccess
+            ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
+            : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86l-8.1 14.04A2 2 0 003.92 21h16.16a2 2 0 001.73-3.1l-8.1-14.04a2 2 0 00-3.46 0z"/></svg>';
+    }
+    if (successCount) successCount.innerText = String(createdCount);
+    if (errorCount) errorCount.innerText = String(errors.length);
+    if (errorsListContainer) errorsListContainer.classList.toggle('hidden', errors.length === 0);
+    if (errorsList) {
+        errorsList.innerHTML = errors.length
+            ? errors.slice(0, 10).map(error => `<div class="text-rose-700 whitespace-pre-wrap">${error}</div>`).join('')
+            : '';
+    }
+}
+
 function initializeUploadForm() {
     const form = document.getElementById('uploadForm');
     if (form) {
@@ -472,6 +791,7 @@ function initializeUploadForm() {
             
             const submitBtn = form.querySelector('button[type="submit"]') || document.querySelector('button[form="uploadForm"]');
             if (submitBtn) submitBtn.disabled = true;
+            resetUploadFeedback();
             
             // Generate a unique upload ID
             const uploadId = 'upload_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -485,9 +805,8 @@ function initializeUploadForm() {
             const progressPercent = document.getElementById('uploadProgressPercent');
             const progressDetails = document.getElementById('uploadProgressDetails');
             
+            updateUploadProgress(0);
             if (progressContainer) {
-                progressContainer.classList.remove('hidden');
-                // Scroll container to bottom to show progress bar
                 const scrollContainer = progressContainer.closest('.overflow-y-auto');
                 if (scrollContainer) {
                     setTimeout(() => {
@@ -495,9 +814,6 @@ function initializeUploadForm() {
                     }, 50);
                 }
             }
-            if (progressBar) progressBar.style.width = '0%';
-            if (progressPercent) progressPercent.innerText = '0%';
-            if (progressDetails) progressDetails.innerText = '0 of 0 records uploaded';
             
             // Periodically poll the upload progress
             let pollInterval = setInterval(() => {
@@ -530,21 +846,19 @@ function initializeUploadForm() {
                 if (submitBtn) submitBtn.disabled = false;
                 
                 if (data.success) {
-                    if (progressBar) progressBar.style.width = '100%';
-                    if (progressPercent) progressPercent.innerText = '100%';
-                    
+                    updateUploadProgress(100);
+                    showUploadResult(data, true);
                     showToast(data.message || 'Courses imported successfully!');
-                    setTimeout(() => location.reload(), 2000);
-                    closeDrawer('uploadDrawer');
+                    setTimeout(() => location.reload(), 2500);
                 } else {
-                    if (progressContainer) progressContainer.classList.add('hidden');
+                    showUploadResult(data, false);
                     showToast(data.error || 'Error uploading file', 'error');
                 }
             })
             .catch(error => {
                 clearInterval(pollInterval);
                 if (submitBtn) submitBtn.disabled = false;
-                if (progressContainer) progressContainer.classList.add('hidden');
+                resetUploadFeedback();
                 console.error('Error:', error);
                 showToast('Error uploading file', 'error');
             });
@@ -554,15 +868,7 @@ function initializeUploadForm() {
 
 // Per page change
 function initializePerPage() {
-    const perPageSelect = document.getElementById('perPageSelect');
-    if (perPageSelect) {
-        perPageSelect.addEventListener('change', function() {
-            const url = new URL(window.location.href);
-            url.searchParams.set('per_page', this.value);
-            url.searchParams.delete('page');
-            window.location.href = url.toString();
-        });
-    }
+    attachSearchPerPageHandler();
 }
 
 // Clear filters
@@ -571,6 +877,11 @@ function initializeClearFilters() {
     if (clearBtn) {
         clearBtn.addEventListener('click', function() {
             document.querySelectorAll('#filterForm select').forEach(select => select.value = '');
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) searchInput.value = '';
+            if (courseSearchState.active) {
+                restoreCourseServerView();
+            }
             document.getElementById('filterForm').submit();
         });
     }

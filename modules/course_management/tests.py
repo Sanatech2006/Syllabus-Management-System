@@ -226,6 +226,85 @@ class CourseManagementSyllabusTests(TestCase):
         self.assertIsNone(course.marks_ese)
         self.assertIsNone(course.total_marks)
 
+    def test_upload_courses_excel_normalizes_numeric_part_values(self):
+        """Part values like 1.0 should be stored and displayed as 1."""
+        excel_buffer = io.BytesIO()
+        pd.DataFrame(
+            [
+                {
+                    "program_code": "BSCCS",
+                    "course_code": "CS203",
+                    "course_title": "Operating Systems",
+                    "year": "II",
+                    "sem": "IV",
+                    "course_category": "Core",
+                    "part": 1.0,
+                    "hrs_per_week": 4,
+                    "credit": 4,
+                    "marks_cia": 40,
+                    "marks_ese": 60,
+                    "total_marks": 100,
+                }
+            ]
+        ).to_excel(excel_buffer, index=False)
+        excel_buffer.seek(0)
+
+        upload = SimpleUploadedFile(
+            "courses.xlsx",
+            excel_buffer.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+        response = self.client.post(reverse("course_management:upload_courses"), {"excel_file": upload})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["success"])
+        course = CourseStructure.objects.get(program=self.program, course_code="CS203")
+        self.assertEqual(course.part, "1")
+
+    def test_reuploading_same_excel_reports_existing_courses(self):
+        """Re-uploading the same file should hit duplicate detection, not numeric parsing."""
+        excel_buffer = io.BytesIO()
+        pd.DataFrame(
+            [
+                {
+                    "program_code": "BSCCS",
+                    "course_code": "CS202",
+                    "course_title": "Algorithms",
+                    "year": "II",
+                    "sem": "IV",
+                    "course_category": "Core",
+                    "part": "III",
+                    "hrs_per_week": "-",
+                    "credit": "--",
+                    "marks_cia": "-",
+                    "marks_ese": "--",
+                    "total_marks": "-",
+                }
+            ]
+        ).to_excel(excel_buffer, index=False)
+        excel_buffer.seek(0)
+
+        first_upload = SimpleUploadedFile(
+            "courses.xlsx",
+            excel_buffer.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        first_response = self.client.post(reverse("course_management:upload_courses"), {"excel_file": first_upload})
+        self.assertEqual(first_response.status_code, 200)
+        self.assertTrue(first_response.json()["success"])
+
+        excel_buffer.seek(0)
+        second_upload = SimpleUploadedFile(
+            "courses.xlsx",
+            excel_buffer.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        second_response = self.client.post(reverse("course_management:upload_courses"), {"excel_file": second_upload})
+
+        self.assertEqual(second_response.status_code, 200)
+        self.assertFalse(second_response.json()["success"])
+        self.assertEqual(second_response.json()["error"], "Existing courses cannot be uploaded.")
 
 class HodScopedCourseManagementTests(TestCase):
     def setUp(self):
@@ -297,3 +376,20 @@ class HodScopedCourseManagementTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.json()["success"])
+
+    def test_hod_can_view_only_assigned_syllabus_files(self):
+        CourseSyllabus.objects.create(
+            course_code="MATH101",
+            pdf=SimpleUploadedFile("math101.pdf", b"%PDF-1.4 math syllabus", content_type="application/pdf"),
+        )
+        CourseSyllabus.objects.create(course_code="PHYS101")
+
+        own_view_response = self.client.get(reverse("course_management:view_syllabus", args=[self.math_course.id]))
+        own_download_response = self.client.get(reverse("course_management:download_syllabus", args=[self.math_course.id]))
+        other_view_response = self.client.get(reverse("course_management:view_syllabus", args=[self.physics_course.id]))
+
+        self.assertEqual(own_view_response.status_code, 200)
+        self.assertEqual(own_download_response.status_code, 200)
+        self.assertEqual(own_view_response["Content-Type"], "application/pdf")
+        self.assertEqual(own_download_response["Content-Type"], "application/pdf")
+        self.assertFalse(other_view_response.json()["success"])

@@ -61,27 +61,256 @@ function resetFileInput(fileInput, emptyState, selectedState, nameDisplay) {
     if (emptyState) emptyState.classList.remove('hidden');
 }
 
+const programSearchState = {
+    active: false,
+    term: '',
+    page: 1,
+    perPage: 10,
+    data: [],
+    serverRowsHtml: '',
+    serverPaginationHtml: '',
+    serverSummaryHtml: '',
+};
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function getProgramSearchData() {
+    if (programSearchState.data.length > 0) return programSearchState.data;
+    const dataElement = document.getElementById('program-search-data');
+    if (!dataElement) return [];
+
+    try {
+        programSearchState.data = JSON.parse(dataElement.textContent || '[]');
+    } catch (error) {
+        console.error('Error parsing program search data:', error);
+        programSearchState.data = [];
+    }
+
+    return programSearchState.data;
+}
+
+function programMatchesSearch(program, searchTerm) {
+    if (!searchTerm) return true;
+    const lowered = searchTerm.toLowerCase();
+    return [
+        program.prog_code,
+        program.degree,
+        program.branch,
+        program.prog_type,
+        program.prog_category,
+    ].some(value => String(value ?? '').toLowerCase().includes(lowered));
+}
+
+function buildProgramRow(program, displayNumber) {
+    const typeBadge = program.prog_type === 'UG'
+        ? '<span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-green-50 text-green-700 text-xs font-semibold">UG</span>'
+        : '<span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-yellow-50 text-yellow-700 text-xs font-semibold">PG</span>';
+
+    const categoryBadge = program.prog_category === 'Arts'
+        ? '<span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-pink-50 text-pink-700 text-xs font-semibold">Arts</span>'
+        : '<span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-semibold">Science</span>';
+
+    return `
+        <tr class="group hover:bg-slate-50 transition">
+            <td class="px-6 py-4 text-center text-sm text-slate-500 whitespace-nowrap">${displayNumber}</td>
+            <td class="px-6 py-4 text-center whitespace-nowrap">${typeBadge}</td>
+            <td class="px-6 py-4 text-center whitespace-nowrap">${categoryBadge}</td>
+            <td class="px-6 py-4 text-center font-medium text-slate-900 whitespace-nowrap">${escapeHtml(program.degree)}</td>
+            <td class="px-6 py-4 text-center text-slate-600 whitespace-nowrap">${escapeHtml(program.branch)}</td>
+            <td class="px-6 py-4 text-center font-mono font-bold text-blue-600 whitespace-nowrap">${escapeHtml(program.prog_code)}</td>
+            <td class="px-6 py-4 text-center whitespace-nowrap">
+                <div class="flex items-center justify-center gap-2">
+                    <button onclick="editProgram(${program.id})" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                        </svg>
+                    </button>
+                    <button onclick="confirmDelete(${program.id}, ${JSON.stringify(program.prog_code || '')})" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+function renderProgramPagination(totalResults, page, perPage) {
+    const paginationContainer = document.getElementById('programPagination');
+    if (!paginationContainer) return;
+
+    const totalPages = Math.max(1, Math.ceil(totalResults / perPage));
+    const start = totalResults === 0 ? 0 : ((page - 1) * perPage) + 1;
+    const end = totalResults === 0 ? 0 : Math.min(page * perPage, totalResults);
+
+    paginationContainer.innerHTML = `
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p id="programResultsSummary" class="text-sm text-slate-600">
+                Showing <span class="font-medium">${start}</span> to
+                <span class="font-medium">${end}</span> of
+                <span class="font-medium">${totalResults}</span> results
+            </p>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <label class="text-sm text-slate-600">Items per page:</label>
+                    <select id="perPageSelect" class="p-1.5 border border-slate-200 rounded-lg text-sm">
+                        <option value="10"${perPage === 10 ? ' selected' : ''}>10</option>
+                        <option value="20"${perPage === 20 ? ' selected' : ''}>20</option>
+                        <option value="50"${perPage === 50 ? ' selected' : ''}>50</option>
+                        <option value="100"${perPage === 100 ? ' selected' : ''}>100</option>
+                        <option value="all"${String(perPage) === 'all' ? ' selected' : ''}>All</option>
+                    </select>
+                </div>
+                ${totalPages > 1 ? `
+                <nav class="flex gap-1">
+                    <button type="button" data-program-search-page="${Math.max(1, page - 1)}" ${page <= 1 ? 'disabled' : ''} class="px-3 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+                    <span class="px-3 py-1 bg-blue-600 text-white rounded-lg">${page}</span>
+                    <button type="button" data-program-search-page="${Math.min(totalPages, page + 1)}" ${page >= totalPages ? 'disabled' : ''} class="px-3 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+                </nav>` : ''}
+            </div>
+        </div>
+    `;
+
+    attachProgramPaginationHandlers();
+    attachProgramPerPageHandler();
+}
+
+function restoreProgramServerView() {
+    const tableBody = document.getElementById('programTableBody');
+    const paginationContainer = document.getElementById('programPagination');
+    const summary = document.getElementById('programResultsSummary');
+
+    if (tableBody && programSearchState.serverRowsHtml) tableBody.innerHTML = programSearchState.serverRowsHtml;
+    if (paginationContainer && programSearchState.serverPaginationHtml) paginationContainer.innerHTML = programSearchState.serverPaginationHtml;
+    if (summary && programSearchState.serverSummaryHtml) summary.innerHTML = programSearchState.serverSummaryHtml;
+
+    programSearchState.active = false;
+    programSearchState.term = '';
+    programSearchState.page = 1;
+    attachProgramPaginationHandlers();
+    attachProgramPerPageHandler();
+}
+
+function renderProgramSearchResults() {
+    const tableBody = document.getElementById('programTableBody');
+    const searchInput = document.getElementById('searchInput');
+    if (!tableBody || !searchInput) return;
+
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    const allPrograms = getProgramSearchData();
+    let perPageValue = document.getElementById('perPageSelect')?.value || programSearchState.perPage || 10;
+    const perPage = perPageValue === 'all' ? allPrograms.length || 1 : Number(perPageValue);
+
+    programSearchState.perPage = perPage;
+
+    if (!searchTerm) {
+        restoreProgramServerView();
+        return;
+    }
+
+    const filtered = allPrograms.filter(program => programMatchesSearch(program, searchTerm));
+    const totalResults = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalResults / perPage));
+    const page = Math.min(programSearchState.page || 1, totalPages);
+    const startIndex = (page - 1) * perPage;
+    const pageItems = filtered.slice(startIndex, startIndex + perPage);
+
+    programSearchState.active = true;
+    programSearchState.term = searchTerm;
+    programSearchState.page = page;
+
+    if (pageItems.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="7" class="px-6 py-12 text-center">
+                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                    </div>
+                    <h3 class="mt-4 text-sm font-bold text-slate-900">No programs found</h3>
+                    <p class="mt-1 text-xs text-slate-400">Try a different search term.</p>
+                </td>
+            </tr>
+        `;
+    } else {
+        tableBody.innerHTML = pageItems.map((program, index) => buildProgramRow(program, startIndex + index + 1)).join('');
+    }
+
+    renderProgramPagination(totalResults, page, perPage);
+}
+
+function attachProgramPaginationHandlers() {
+    const paginationContainer = document.getElementById('programPagination');
+    if (!paginationContainer) return;
+
+    paginationContainer.querySelectorAll('[data-program-search-page]').forEach(button => {
+        button.addEventListener('click', function() {
+            programSearchState.page = Number(this.getAttribute('data-program-search-page')) || 1;
+            renderProgramSearchResults();
+        });
+    });
+}
+
+function attachProgramPerPageHandler() {
+    const perPageSelect = document.getElementById('perPageSelect');
+    if (!perPageSelect) return;
+
+    perPageSelect.onchange = function() {
+        if (programSearchState.active) {
+            programSearchState.page = 1;
+            renderProgramSearchResults();
+            return;
+        }
+
+        const url = new URL(window.location.href);
+        url.searchParams.set('per_page', this.value);
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+    };
+}
+
 // Search functionality
 function initializeSearch() {
     const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('keyup', function() {
-            const searchTerm = this.value.toLowerCase();
-            const rows = document.querySelectorAll('.program-row');
-            
-            rows.forEach(row => {
-                const programCode = row.getAttribute('data-program-code') || '';
-                const degree = row.getAttribute('data-degree') || '';
-                const branch = row.getAttribute('data-branch') || '';
-                
-                if (programCode.includes(searchTerm) || degree.includes(searchTerm) || branch.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
-    }
+    const tableBody = document.getElementById('programTableBody');
+    const paginationContainer = document.getElementById('programPagination');
+    const summary = document.getElementById('programResultsSummary');
+
+    if (!searchInput || !tableBody || !paginationContainer || !summary) return;
+
+    programSearchState.serverRowsHtml = tableBody.innerHTML;
+    programSearchState.serverPaginationHtml = paginationContainer.innerHTML;
+    programSearchState.serverSummaryHtml = summary.innerHTML;
+
+    let searchTimer = null;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            programSearchState.page = 1;
+            renderProgramSearchResults();
+        }, 250);
+    });
+
+    searchInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            clearTimeout(searchTimer);
+            programSearchState.page = 1;
+            renderProgramSearchResults();
+        }
+    });
+
+    attachProgramPaginationHandlers();
+    attachProgramPerPageHandler();
 }
 
 // Drawer functions
@@ -334,15 +563,7 @@ function initializeUploadForm() {
 
 // Per page change
 function initializePerPage() {
-    const perPageSelect = document.getElementById('perPageSelect');
-    if (perPageSelect) {
-        perPageSelect.addEventListener('change', function() {
-            const url = new URL(window.location.href);
-            url.searchParams.set('per_page', this.value);
-            url.searchParams.delete('page');
-            window.location.href = url.toString();
-        });
-    }
+    attachProgramPerPageHandler();
 }
 
 // Clear filters
@@ -351,6 +572,11 @@ function initializeClearFilters() {
     if (clearBtn) {
         clearBtn.addEventListener('click', function() {
             document.querySelectorAll('#filterForm select').forEach(select => select.value = '');
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) searchInput.value = '';
+            if (programSearchState.active) {
+                restoreProgramServerView();
+            }
             document.getElementById('filterForm').submit();
         });
     }
