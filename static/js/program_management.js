@@ -251,7 +251,52 @@ function initializeUploadForm() {
                 return;
             }
             
+            const submitBtn = form.querySelector('button[type="submit"]') || document.querySelector('button[form="uploadForm"]');
+            if (submitBtn) submitBtn.disabled = true;
+            
+            // Generate a unique upload ID
+            const uploadId = 'upload_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
             const formData = new FormData(this);
+            formData.append('upload_id', uploadId);
+            
+            // Show and reset progress container
+            const progressContainer = document.getElementById('uploadProgressContainer');
+            const progressBar = document.getElementById('uploadProgressBar');
+            const progressPercent = document.getElementById('uploadProgressPercent');
+            const progressDetails = document.getElementById('uploadProgressDetails');
+            
+            if (progressContainer) {
+                progressContainer.classList.remove('hidden');
+                // Scroll container to bottom to show progress bar
+                const scrollContainer = progressContainer.closest('.overflow-y-auto');
+                if (scrollContainer) {
+                    setTimeout(() => {
+                        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                    }, 50);
+                }
+            }
+            if (progressBar) progressBar.style.width = '0%';
+            if (progressPercent) progressPercent.innerText = '0%';
+            if (progressDetails) progressDetails.innerText = '0 of 0 records uploaded';
+            
+            // Periodically poll the upload progress
+            let pollInterval = setInterval(() => {
+                fetch(`/upload-progress/?upload_id=${uploadId}`)
+                    .then(res => res.json())
+                    .then(progress => {
+                        if (progress && progress.total > 0) {
+                            const percent = Math.round((progress.current / progress.total) * 100);
+                            if (progressBar) progressBar.style.width = percent + '%';
+                            if (progressPercent) progressPercent.innerText = percent + '%';
+                            if (progressDetails) {
+                                progressDetails.innerText = `${progress.current} of ${progress.total} records uploaded`;
+                            }
+                        }
+                    })
+                    .catch(err => console.error('Error polling progress:', err));
+            }, 400);
+            
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
             
             fetch('/programs/upload-programs/', {
@@ -261,15 +306,25 @@ function initializeUploadForm() {
             })
             .then(response => response.json())
             .then(data => {
+                clearInterval(pollInterval);
+                if (submitBtn) submitBtn.disabled = false;
+                
                 if (data.success) {
+                    if (progressBar) progressBar.style.width = '100%';
+                    if (progressPercent) progressPercent.innerText = '100%';
+                    
                     showToast(data.message || 'Programs imported successfully!');
                     setTimeout(() => location.reload(), 2000);
                     closeDrawer('uploadDrawer');
                 } else {
+                    if (progressContainer) progressContainer.classList.add('hidden');
                     showToast(data.error || 'Error uploading file', 'error');
                 }
             })
             .catch(error => {
+                clearInterval(pollInterval);
+                if (submitBtn) submitBtn.disabled = false;
+                if (progressContainer) progressContainer.classList.add('hidden');
                 console.error('Error:', error);
                 showToast('Error uploading file', 'error');
             });
@@ -338,12 +393,12 @@ function initializeEscapeKey() {
 
 // Initialize everything
 document.addEventListener('DOMContentLoaded', function() {
-    initializeFileInput();
-    initializeSearch();
-    initializeDeleteButton();
-    initializeProgramForm();
-    initializeUploadForm();
-    initializePerPage();
-    initializeClearFilters();
-    initializeEscapeKey();
+    try { initializeFileInput(); } catch (e) { console.error('Error initializing file input:', e); }
+    try { initializeSearch(); } catch (e) { console.error('Error initializing search:', e); }
+    try { initializeDeleteButton(); } catch (e) { console.error('Error initializing delete button:', e); }
+    try { initializeProgramForm(); } catch (e) { console.error('Error initializing program form:', e); }
+    try { initializeUploadForm(); } catch (e) { console.error('Error initializing upload form:', e); }
+    try { initializePerPage(); } catch (e) { console.error('Error initializing per page:', e); }
+    try { initializeClearFilters(); } catch (e) { console.error('Error initializing clear filters:', e); }
+    try { initializeEscapeKey(); } catch (e) { console.error('Error initializing escape key:', e); }
 });

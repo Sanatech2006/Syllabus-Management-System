@@ -129,7 +129,6 @@ function openDrawer(drawerId) {
             if (fileInput && emptyState && selectedState && nameDisplay) {
                 resetFileInput(fileInput, emptyState, selectedState, nameDisplay);
             }
-            resetUploadFeedback();
         }
     }
 }
@@ -154,7 +153,6 @@ function closeDrawer(drawerId) {
             if (fileInput && emptyState && selectedState && nameDisplay) {
                 resetFileInput(fileInput, emptyState, selectedState, nameDisplay);
             }
-            resetUploadFeedback();
         }
     }
 }
@@ -311,75 +309,6 @@ function initializeUserForm() {
     }
 }
 
-function resetUploadFeedback() {
-    const progressContainer = document.getElementById('uploadProgressContainer');
-    const progressText = document.getElementById('uploadProgressText');
-    const progressPercent = document.getElementById('uploadProgressPercent');
-    const progressBar = document.getElementById('uploadProgressBar');
-    const resultContainer = document.getElementById('uploadResultContainer');
-    const resultTitle = document.getElementById('uploadResultTitle');
-    const resultMessage = document.getElementById('uploadResultMessage');
-    const resultIcon = document.getElementById('uploadResultIcon');
-    const successCount = document.getElementById('uploadSuccessCount');
-    const errorCount = document.getElementById('uploadErrorCount');
-    const errorsListContainer = document.getElementById('uploadErrorsListContainer');
-    const errorsList = document.getElementById('uploadErrorsList');
-
-    if (progressContainer) progressContainer.classList.add('hidden');
-    if (progressText) progressText.innerText = 'Uploading...';
-    if (progressPercent) progressPercent.innerText = '0%';
-    if (progressBar) progressBar.style.width = '0%';
-    if (resultContainer) resultContainer.classList.add('hidden');
-    if (resultTitle) resultTitle.innerText = 'Upload Status';
-    if (resultMessage) resultMessage.innerText = '';
-    if (resultIcon) resultIcon.className = 'p-2 rounded-lg';
-    if (successCount) successCount.innerText = '0';
-    if (errorCount) errorCount.innerText = '0';
-    if (errorsListContainer) errorsListContainer.classList.add('hidden');
-    if (errorsList) errorsList.innerHTML = '';
-}
-
-function updateUploadProgress(percent) {
-    const progressContainer = document.getElementById('uploadProgressContainer');
-    const progressText = document.getElementById('uploadProgressText');
-    const progressPercent = document.getElementById('uploadProgressPercent');
-    const progressBar = document.getElementById('uploadProgressBar');
-
-    if (progressContainer) progressContainer.classList.remove('hidden');
-    if (progressText) progressText.innerText = percent >= 100 ? 'Processing response...' : 'Uploading...';
-    if (progressPercent) progressPercent.innerText = `${Math.min(percent, 100)}%`;
-    if (progressBar) progressBar.style.width = `${Math.min(percent, 100)}%`;
-}
-
-function showUploadResult(data, isSuccess) {
-    const progressContainer = document.getElementById('uploadProgressContainer');
-    const resultContainer = document.getElementById('uploadResultContainer');
-    const resultTitle = document.getElementById('uploadResultTitle');
-    const resultMessage = document.getElementById('uploadResultMessage');
-    const resultIcon = document.getElementById('uploadResultIcon');
-    const successCount = document.getElementById('uploadSuccessCount');
-    const errorCount = document.getElementById('uploadErrorCount');
-    const errorsListContainer = document.getElementById('uploadErrorsListContainer');
-    const errorsList = document.getElementById('uploadErrorsList');
-    const createdCount = Number(data?.created || 0);
-    const errors = Array.isArray(data?.errors) ? data.errors : [];
-
-    if (progressContainer) progressContainer.classList.add('hidden');
-    if (resultContainer) resultContainer.classList.remove('hidden');
-    if (resultTitle) resultTitle.innerText = isSuccess ? 'Upload completed' : 'Upload finished with errors';
-    if (resultMessage) resultMessage.innerText = data?.message || data?.error || '';
-    if (resultIcon) {
-        resultIcon.className = `p-2 rounded-lg ${isSuccess ? 'bg-green-50 text-green-600' : 'bg-rose-50 text-rose-600'}`;
-        resultIcon.innerHTML = isSuccess
-            ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
-            : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86l-8.1 14.04A2 2 0 003.92 21h16.16a2 2 0 001.73-3.1l-8.1-14.04a2 2 0 00-3.46 0z"/></svg>';
-    }
-    if (successCount) successCount.innerText = String(createdCount);
-    if (errorCount) errorCount.innerText = String(errors.length);
-    if (errorsListContainer) errorsListContainer.classList.toggle('hidden', errors.length === 0);
-    if (errorsList) errorsList.innerHTML = errors.slice(0, 10).map(error => `<div>${error}</div>`).join('');
-}
-
 // Handle Excel upload
 function initializeUploadForm() {
     const form = document.getElementById('uploadForm');
@@ -393,55 +322,87 @@ function initializeUploadForm() {
                 return;
             }
             
+            const submitBtn = form.querySelector('button[type="submit"]') || document.querySelector('button[form="uploadForm"]');
+            if (submitBtn) submitBtn.disabled = true;
+            
+            // Generate a unique upload ID
+            const uploadId = 'upload_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
             const formData = new FormData(this);
+            formData.append('upload_id', uploadId);
+            
+            // Show and reset progress container
+            const progressContainer = document.getElementById('uploadProgressContainer');
+            const progressBar = document.getElementById('uploadProgressBar');
+            const progressPercent = document.getElementById('uploadProgressPercent');
+            const progressDetails = document.getElementById('uploadProgressDetails');
+            
+            if (progressContainer) {
+                progressContainer.classList.remove('hidden');
+                // Scroll container to bottom to show progress bar
+                const scrollContainer = progressContainer.closest('.overflow-y-auto');
+                if (scrollContainer) {
+                    setTimeout(() => {
+                        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                    }, 50);
+                }
+            }
+            if (progressBar) progressBar.style.width = '0%';
+            if (progressPercent) progressPercent.innerText = '0%';
+            if (progressDetails) progressDetails.innerText = '0 of 0 records uploaded';
+            
+            // Periodically poll the upload progress
+            let pollInterval = setInterval(() => {
+                fetch(`/upload-progress/?upload_id=${uploadId}`)
+                    .then(res => res.json())
+                    .then(progress => {
+                        if (progress && progress.total > 0) {
+                            const percent = Math.round((progress.current / progress.total) * 100);
+                            if (progressBar) progressBar.style.width = percent + '%';
+                            if (progressPercent) progressPercent.innerText = percent + '%';
+                            if (progressDetails) {
+                                progressDetails.innerText = `${progress.current} of ${progress.total} records uploaded`;
+                            }
+                        }
+                    })
+                    .catch(err => console.error('Error polling progress:', err));
+            }, 400);
+            
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-            const submitButton = document.querySelector('button[type="submit"][form="uploadForm"]');
-            if (submitButton) submitButton.disabled = true;
-            resetUploadFeedback();
-            updateUploadProgress(0);
-
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/users/upload-users/', true);
-            if (csrfToken) xhr.setRequestHeader('X-CSRFToken', csrfToken);
-
-            xhr.upload.onprogress = function(event) {
-                if (event.lengthComputable) {
-                    updateUploadProgress(Math.round((event.loaded / event.total) * 100));
-                } else {
-                    updateUploadProgress(85);
+            
+            fetch('/users/upload-users/', {  // ← FIXED URL
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken
                 }
-            };
-
-            xhr.onload = function() {
-                if (submitButton) submitButton.disabled = false;
-                updateUploadProgress(100);
-
-                let data = {};
-                try {
-                    data = JSON.parse(xhr.responseText || '{}');
-                } catch (error) {
-                    console.error('Error parsing upload response:', error);
-                    showToast('Error uploading file', 'error');
-                    return;
-                }
-
-                const isSuccess = xhr.status >= 200 && xhr.status < 300 && data.success;
-                showUploadResult(data, isSuccess);
-
-                if (isSuccess) {
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(pollInterval);
+                if (submitBtn) submitBtn.disabled = false;
+                
+                if (data.success) {
+                    if (progressBar) progressBar.style.width = '100%';
+                    if (progressPercent) progressPercent.innerText = '100%';
+                    
                     showToast(data.message || 'Users imported successfully!');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                    closeDrawer('uploadDrawer');
                 } else {
+                    if (progressContainer) progressContainer.classList.add('hidden');
                     showToast(data.error || 'Error uploading file', 'error');
                 }
-            };
-
-            xhr.onerror = function() {
-                if (submitButton) submitButton.disabled = false;
-                resetUploadFeedback();
+            })
+            .catch(error => {
+                clearInterval(pollInterval);
+                if (submitBtn) submitBtn.disabled = false;
+                if (progressContainer) progressContainer.classList.add('hidden');
+                console.error('Error:', error);
                 showToast('Error uploading file', 'error');
-            };
-
-            xhr.send(formData);
+            });
         });
     }
 }
@@ -523,23 +484,18 @@ function fixDropdownPosition() {
 
 // Initialize all functionality when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    initializeFileInput();
-    initializeSearch();
-    initializeDeleteButton();
-    initializeUserForm();
-    initializeUploadForm();
-    initializeEscapeKey();
-    const closeUploadResultBtn = document.getElementById('closeUploadResultBtn');
-    if (closeUploadResultBtn) {
-        closeUploadResultBtn.addEventListener('click', function() {
-            closeDrawer('uploadDrawer');
-            location.reload();
-        });
-    }
-    fixDropdownPosition();
+    try { initializeFileInput(); } catch (e) { console.error('Error initializing file input:', e); }
+    try { initializeSearch(); } catch (e) { console.error('Error initializing search:', e); }
+    try { initializeDeleteButton(); } catch (e) { console.error('Error initializing delete button:', e); }
+    try { initializeUserForm(); } catch (e) { console.error('Error initializing user form:', e); }
+    try { initializeUploadForm(); } catch (e) { console.error('Error initializing upload form:', e); }
+    try { initializeEscapeKey(); } catch (e) { console.error('Error initializing escape key:', e); }
+    try { fixDropdownPosition(); } catch (e) { console.error('Error fixing dropdown position:', e); }
     
     // Re-fix dropdown position on window resize
-    window.addEventListener('resize', fixDropdownPosition);
+    window.addEventListener('resize', function() {
+        try { fixDropdownPosition(); } catch (e) {}
+    });
     
     // Fix for table sticky headers z-index issues
     const style = document.createElement('style');

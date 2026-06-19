@@ -4,11 +4,10 @@ from django.db import models
 from django.contrib.auth.decorators import login_required
 
 # Import models from other apps
-from modules.course_management.access import get_accessible_courses, get_accessible_programs
-from modules.course_management.models import CourseSyllabus
+from modules.program_manage.models import Program
+from modules.course_management.models import CourseStructure, CourseSyllabus
 
 
-@login_required
 def view_syllabus(request):
     """View to browse and download syllabi - accessible to all authenticated users"""
     
@@ -23,7 +22,7 @@ def view_syllabus(request):
         view_mode = 'syllabus'
     
     # Base queryset
-    all_courses = get_accessible_courses(request.user).annotate(
+    all_courses = CourseStructure.objects.select_related('program').annotate(
         has_syllabus_pdf=models.Exists(
             CourseSyllabus.objects.filter(
                 course_code=models.OuterRef('course_code'),
@@ -34,30 +33,36 @@ def view_syllabus(request):
     
     # Apply filters
     if has_applied_filters:
-        filtered_courses = all_courses.filter(has_syllabus_pdf=True)
+        # Start with all course structures. Only require an existing PDF when
+        # the user explicitly selected the 'syllabus' view mode.
+        filtered_courses = all_courses
+        if view_mode == 'syllabus':
+            filtered_courses = filtered_courses.filter(has_syllabus_pdf=True)
+
         if program_id and program_id != "__all__":
             filtered_courses = filtered_courses.filter(program_id=program_id)
         if year and year != "__all__":
             filtered_courses = filtered_courses.filter(year=year)
         if sem and sem != "__all__":
             filtered_courses = filtered_courses.filter(sem=sem)
+
         filtered_courses = filtered_courses.order_by('program__prog_code', 'year', 'sem', 'course_code')
     else:
-        filtered_courses = all_courses.none()
+        filtered_courses = CourseStructure.objects.none()
     
     # Get filter options
-    programs = get_accessible_programs(request.user).order_by('prog_code')
+    programs = Program.objects.filter(is_active=True).order_by('prog_code')
     
     # Get unique years and semesters from course structures
     years = list(
-        get_accessible_courses(request.user).exclude(year__isnull=True)
+        CourseStructure.objects.exclude(year__isnull=True)
         .exclude(year='')
         .values_list('year', flat=True)
         .distinct()
         .order_by('year')
     )
     sems = list(
-        get_accessible_courses(request.user).exclude(sem__isnull=True)
+        CourseStructure.objects.exclude(sem__isnull=True)
         .exclude(sem='')
         .values_list('sem', flat=True)
         .distinct()
@@ -80,11 +85,10 @@ def view_syllabus(request):
     return render(request, 'view_syllabus.html', context)
 
 
-@login_required
 def view_syllabus_pdf(request, course_id):
     """Open syllabus PDF inline for a specific course"""
     try:
-        course = get_object_or_404(get_accessible_courses(request.user), id=course_id)
+        course = get_object_or_404(CourseStructure, id=course_id)
         syllabus = get_object_or_404(CourseSyllabus, course_code=course.course_code)
         
         if not syllabus.pdf:
@@ -100,11 +104,10 @@ def view_syllabus_pdf(request, course_id):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
-@login_required
 def download_syllabus(request, course_id):
     """Download syllabus PDF for a specific course"""
     try:
-        course = get_object_or_404(get_accessible_courses(request.user), id=course_id)
+        course = get_object_or_404(CourseStructure, id=course_id)
         syllabus = get_object_or_404(CourseSyllabus, course_code=course.course_code)
         
         if not syllabus.pdf:

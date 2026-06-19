@@ -189,7 +189,13 @@
                             <th class="px-6 py-4 text-center">Course Title</th>
                             <th class="px-6 py-4 text-center">Year</th>
                             <th class="px-6 py-4 text-center">Sem</th>
+                            <th class="px-6 py-4 text-center">Category</th>
+                            <th class="px-6 py-4 text-center">Part</th>
+                            <th class="px-6 py-4 text-center">Hrs/Week</th>
                             <th class="px-6 py-4 text-center">Credit</th>
+                            <th class="px-6 py-4 text-center">CIA</th>
+                            <th class="px-6 py-4 text-center">ESE</th>
+                            <th class="px-6 py-4 text-center">Total</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
@@ -208,7 +214,13 @@
                             <td class="px-6 py-4 text-center">
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">Sem {{ course.sem }}</span>
                             </td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ course.course_category|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ course.part|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ course.hrs_per_week|default:"-" }}</td>
                             <td class="px-6 py-4 text-center font-semibold">{{ course.credit|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ course.marks_cia|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ course.marks_ese|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center font-semibold text-slate-900">{{ course.total_marks|default:"-" }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 import pandas as pd
 import io
 from datetime import datetime
+from modules.core.utils import set_upload_progress, delete_upload_progress
 
 User = get_user_model()
 
@@ -240,7 +241,7 @@ def download_users_excel(request):
 @login_required
 @require_http_methods(["POST"])
 def upload_users_excel(request):
-
+    upload_id = request.POST.get('upload_id') or request.GET.get('upload_id')
     try:
         if 'excel_file' not in request.FILES:
             return JsonResponse({'success': False, 'error': 'No file uploaded.'})
@@ -268,7 +269,15 @@ def upload_users_excel(request):
         errors = []
         skipped = 0
         
+        total_rows = len(df)
+        if upload_id:
+            set_upload_progress(upload_id, 0, total_rows, status="processing")
+        
         for index, row in df.iterrows():
+            current_row = index + 1
+            if upload_id:
+                set_upload_progress(upload_id, current_row, total_rows, status="processing")
+            
             username = str(row.get('username', '')).strip()
             first_name = str(row.get('first_name', '')).strip() if pd.notna(row.get('first_name')) else ''
             password = str(row.get('password', '')).strip() if pd.notna(row.get('password')) else 'TempPass@123'
@@ -302,6 +311,9 @@ def upload_users_excel(request):
             except Exception as e:
                 errors.append(f'Row {index + 2}: Error creating user {username} - {str(e)}')
         
+        if upload_id:
+            set_upload_progress(upload_id, total_rows, total_rows, status="completed")
+            
         # Prepare response message
         if created_users:
             message = f'Successfully imported {len(created_users)} users.'
@@ -321,4 +333,6 @@ def upload_users_excel(request):
             })
         
     except Exception as e:
+        if upload_id:
+            set_upload_progress(upload_id, 0, 0, status="failed")
         return JsonResponse({'success': False, 'error': str(e)})

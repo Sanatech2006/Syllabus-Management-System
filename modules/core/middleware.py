@@ -14,6 +14,7 @@ class LoginRequiredMiddleware:
             '/admin/',
             '/static/',
             '/media/',
+            '/view-syllabus/',
         ]
 
     def __call__(self, request):

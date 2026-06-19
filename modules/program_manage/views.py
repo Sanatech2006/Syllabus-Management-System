@@ -10,6 +10,8 @@ from django.views.decorators.http import require_http_methods
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.utils import get_column_letter
+from modules.core.utils import set_upload_progress, delete_upload_progress
+
 
 from modules.core.decorators import admin_required
 from .models import Program
@@ -295,7 +297,7 @@ def download_programs_excel(request):
 @admin_required
 @require_http_methods(["POST"])
 def upload_programs_excel(request):
-
+    upload_id = request.POST.get('upload_id') or request.GET.get('upload_id')
     try:
         if 'excel_file' not in request.FILES:
             return JsonResponse({'success': False, 'error': 'No file uploaded.'})
@@ -318,7 +320,15 @@ def upload_programs_excel(request):
         created_programs = []
         errors = []
         
+        total_rows = len(df)
+        if upload_id:
+            set_upload_progress(upload_id, 0, total_rows, status="processing")
+        
         for index, row in df.iterrows():
+            current_row = index + 1
+            if upload_id:
+                set_upload_progress(upload_id, current_row, total_rows, status="processing")
+            
             prog_type = str(row.get('prog_type', '')).strip().upper()
             prog_category = str(row.get('prog_category', '')).strip().title()
             degree = str(row.get('degree', '')).strip()
@@ -358,6 +368,9 @@ def upload_programs_excel(request):
             except Exception as e:
                 errors.append(f'Row {index + 2}: Error - {str(e)}')
         
+        if upload_id:
+            set_upload_progress(upload_id, total_rows, total_rows, status="completed")
+            
         if created_programs:
             message = f'Successfully imported {len(created_programs)} programs.'
             if errors:
@@ -367,4 +380,6 @@ def upload_programs_excel(request):
             return JsonResponse({'success': False, 'error': f'No programs imported. Errors: {", ".join(errors[:5])}'})
         
     except Exception as e:
+        if upload_id:
+            set_upload_progress(upload_id, 0, 0, status="failed")
         return JsonResponse({'success': False, 'error': str(e)})
