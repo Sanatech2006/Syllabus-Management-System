@@ -13,9 +13,13 @@
     .ts-control {
         border: 1px solid #cbd5e1 !important; /* border-slate-300 */
         border-radius: 0.5rem !important; /* rounded-lg */
-        padding: 0.5rem 0.75rem !important;
+        padding: 0.5rem 2.25rem 0.5rem 0.75rem !important;
         font-size: 0.875rem !important; /* text-sm */
         background-color: #ffffff !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 7l5 5 5-5'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 0.9rem;
         box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
         transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
     }
@@ -507,8 +511,6 @@
                             <option value="4">Semester 4</option>
                             <option value="5">Semester 5</option>
                             <option value="6">Semester 6</option>
-                            <option value="7">Semester 7</option>
-                            <option value="8">Semester 8</option>
                         </select>
                     </div>
                 </div>
@@ -976,7 +978,8 @@
         courseSelects.forEach(select => {
             new TomSelect(select, {
                 create: false,
-                placeholder: select.options[0]?.text || "Select..."
+                placeholder: select.options[0]?.text || "Select...",
+                dropdownParent: 'body'
             });
         });
 
