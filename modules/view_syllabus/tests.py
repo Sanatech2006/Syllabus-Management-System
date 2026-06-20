@@ -67,3 +67,58 @@ class ViewSyllabusScopeTests(TestCase):
         returned_codes = [course.course_code for course in response.context["courses"]]
         self.assertIn("MATH101", returned_codes)
         self.assertNotIn("PHYS101", returned_codes)
+
+    def test_get_filter_options_returns_all_initially(self):
+        response = self.client.get(reverse("view_syllabus:get_filter_options"))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("I", data["years"])
+        # Should include both programs
+        program_ids = [p["id"] for p in data["programs"]]
+        self.assertIn(self.math_program.id, program_ids)
+        self.assertIn(self.physics_program.id, program_ids)
+        self.assertIn("I", data["sems"])
+
+    def test_get_filter_options_filtered_by_year(self):
+        # We can create a second course in Year II
+        CourseStructure.objects.create(
+            program=self.physics_program,
+            course_code="PHYS201",
+            course_title="Electromagnetism",
+            year="II",
+            sem="III",
+        )
+        
+        # Request only Year II
+        response = self.client.get(reverse("view_syllabus:get_filter_options"), {"year": "II"})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Only physics_program has a course in Year II
+        program_ids = [p["id"] for p in data["programs"]]
+        self.assertIn(self.physics_program.id, program_ids)
+        self.assertNotIn(self.math_program.id, program_ids)
+        self.assertEqual(data["sems"], ["III"])
+
+    def test_get_filter_options_filtered_by_year_and_program(self):
+        # Add physics course in Semester II
+        CourseStructure.objects.create(
+            program=self.physics_program,
+            course_code="PHYS102",
+            course_title="Optics",
+            year="I",
+            sem="II",
+        )
+        
+        # Request Year I and Physics Program
+        response = self.client.get(
+            reverse("view_syllabus:get_filter_options"),
+            {"year": "I", "program": self.physics_program.id}
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Semesters should only have II (and I from physics setup)
+        self.assertIn("I", data["sems"])
+        self.assertIn("II", data["sems"])
+
