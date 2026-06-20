@@ -6,6 +6,7 @@ app_name = 'view_syllabus'
 urlpatterns = [
     # Main view syllabus page
     path('', views.view_syllabus, name='view_syllabus'),
+    path('get-filter-options/', views.get_filter_options, name='get_filter_options'),
     
     # Download syllabus
     path('view/<int:course_id>/', views.view_syllabus_pdf, name='view_syllabus_pdf'),

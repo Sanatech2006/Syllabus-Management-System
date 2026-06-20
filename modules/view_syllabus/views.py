@@ -121,3 +121,60 @@ def download_syllabus(request, course_id):
         return JsonResponse({'success': False, 'error': 'Syllabus not found for this course.'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+
+def get_filter_options(request):
+    """Retrieve distinct options for view syllabus filters dynamically based on selections"""
+    year = request.GET.get('year')
+    program_id = request.GET.get('program')
+    
+    # Base queryset for all courses
+    qs = CourseStructure.objects.all()
+    
+    # 1. Years option (always all distinct years from CourseStructure)
+    years = list(
+        CourseStructure.objects.exclude(year__isnull=True)
+        .exclude(year='')
+        .values_list('year', flat=True)
+        .distinct()
+        .order_by('year')
+    )
+    
+    # 2. Programs options (filtered by year if provided)
+    if year and year != "__all__":
+        qs_program = qs.filter(year=year)
+    else:
+        qs_program = qs
+        
+    program_ids = qs_program.values_list('program_id', flat=True).distinct()
+    programs = Program.objects.filter(id__in=program_ids, is_active=True).order_by('prog_code')
+    programs_list = [
+        {
+            'id': p.id,
+            'code': p.prog_code,
+            'degree': p.degree,
+            'branch': p.branch
+        }
+        for p in programs
+    ]
+    
+    # 3. Semesters options (filtered by year and program if provided)
+    qs_sem = qs
+    if year and year != "__all__":
+        qs_sem = qs_sem.filter(year=year)
+    if program_id and program_id != "__all__":
+        qs_sem = qs_sem.filter(program_id=program_id)
+        
+    sems = list(
+        qs_sem.exclude(sem__isnull=True)
+        .exclude(sem='')
+        .values_list('sem', flat=True)
+        .distinct()
+        .order_by('sem')
+    )
+    
+    return JsonResponse({
+        'years': years,
+        'programs': programs_list,
+        'sems': sems
+    })
