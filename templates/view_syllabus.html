@@ -29,8 +29,8 @@
     </div>
 
     <!-- Filter Section -->
-    <div class="mx-auto bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
-        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
+    <div class="mx-auto bg-white rounded-xl border border-slate-200 shadow-sm mb-8">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 rounded-t-xl">
             <h2 class="text-base font-semibold text-slate-900 flex items-center gap-2">
                 <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -52,16 +52,15 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program</label>
                         <div class="sms-dropdown relative" id="programDropdown">
-                            <button type="button" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-left flex items-center justify-between gap-2 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                <span class="sms-label truncate text-slate-400">Select Program</span>
-                                <svg class="sms-chevron w-4 h-4 text-slate-400 shrink-0 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                            <div class="sms-panel hidden absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                                <div class="p-2 border-b border-slate-100">
-                                    <input type="text" class="sms-search w-full text-sm px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400" placeholder="Search...">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Program" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
                                 </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
                                 <ul class="sms-list max-h-52 overflow-y-auto py-1">
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Program</li>
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Programs</li>
@@ -78,16 +77,15 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Year</label>
                         <div class="sms-dropdown relative" id="yearDropdown">
-                            <button type="button" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-left flex items-center justify-between gap-2 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                <span class="sms-label truncate text-slate-400">Select Year</span>
-                                <svg class="sms-chevron w-4 h-4 text-slate-400 shrink-0 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                            <div class="sms-panel hidden absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                                <div class="p-2 border-b border-slate-100">
-                                    <input type="text" class="sms-search w-full text-sm px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400" placeholder="Search...">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Year" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
                                 </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
                                 <ul class="sms-list max-h-52 overflow-y-auto py-1">
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Year</li>
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Years</li>
@@ -104,16 +102,15 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Semester</label>
                         <div class="sms-dropdown relative" id="semDropdown">
-                            <button type="button" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-left flex items-center justify-between gap-2 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                <span class="sms-label truncate text-slate-400">Select Semester</span>
-                                <svg class="sms-chevron w-4 h-4 text-slate-400 shrink-0 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                            <div class="sms-panel hidden absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                                <div class="p-2 border-b border-slate-100">
-                                    <input type="text" class="sms-search w-full text-sm px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400" placeholder="Search...">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Semester" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
                                 </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
                                 <ul class="sms-list max-h-52 overflow-y-auto py-1">
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Semester</li>
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Semesters</li>
@@ -130,16 +127,15 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">View Mode</label>
                         <div class="sms-dropdown relative" id="viewModeDropdown">
-                            <button type="button" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-left flex items-center justify-between gap-2 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                <span class="sms-label truncate text-slate-400">Select View Mode</span>
-                                <svg class="sms-chevron w-4 h-4 text-slate-400 shrink-0 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                            <div class="sms-panel hidden absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                                <div class="p-2 border-b border-slate-100">
-                                    <input type="text" class="sms-search w-full text-sm px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400" placeholder="Search...">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select View Mode" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
                                 </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
                                 <ul class="sms-list max-h-52 overflow-y-auto py-1">
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="structure">Structure View</li>
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="syllabus">Syllabus View</li>
@@ -179,9 +175,9 @@
         </div>
         {% if selected_view_mode == "structure" %}
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto overflow-y-auto max-h-[600px]">
                 <table class="w-full text-sm text-left">
-                    <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200 sticky top-0 z-10 shadow-sm">
                         <tr>
                             <th class="px-6 py-4 text-center">#</th>
                             <th class="px-6 py-4 text-center">Program</th>
@@ -216,8 +212,8 @@
                             </td>
                             <td class="px-6 py-4 text-center text-slate-700">{{ course.course_category|default:"-" }}</td>
                             <td class="px-6 py-4 text-center text-slate-700">{{ course.part|default:"-" }}</td>
-                            <td class="px-6 py-4 text-center text-slate-700">{{ course.hrs_per_week|default:"-" }}</td>
-                            <td class="px-6 py-4 text-center font-semibold">{{ course.credit|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ course.hrs_per_week|floatformat:-2|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center font-semibold">{{ course.credit|floatformat:-2|default:"-" }}</td>
                             <td class="px-6 py-4 text-center text-slate-700">{{ course.marks_cia|default:"-" }}</td>
                             <td class="px-6 py-4 text-center text-slate-700">{{ course.marks_ese|default:"-" }}</td>
                             <td class="px-6 py-4 text-center font-semibold text-slate-900">{{ course.total_marks|default:"-" }}</td>
@@ -225,6 +221,27 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+            <!-- Pagination Controls -->
+            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-4">
+                <div class="text-sm text-slate-500">
+                    Showing <span id="paginatedStart">1</span> to <span id="paginatedEnd">100</span> of <span id="paginatedTotal">100</span> records
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="pageIndicator" class="text-sm font-medium text-slate-700">Page 1 of 1</span>
+                    <div class="inline-flex rounded-lg border border-slate-200 bg-white p-1">
+                        <button type="button" id="prevPageBtn" class="p-1 rounded hover:bg-slate-50 text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <button type="button" id="nextPageBtn" class="p-1 rounded hover:bg-slate-50 text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         {% else %}
@@ -247,7 +264,7 @@
                     <div class="mt-4 pt-3 border-t border-slate-100">
                         <div class="flex items-center justify-between">
                             <div class="text-xs text-slate-500">
-                                <div>Credits: <span class="font-semibold text-slate-700">{{ course.credit|default:"N/A" }}</span></div>
+                                <div>Credits: <span class="font-semibold text-slate-700">{{ course.credit|floatformat:-2|default:"N/A" }}</span></div>
                                 <div>Category: <span class="font-semibold text-slate-700">{{ course.course_category|default:"N/A" }}</span></div>
                             </div>
                             <div class="flex flex-wrap justify-end gap-2">
@@ -312,11 +329,9 @@ document.addEventListener('DOMContentLoaded', function () {
     dropdownConfigs.forEach(({ dropdownId, hiddenId, placeholder }) => {
         const dropdown  = document.getElementById(dropdownId);
         const hidden    = document.getElementById(hiddenId);
-        const trigger   = dropdown.querySelector('.sms-trigger');
-        const label     = dropdown.querySelector('.sms-label');
+        const trigger   = dropdown.querySelector('.sms-trigger'); // Now the input element
         const chevron   = dropdown.querySelector('.sms-chevron');
         const panel     = dropdown.querySelector('.sms-panel');
-        const search    = dropdown.querySelector('.sms-search');
         const list      = dropdown.querySelector('.sms-list');
         const emptyMsg  = dropdown.querySelector('.sms-empty');
         const options   = Array.from(dropdown.querySelectorAll('.sms-option'));
@@ -326,9 +341,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (currentVal) {
             const match = options.find(o => o.dataset.value === currentVal);
             if (match) {
-                label.textContent = match.textContent.trim();
-                label.classList.remove('text-slate-400');
-                label.classList.add('text-slate-700');
+                trigger.value = match.textContent.trim();
                 markSelected(match);
             }
         }
@@ -342,12 +355,47 @@ document.addEventListener('DOMContentLoaded', function () {
             selectedOption.classList.remove('text-slate-700');
         }
 
+        function getVisibleOptions() {
+            return options.filter(o => o.style.display !== 'none');
+        }
+
+        function getHighlightedOption() {
+            return options.find(o => o.classList.contains('bg-slate-100'));
+        }
+
+        function highlightOption(option) {
+            options.forEach(o => o.classList.remove('bg-slate-100'));
+            if (option) {
+                option.classList.add('bg-slate-100');
+                option.scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        function selectOption(option) {
+            const val  = option.dataset.value;
+            const text = option.textContent.trim();
+            
+            hidden.value = val;
+            trigger.value = val ? text : '';
+            
+            markSelected(option);
+            closePanel();
+            updateApplyButtonState();
+        }
+
         function openPanel() {
             panel.classList.remove('hidden');
             chevron.classList.add('rotate-180');
-            search.value = '';
-            filterOptions('');
-            search.focus();
+            filterOptions(''); // Show all available options by default when clicked
+            
+            // Highlight currently selected option, or first visible option
+            const currentVal = hidden.value;
+            const currentSelected = options.find(o => o.dataset.value === currentVal);
+            const visible = getVisibleOptions();
+            highlightOption(currentSelected || visible[0]);
+            
+            // Highlight the text for easy replacement
+            trigger.select();
         }
 
         function closePanel() {
@@ -357,54 +405,125 @@ document.addEventListener('DOMContentLoaded', function () {
 
         function filterOptions(term) {
             const lower = term.toLowerCase().trim();
-            let visible = 0;
+            let visibleCount = 0;
             options.forEach(o => {
+                const isPlaceholder = o.dataset.value === '';
                 const matches = o.textContent.toLowerCase().includes(lower);
-                o.style.display = matches ? '' : 'none';
-                if (matches) visible++;
+                
+                if (lower === '') {
+                    o.style.display = '';
+                    visibleCount++;
+                } else {
+                    if (isPlaceholder) {
+                        o.style.display = 'none';
+                    } else {
+                        o.style.display = matches ? '' : 'none';
+                        if (matches) visibleCount++;
+                    }
+                }
             });
-            emptyMsg.classList.toggle('hidden', visible > 0);
+            emptyMsg.classList.toggle('hidden', visibleCount > 0);
+
+            // Re-highlight first visible option when filtering
+            const visible = getVisibleOptions();
+            highlightOption(visible[0]);
         }
 
-        trigger.addEventListener('click', () => {
-            const isOpen = !panel.classList.contains('hidden');
-            /* Close all other dropdowns first */
+        function revertInvalidInput() {
+            const currentVal = hidden.value;
+            const match = options.find(o => o.dataset.value === currentVal);
+            if (match) {
+                trigger.value = currentVal ? match.textContent.trim() : '';
+            } else {
+                trigger.value = '';
+            }
+        }
+
+        // Open on focus, closing all other dropdowns
+        trigger.addEventListener('focus', () => {
             document.querySelectorAll('.sms-dropdown').forEach(d => {
                 if (d !== dropdown) {
                     d.querySelector('.sms-panel').classList.add('hidden');
                     d.querySelector('.sms-chevron').classList.remove('rotate-180');
                 }
             });
-            isOpen ? closePanel() : openPanel();
+            openPanel();
         });
 
-        search.addEventListener('input', () => filterOptions(search.value));
+        // Click event on trigger input to stop propagation and open if closed
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (panel.classList.contains('hidden')) {
+                openPanel();
+            }
+        });
 
-        /* Prevent the search input click from bubbling to the document close handler */
-        search.addEventListener('click', e => e.stopPropagation());
+        // Filter as the user types
+        trigger.addEventListener('input', () => {
+            if (panel.classList.contains('hidden')) {
+                openPanel();
+            }
+            filterOptions(trigger.value);
+        });
+
+        // Keyboard support: Escape/Tab closing & reverting, ArrowUp/ArrowDown, Enter
+        trigger.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab' || e.key === 'Escape') {
+                closePanel();
+                revertInvalidInput();
+                return;
+            }
+
+            const isOpen = !panel.classList.contains('hidden');
+            if (!isOpen) {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter') {
+                    openPanel();
+                    e.preventDefault();
+                }
+                return;
+            }
+
+            const visible = getVisibleOptions();
+            if (visible.length === 0) return;
+
+            let currentIndex = visible.indexOf(getHighlightedOption());
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const nextIndex = (currentIndex + 1) % visible.length;
+                highlightOption(visible[nextIndex]);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const prevIndex = (currentIndex - 1 + visible.length) % visible.length;
+                highlightOption(visible[prevIndex]);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const currentHighlighted = getHighlightedOption();
+                if (currentHighlighted) {
+                    selectOption(currentHighlighted);
+                }
+            }
+        });
+
+        // Mouse hover syncs keyboard highlight
+        options.forEach(o => {
+            o.addEventListener('mouseenter', () => {
+                highlightOption(o);
+            });
+        });
 
         list.addEventListener('click', e => {
             const option = e.target.closest('.sms-option');
             if (!option) return;
-            const val  = option.dataset.value;
-            const text = option.textContent.trim();
-            hidden.value = val;
-            label.textContent = val ? text : placeholder;
-            if (val) {
-                label.classList.remove('text-slate-400');
-                label.classList.add('text-slate-700');
-            } else {
-                label.classList.add('text-slate-400');
-                label.classList.remove('text-slate-700');
-            }
-            markSelected(option);
-            closePanel();
-            updateApplyButtonState();
+            selectOption(option);
         });
 
-        /* Close panel when clicking outside */
+        /* Close panel and revert/validate on click outside */
         document.addEventListener('click', e => {
-            if (!dropdown.contains(e.target)) closePanel();
+            if (!dropdown.contains(e.target)) {
+                closePanel();
+                revertInvalidInput();
+            }
         });
     });
 
@@ -422,28 +541,114 @@ document.addEventListener('DOMContentLoaded', function () {
 
     updateApplyButtonState();
 
-    /* ── Course search (unchanged) ── */
+    /* ── Course search & client-side pagination ── */
     const searchInput = document.getElementById('viewSyllabusSearchInput');
     const emptyState  = document.getElementById('viewSyllabusSearchEmpty');
+    const isStructureView = document.getElementById('prevPageBtn') !== null;
 
-    if (!searchInput) return;
+    let currentPage = 1;
+    const pageSize = 100;
 
-    searchInput.addEventListener('keyup', function () {
-        const searchTerm = this.value.toLowerCase().trim();
-        const courseItems = document.querySelectorAll('.view-syllabus-course-item');
-        let visibleCount = 0;
+    function updatePagination() {
+        const rows = Array.from(document.querySelectorAll('.view-syllabus-course-item'));
+        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
-        courseItems.forEach(item => {
+        const matchedRows = rows.filter(item => {
+            if (!searchTerm) return true;
             const courseCode  = item.getAttribute('data-course-code') || '';
             const courseTitle = item.getAttribute('data-course-title') || '';
             const program     = item.getAttribute('data-program') || '';
-            const matches = courseCode.includes(searchTerm) || courseTitle.includes(searchTerm) || program.includes(searchTerm);
-            item.style.display = matches ? '' : 'none';
-            if (matches) visibleCount++;
+            return courseCode.includes(searchTerm) || 
+                   courseTitle.includes(searchTerm) || 
+                   program.includes(searchTerm);
         });
 
-        if (emptyState) emptyState.classList.toggle('hidden', visibleCount > 0);
-    });
+        const totalRecords = matchedRows.length;
+        const totalPages = Math.ceil(totalRecords / pageSize) || 1;
+
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+        if (currentPage < 1) {
+            currentPage = 1;
+        }
+
+        const startIdx = (currentPage - 1) * pageSize;
+        const endIdx = startIdx + pageSize;
+
+        // Hide all rows, show only matching rows for current page
+        rows.forEach(r => r.style.display = 'none');
+        matchedRows.slice(startIdx, endIdx).forEach(r => r.style.display = '');
+
+        // Update pagination panel elements
+        const paginatedStart = document.getElementById('paginatedStart');
+        const paginatedEnd = document.getElementById('paginatedEnd');
+        const paginatedTotal = document.getElementById('paginatedTotal');
+        const pageIndicator = document.getElementById('pageIndicator');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+
+        if (paginatedStart) paginatedStart.textContent = totalRecords === 0 ? 0 : startIdx + 1;
+        if (paginatedEnd) paginatedEnd.textContent = Math.min(endIdx, totalRecords);
+        if (paginatedTotal) paginatedTotal.textContent = totalRecords;
+        if (pageIndicator) pageIndicator.textContent = `Page ${currentPage} of ${totalPages}`;
+
+        if (prevPageBtn) prevPageBtn.disabled = currentPage === 1;
+        if (nextPageBtn) nextPageBtn.disabled = currentPage === totalPages;
+
+        if (emptyState) {
+            emptyState.classList.toggle('hidden', totalRecords > 0);
+        }
+    }
+
+    if (isStructureView) {
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+
+        if (prevPageBtn) {
+            prevPageBtn.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updatePagination();
+                }
+            });
+        }
+        if (nextPageBtn) {
+            nextPageBtn.addEventListener('click', () => {
+                currentPage++;
+                updatePagination();
+            });
+        }
+
+        updatePagination();
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                currentPage = 1;
+                updatePagination();
+            });
+        }
+    } else {
+        // Grid layout - standard card filter logic (no pagination needed)
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                const searchTerm = this.value.toLowerCase().trim();
+                const courseItems = document.querySelectorAll('.view-syllabus-course-item');
+                let visibleCount = 0;
+
+                courseItems.forEach(item => {
+                    const courseCode  = item.getAttribute('data-course-code') || '';
+                    const courseTitle = item.getAttribute('data-course-title') || '';
+                    const program     = item.getAttribute('data-program') || '';
+                    const matches = courseCode.includes(searchTerm) || courseTitle.includes(searchTerm) || program.includes(searchTerm);
+                    item.style.display = matches ? '' : 'none';
+                    if (matches) visibleCount++;
+                });
+
+                if (emptyState) emptyState.classList.toggle('hidden', visibleCount > 0);
+            });
+        }
+    }
 });
 </script>
 {% endblock %}

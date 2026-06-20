@@ -67,6 +67,39 @@ class CourseManagementSyllabusTests(TestCase):
         syllabus = CourseSyllabus.objects.get(course_code="CS101")
         self.assertFalse(syllabus.pdf)
 
+    def test_add_course_can_upload_syllabus_pdf(self):
+        """Test that adding a course can persist an uploaded syllabus PDF."""
+        url = reverse("course_management:add_course")
+        syllabus_pdf = SimpleUploadedFile(
+            "intro_cs.pdf",
+            b"%PDF-1.4 syllabus content",
+            content_type="application/pdf",
+        )
+        data = {
+            "program_id": self.program.id,
+            "course_code": "CS105",
+            "course_title": "Computer Fundamentals",
+            "year": "I",
+            "sem": "I",
+            "course_category": "Core",
+            "part": "III",
+            "hrs_per_week": "4",
+            "credit": "4",
+            "marks_cia": "25",
+            "marks_ese": "75",
+            "total_marks": "100",
+            "syllabus_pdf": syllabus_pdf,
+        }
+
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["success"])
+
+        syllabus = CourseSyllabus.objects.get(course_code="CS105")
+        self.assertTrue(syllabus.pdf)
+        self.assertIn("CS105", syllabus.pdf.name)
+        self.assertTrue(syllabus.pdf.name.endswith(".pdf"))
+
     def test_edit_course_code_syncs_syllabus_record(self):
         """Test that updating a course's code updates the syllabus record code."""
         # Create course and corresponding syllabus
@@ -335,6 +368,8 @@ class HodScopedCourseManagementTests(TestCase):
             course_title="Algebra",
             year="I",
             sem="I",
+            part="III",
+            course_category="Core",
         )
         self.physics_course = CourseStructure.objects.create(
             program=self.physics_program,
@@ -342,19 +377,42 @@ class HodScopedCourseManagementTests(TestCase):
             course_title="Mechanics",
             year="I",
             sem="I",
+            part="III",
+            course_category="Core",
         )
         self.client.force_login(self.hod_user)
 
-    def test_hod_course_management_shows_only_assigned_programs(self):
+    def test_hod_course_management_waits_for_filters_before_showing_courses(self):
         response = self.client.get(reverse("course_management:course_management"))
 
         self.assertEqual(response.status_code, 200)
-        returned_codes = [course.course_code for course in response.context["courses"].object_list]
-        self.assertIn("MATH101", returned_codes)
-        self.assertNotIn("PHYS101", returned_codes)
+        self.assertFalse(response.context["has_applied_filters"])
+        self.assertEqual(response.context["courses"].paginator.count, 0)
 
         returned_program_codes = list(response.context["programs"].values_list("prog_code", flat=True))
         self.assertEqual(returned_program_codes, ["BSCMATH"])
+
+    def test_hod_course_management_applies_rich_filters(self):
+        response = self.client.get(
+            reverse("course_management:course_management"),
+            {
+                "year": "I",
+                "prog_type": "UG",
+                "prog_category": "Science",
+                "degree": "B.Sc Mathematics",
+                "branch": "Math",
+                "program": self.math_program.id,
+                "sem": "I",
+                "part": "III",
+                "course_category": "Core",
+                "course_title": "ALG",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        returned_codes = [course.course_code for course in response.context["courses"].object_list]
+        self.assertEqual(returned_codes, ["MATH101"])
+        self.assertTrue(response.context["has_applied_filters"])
 
     def test_hod_cannot_access_course_outside_assigned_program(self):
         response = self.client.get(reverse("course_management:get_course", args=[self.physics_course.id]))

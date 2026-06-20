@@ -104,6 +104,51 @@ function resetSyllabusFileInput(fileInput, emptyState, selectedState, nameDispla
     if (emptyState) emptyState.classList.remove('hidden');
 }
 
+// Course syllabus file input handling
+function initializeCourseSyllabusFileInput() {
+    const fileInput = document.getElementById('courseSyllabusPdf');
+    const emptyState = document.getElementById('courseSyllabusFileEmptyState');
+    const selectedState = document.getElementById('courseSyllabusFileSelectedState');
+    const nameDisplay = document.getElementById('courseSyllabusFileNameDisplay');
+    const removeBtn = document.getElementById('courseSyllabusRemoveFileBtn');
+
+    if (!fileInput) return;
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
+            const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+
+            if (fileExt !== '.pdf') {
+                showToast('Please select a valid PDF file', 'error');
+                resetCourseSyllabusFileInput(fileInput, emptyState, selectedState, nameDisplay);
+                return;
+            }
+
+            if (nameDisplay) nameDisplay.textContent = file.name;
+            if (emptyState) emptyState.classList.add('hidden');
+            if (selectedState) selectedState.classList.remove('hidden');
+        } else {
+            resetCourseSyllabusFileInput(fileInput, emptyState, selectedState, nameDisplay);
+        }
+    });
+
+    if (removeBtn) {
+        removeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            resetCourseSyllabusFileInput(fileInput, emptyState, selectedState, nameDisplay);
+        });
+    }
+}
+
+function resetCourseSyllabusFileInput(fileInput, emptyState, selectedState, nameDisplay) {
+    if (fileInput) fileInput.value = '';
+    if (nameDisplay) nameDisplay.textContent = 'No file selected';
+    if (selectedState) selectedState.classList.add('hidden');
+    if (emptyState) emptyState.classList.remove('hidden');
+}
+
 const courseSearchState = {
     active: false,
     term: '',
@@ -385,16 +430,25 @@ function initializeFilterSubmitState() {
 
     if (!applyFiltersBtn || !form) return;
 
+    const hiddenInputIds = [
+        'yearValue', 'progTypeValue', 'progCategoryValue', 'degreeValue',
+        'branchValue', 'programValue', 'semValue', 'partValue',
+        'courseCategoryValue', 'courseTitleValue'
+    ];
+    const hiddenInputs = hiddenInputIds
+        .map(id => document.getElementById(id))
+        .filter(Boolean);
     const selects = Array.from(form.querySelectorAll('select'));
 
     const updateApplyButtonState = () => {
-        // Button enabled only when every select has a non-empty value
-        const allSelected = selects.length > 0 && selects.every(s => s.value && s.value !== '');
+        const controls = hiddenInputs.length > 0 ? hiddenInputs : selects;
+        const allSelected = controls.length > 0 && controls.every(control => control.value && control.value !== '');
         applyFiltersBtn.disabled = !allSelected;
     };
 
-    selects.forEach(s => s.addEventListener('change', updateApplyButtonState));
-    // initialize state
+    hiddenInputs.forEach(input => input.addEventListener('change', updateApplyButtonState));
+    selects.forEach(select => select.addEventListener('change', updateApplyButtonState));
+    window.updateApplyButtonState = updateApplyButtonState;
     updateApplyButtonState();
 }
 
@@ -413,6 +467,15 @@ function closeDrawer(drawerId) {
         drawer.classList.add('hidden');
         document.body.style.overflow = '';
         if (drawerId === 'courseDrawer') resetCourseForm();
+        if (drawerId === 'courseDrawer') {
+            const fileInput = document.getElementById('courseSyllabusPdf');
+            const emptyState = document.getElementById('courseSyllabusFileEmptyState');
+            const selectedState = document.getElementById('courseSyllabusFileSelectedState');
+            const nameDisplay = document.getElementById('courseSyllabusFileNameDisplay');
+            if (fileInput && emptyState && selectedState && nameDisplay) {
+                resetCourseSyllabusFileInput(fileInput, emptyState, selectedState, nameDisplay);
+            }
+        }
         if (drawerId === 'uploadDrawer') {
             const fileInput = document.getElementById('excelFile');
             const emptyState = document.getElementById('fileEmptyState');
@@ -876,13 +939,27 @@ function initializeClearFilters() {
     const clearBtn = document.getElementById('clearFilters');
     if (clearBtn) {
         clearBtn.addEventListener('click', function() {
-            document.querySelectorAll('#filterForm select').forEach(select => select.value = '');
+            const filterForm = document.getElementById('filterForm');
+            if (!filterForm) return;
+
+            filterForm.querySelectorAll('select').forEach(select => {
+                if (select.tomselect) {
+                    select.tomselect.setValue('');
+                } else {
+                    select.value = '';
+                }
+            });
+            filterForm.querySelectorAll('input').forEach(input => {
+                if (input.type !== 'hidden' || input.name !== 'csrfmiddlewaretoken') {
+                    input.value = '';
+                }
+            });
             const searchInput = document.getElementById('searchInput');
             if (searchInput) searchInput.value = '';
             if (courseSearchState.active) {
                 restoreCourseServerView();
             }
-            document.getElementById('filterForm').submit();
+            filterForm.submit();
         });
     }
 }
@@ -926,6 +1003,7 @@ function initializeEscapeKey() {
 document.addEventListener('DOMContentLoaded', function() {
     try { initializeFileInput(); } catch (e) { console.error('Error initializing file input:', e); }
     try { initializeSyllabusFileInput(); } catch (e) { console.error('Error initializing syllabus file input:', e); }
+    try { initializeCourseSyllabusFileInput(); } catch (e) { console.error('Error initializing course syllabus file input:', e); }
     try { initializeSearch(); } catch (e) { console.error('Error initializing search:', e); }
     try { initializeFilterSubmitState(); } catch (e) { console.error('Error initializing filter submit state:', e); }
     try { initializeDeleteButton(); } catch (e) { console.error('Error initializing delete button:', e); }

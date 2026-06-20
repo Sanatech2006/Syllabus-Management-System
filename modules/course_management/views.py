@@ -32,6 +32,17 @@ COURSE_FILTER_FIELDS = (
     "part",
 )
 
+PROGRAM_FILTER_FIELDS = (
+    "prog_type",
+    "prog_category",
+    "degree",
+)
+
+TEXT_FILTER_FIELDS = (
+    "branch",
+    "course_title",
+)
+
 COURSE_BULK_REQUIRED_COLUMNS = (
     "program_code",
     "course_code",
@@ -59,8 +70,29 @@ def _apply_course_filters(queryset, filters, exclude_field=None):
         if value and value != "__all__":
             if field == "program":
                 queryset = queryset.filter(program_id=value)
+            elif field == "part":
+                queryset = queryset.filter(part__in=_part_lookup_values(value))
             else:
                 queryset = queryset.filter(**{field: value})
+
+    for field in PROGRAM_FILTER_FIELDS:
+        if field == exclude_field:
+            continue
+        value = filters.get(field)
+        if value and value != "__all__":
+            queryset = queryset.filter(**{f"program__{field}": value})
+
+    branch = filters.get("branch")
+    if exclude_field != "branch" and branch and branch != "__all__":
+        queryset = queryset.filter(program__branch__icontains=branch)
+
+    course_title = filters.get("course_title")
+    if exclude_field != "course_title" and course_title and course_title != "__all__":
+        queryset = queryset.filter(
+            models.Q(course_code__icontains=course_title)
+            | models.Q(course_title__icontains=course_title)
+        )
+
     return queryset
 
 
@@ -68,17 +100,21 @@ def _build_course_filter_options(base_queryset, filters):
 
     option_querysets = {
         field: _apply_course_filters(base_queryset, filters, exclude_field=field)
-        for field in COURSE_FILTER_FIELDS
+        for field in (*COURSE_FILTER_FIELDS, *PROGRAM_FILTER_FIELDS, *TEXT_FILTER_FIELDS)
     }
     
     # Get programs for filter
-    programs = Program.objects.filter(
-        id__in=base_queryset.values_list('program_id', flat=True)
-    ).distinct().order_by('prog_code')
+    programs = (
+        Program.objects.filter(
+            id__in=option_querysets["program"].values_list('program_id', flat=True)
+        )
+        .distinct()
+        .order_by('prog_code')
+    )
 
     degrees = (
         Program.objects.filter(
-            id__in=base_queryset.values_list('program_id', flat=True)
+            id__in=option_querysets["degree"].values_list('program_id', flat=True)
         )
         .values_list('degree', flat=True)
         .distinct()
@@ -91,6 +127,10 @@ def _build_course_filter_options(base_queryset, filters):
         "years": _distinct_non_empty(option_querysets["year"], "year"),
         "sems": _distinct_non_empty(option_querysets["sem"], "sem"),
         "course_categories": _distinct_non_empty(option_querysets["course_category"], "course_category"),
+        "branches": _distinct_non_empty(option_querysets["branch"], "program__branch"),
+        "prog_types": _distinct_non_empty(option_querysets["prog_type"], "program__prog_type"),
+        "prog_categories": _distinct_non_empty(option_querysets["prog_category"], "program__prog_category"),
+        "all_courses_list": option_querysets["course_title"].order_by('course_code'),
         "parts": sorted({
             normalized_part
             for normalized_part in (
@@ -155,6 +195,25 @@ def _normalize_part_value(value):
         return text
 
 
+def _part_lookup_values(value):
+    normalized = _normalize_part_value(value)
+    if not normalized:
+        return []
+
+    numeric_to_roman = {
+        "1": "I",
+        "2": "II",
+        "3": "III",
+        "4": "IV",
+        "5": "V",
+    }
+    lookup_values = {str(value).strip(), normalized}
+    roman_value = numeric_to_roman.get(str(normalized))
+    if roman_value:
+        lookup_values.update({roman_value, roman_value.lower()})
+    return [item for item in lookup_values if item]
+
+
 def _get_accessible_course_queryset(user):
     if user.is_superuser:
         return CourseStructure.objects.select_related('program').all()
@@ -174,22 +233,87 @@ def _user_can_access_course(user, course):
     return course.program_id in set(get_accessible_programs(user).values_list('id', flat=True))
 
 
+def _clone_pdf_file(source_file, target_name):
+    if not source_file:
+        return None
+
+    source_file.open("rb")
+    try:
+        return ContentFile(source_file.read(), name=target_name)
+    finally:
+        source_file.close()
+
+
+def _upsert_course_syllabus(course_code, pdf_file=None):
+    syllabus, _ = CourseSyllabus.objects.get_or_create(course_code=course_code)
+    if pdf_file is not None:
+        if syllabus.pdf:
+            syllabus.pdf.delete(save=False)
+        if hasattr(pdf_file, "seek"):
+            pdf_file.seek(0)
+        syllabus.pdf.save(f"{course_code}.pdf", pdf_file, save=False)
+    syllabus.save()
+    return syllabus
+
+
+def _sync_course_syllabus_code(course, previous_course_code, uploaded_pdf=None):
+    current_course_code = course.course_code
+
+    if uploaded_pdf is not None:
+        return _upsert_course_syllabus(current_course_code, uploaded_pdf)
+
+    if not previous_course_code or previous_course_code == current_course_code:
+        return _upsert_course_syllabus(current_course_code)
+
+    previous_syllabus = CourseSyllabus.objects.filter(course_code=previous_course_code).first()
+    current_syllabus = CourseSyllabus.objects.filter(course_code=current_course_code).first()
+    other_course_uses_previous_code = CourseStructure.objects.exclude(id=course.id).filter(course_code=previous_course_code).exists()
+
+    if previous_syllabus and not other_course_uses_previous_code:
+        if current_syllabus and current_syllabus.id != previous_syllabus.id:
+            if previous_syllabus.pdf and not current_syllabus.pdf:
+                cloned_pdf = _clone_pdf_file(previous_syllabus.pdf, f"{current_course_code}.pdf")
+                if cloned_pdf is not None:
+                    current_syllabus.pdf = cloned_pdf
+                    current_syllabus.save()
+            previous_syllabus.delete()
+            return _upsert_course_syllabus(current_course_code, None)
+
+        previous_syllabus.course_code = current_course_code
+        previous_syllabus.save(update_fields=["course_code", "updated_at"])
+        return previous_syllabus
+
+    if previous_syllabus and other_course_uses_previous_code:
+        if current_syllabus is None:
+            current_syllabus = CourseSyllabus.objects.create(course_code=current_course_code)
+        if previous_syllabus.pdf and not current_syllabus.pdf:
+            cloned_pdf = _clone_pdf_file(previous_syllabus.pdf, f"{current_course_code}.pdf")
+            if cloned_pdf is not None:
+                current_syllabus.pdf = cloned_pdf
+                current_syllabus.save()
+        return current_syllabus
+
+    return _upsert_course_syllabus(current_course_code)
+
+
 @course_management_access_required
 def course_management(request):
 
     # Get pagination and per page parameters
-    per_page = int(request.GET.get('per_page', 10))
+    per_page = int(request.GET.get('per_page', 100))
     page = request.GET.get('page', 1)
     
     # Apply filters
     filters = {}
-    for field in COURSE_FILTER_FIELDS:
+    for field in (*COURSE_FILTER_FIELDS, *PROGRAM_FILTER_FIELDS, *TEXT_FILTER_FIELDS):
         value = request.GET.get(field)
         if value and value != "__all__":
             filters[field] = value
+    has_applied_filters = bool(filters)
     
     base_queryset = _get_accessible_course_queryset(request.user)
-    courses = _apply_course_filters(base_queryset, filters).annotate(
+    filtered_queryset = _apply_course_filters(base_queryset, filters) if has_applied_filters else base_queryset.none()
+    courses = filtered_queryset.annotate(
         has_syllabus_pdf=models.Exists(
             CourseSyllabus.objects.filter(
                 course_code=models.OuterRef('course_code'),
@@ -225,18 +349,18 @@ def course_management(request):
     query_params.pop('page', None)
     
     # Calculate stats - Handle cases where there are no courses
-    total_courses = courses.count()
+    total_courses = base_queryset.count()
     total_programs = _get_accessible_program_queryset(request.user).count()
     
     # Calculate average credits safely
     avg_credits = 0
     if total_courses > 0:
-        avg_credits_result = courses.aggregate(avg_credits=models.Avg('credit'))
+        avg_credits_result = base_queryset.aggregate(avg_credits=models.Avg('credit'))
         avg_credits = avg_credits_result.get('avg_credits') or 0
     
     # Count courses with syllabus
     courses_with_syllabus = CourseSyllabus.objects.filter(
-        course_code__in=courses.values_list('course_code', flat=True)
+        course_code__in=base_queryset.values_list('course_code', flat=True)
     ).count()
     
     stats = {
@@ -251,6 +375,7 @@ def course_management(request):
         "page_obj": page_obj,
         "per_page": per_page,
         "pagination_query": query_params.urlencode(),
+        "has_applied_filters": has_applied_filters,
         "all_courses_for_search": all_courses_for_search,
         **filter_options,
         **stats,
@@ -259,19 +384,109 @@ def course_management(request):
 
 @course_management_access_required
 def get_filter_options(request):
+    base_qs = _get_accessible_course_queryset(request.user)
+    filters = {
+        field: request.GET.get(field)
+        for field in (*COURSE_FILTER_FIELDS, *PROGRAM_FILTER_FIELDS, *TEXT_FILTER_FIELDS)
+    }
 
-    filters = {field: request.GET.get(field) for field in COURSE_FILTER_FIELDS}
-    queryset = _get_accessible_course_queryset(request.user)
-    options = _build_course_filter_options(queryset, filters)
-    
-    # Convert programs to dict for JSON
-    options['programs_list'] = [
-        {'id': p.id, 'code': p.prog_code, 'degree': p.degree, 'branch': p.branch}
-        for p in options['programs']
-    ]
-    del options['programs']
-    
-    return JsonResponse(options)
+    qs = base_qs
+
+    year = filters.get("year")
+    if year and year != "__all__":
+        qs = qs.filter(year=year)
+    prog_types = _distinct_non_empty(qs, "program__prog_type")
+
+    prog_type = filters.get("prog_type")
+    if prog_type and prog_type != "__all__":
+        qs = qs.filter(program__prog_type=prog_type)
+    prog_categories = _distinct_non_empty(qs, "program__prog_category")
+
+    prog_category = filters.get("prog_category")
+    if prog_category and prog_category != "__all__":
+        qs = qs.filter(program__prog_category=prog_category)
+    degrees = _distinct_non_empty(qs, "program__degree")
+
+    degree = filters.get("degree")
+    if degree and degree != "__all__":
+        qs = qs.filter(program__degree=degree)
+    branches = _distinct_non_empty(qs, "program__branch")
+
+    branch = filters.get("branch")
+    if branch and branch != "__all__":
+        qs = qs.filter(program__branch__icontains=branch)
+
+    programs_list = []
+    seen_programs = set()
+    for course in qs.select_related("program").order_by("program__prog_code"):
+        program = course.program
+        if program.id in seen_programs:
+            continue
+        seen_programs.add(program.id)
+        programs_list.append({
+            "id": program.id,
+            "code": program.prog_code,
+            "degree": program.degree,
+            "branch": program.branch,
+        })
+
+    program = filters.get("program")
+    if program and program != "__all__":
+        qs = qs.filter(program_id=program)
+    sems = _distinct_non_empty(qs, "sem")
+
+    sem = filters.get("sem")
+    if sem and sem != "__all__":
+        qs = qs.filter(sem=sem)
+    parts = sorted({
+        normalized_part
+        for normalized_part in (
+            _normalize_part_value(part_value)
+            for part_value in _distinct_non_empty(qs, "part")
+        )
+        if normalized_part
+    }, key=lambda item: int(item) if str(item).isdigit() else str(item))
+
+    part = filters.get("part")
+    if part and part != "__all__":
+        qs = qs.filter(part__in=_part_lookup_values(part))
+    course_categories = _distinct_non_empty(qs, "course_category")
+
+    course_category = filters.get("course_category")
+    if course_category and course_category != "__all__":
+        qs = qs.filter(course_category=course_category)
+
+    course_title = filters.get("course_title")
+    if course_title and course_title != "__all__":
+        qs = qs.filter(
+            models.Q(course_code__icontains=course_title)
+            | models.Q(course_title__icontains=course_title)
+        )
+
+    courses_list = []
+    seen_courses = set()
+    for course in qs.order_by("course_code"):
+        if course.course_code in seen_courses:
+            continue
+        seen_courses.add(course.course_code)
+        courses_list.append({
+            "code": course.course_code,
+            "title": course.course_title or "",
+        })
+
+    return JsonResponse({
+        "years": _distinct_non_empty(base_qs, "year"),
+        "prog_types": prog_types,
+        "prog_categories": prog_categories,
+        "degrees": degrees,
+        "branches": branches,
+        "programs": programs_list,
+        "programs_list": programs_list,
+        "sems": sems,
+        "parts": parts,
+        "course_categories": course_categories,
+        "courses": courses_list,
+    })
 
 
 @course_management_access_required
@@ -327,6 +542,7 @@ def add_course(request):
         marks_cia = request.POST.get("marks_cia", "")
         marks_ese = request.POST.get("marks_ese", "")
         total_marks = request.POST.get("total_marks", "")
+        syllabus_pdf = request.FILES.get("syllabus_pdf")
         
         # Validate required fields
         if not all([program_id, course_code, course_title, year, sem]):
@@ -360,6 +576,12 @@ def add_course(request):
             marks_ese=_parse_optional_decimal(marks_ese),
             total_marks=_parse_optional_decimal(total_marks),
         )
+
+        if syllabus_pdf is not None and not syllabus_pdf.name.lower().endswith(".pdf"):
+            course.delete()
+            return JsonResponse({'success': False, 'error': 'Please upload a PDF file.'})
+
+        _sync_course_syllabus_code(course, None, syllabus_pdf)
         
         return JsonResponse({
             'success': True,
@@ -392,6 +614,8 @@ def edit_course(request, course_id):
         marks_cia = request.POST.get("marks_cia", "")
         marks_ese = request.POST.get("marks_ese", "")
         total_marks = request.POST.get("total_marks", "")
+        syllabus_pdf = request.FILES.get("syllabus_pdf")
+        previous_course_code = course.course_code
         
         # Validate required fields
         if not all([program_id, course_code, course_title, year, sem]):
@@ -424,6 +648,11 @@ def edit_course(request, course_id):
         course.marks_ese = _parse_optional_decimal(marks_ese)
         course.total_marks = _parse_optional_decimal(total_marks)
         course.save()
+
+        if syllabus_pdf is not None and not syllabus_pdf.name.lower().endswith(".pdf"):
+            return JsonResponse({'success': False, 'error': 'Please upload a PDF file.'})
+
+        _sync_course_syllabus_code(course, previous_course_code, syllabus_pdf)
         
         return JsonResponse({'success': True, 'message': 'Course updated successfully.'})
         
@@ -439,7 +668,16 @@ def delete_course(request, course_id):
         course = get_object_or_404(CourseStructure, id=course_id)
         if not _user_can_access_course(request.user, course):
             return JsonResponse({'success': False, 'error': 'You do not have permission to delete that course.'})
+        course_code = course.course_code
         course.delete()
+
+        if not CourseStructure.objects.filter(course_code=course_code).exists():
+            syllabus = CourseSyllabus.objects.filter(course_code=course_code).first()
+            if syllabus:
+                if syllabus.pdf:
+                    syllabus.pdf.delete(save=False)
+                syllabus.delete()
+
         return JsonResponse({'success': True, 'message': 'Course deleted successfully.'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
