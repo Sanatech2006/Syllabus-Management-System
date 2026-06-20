@@ -49,12 +49,17 @@ def _apply_program_filters(queryset, filters, exclude_field=None):
         if field == exclude_field:
             continue
         value = filters.get(field)
-        if value:
+        if value and value != "__all__":
             queryset = queryset.filter(**{field: value})
     return queryset
 
 
 def _build_program_filter_options(base_queryset, filters):
+    filters = {
+        field: value
+        for field, value in filters.items()
+        if value and value != "__all__"
+    }
     option_querysets = {
         field: _apply_program_filters(base_queryset, filters, exclude_field=field)
         for field in PROGRAM_FILTER_FIELDS
@@ -77,8 +82,9 @@ def program_management(request):
     
     # Apply filters
     filters = {field: request.GET.get(field) for field in PROGRAM_FILTER_FIELDS}
+    has_applied_filters = all(filters.get(field) for field in PROGRAM_FILTER_FIELDS)
     base_queryset = Program.objects.filter(is_active=True)
-    programs = _apply_program_filters(base_queryset, filters)
+    programs = _apply_program_filters(base_queryset, filters) if has_applied_filters else base_queryset.none()
     
     # Get filter options for dropdowns
     filter_options = _build_program_filter_options(base_queryset, filters)
@@ -115,6 +121,7 @@ def program_management(request):
         "per_page": per_page,
         "pagination_query": query_params.urlencode(),
         "all_programs_for_search": all_programs_for_search,
+        "has_applied_filters": has_applied_filters,
         **filter_options,
         **stats,
     }

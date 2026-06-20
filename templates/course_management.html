@@ -46,6 +46,12 @@
     .sms-panel {
         z-index: 9999;
     }
+    #filterForm .sms-trigger {
+        cursor: text !important;
+    }
+    #filterForm .sms-trigger:disabled {
+        cursor: not-allowed !important;
+    }
 </style>
 {% endblock %}
 
@@ -1202,12 +1208,12 @@
                 trigger.disabled = !enabled;
                 if (!enabled) {
                     trigger.classList.add('bg-slate-100', 'cursor-not-allowed');
-                    trigger.classList.remove('bg-white', 'cursor-pointer');
+                    trigger.classList.remove('bg-white', 'cursor-pointer', 'cursor-text');
                     hidden.value = '';
                     trigger.value = '';
                 } else {
                     trigger.classList.remove('bg-slate-100', 'cursor-not-allowed');
-                    trigger.classList.add('bg-white', 'cursor-pointer');
+                    trigger.classList.add('bg-white', 'cursor-text');
                 }
             };
         });

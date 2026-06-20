@@ -39,6 +39,19 @@
         position: relative;
         z-index: 10;
     }
+    .sms-dropdown,
+    .sms-panel {
+        overflow: visible;
+    }
+    .sms-panel {
+        z-index: 9999;
+    }
+    #filterForm .sms-trigger {
+        cursor: text !important;
+    }
+    #filterForm .sms-trigger:disabled {
+        cursor: not-allowed !important;
+    }
 </style>
 {% endblock %}
 
@@ -165,7 +178,7 @@
     </div>
 
     <!-- Filter Card -->
-    <div class="mx-auto bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+    <div class="mx-auto bg-white rounded-xl border border-slate-200 shadow-sm mb-8 relative z-30 overflow-visible">
         <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
             <h2 class="text-base font-semibold text-slate-900 flex items-center gap-2">
                 <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -174,63 +187,140 @@
                 Filter Programs
             </h2>
         </div>
-        <div class="p-6">
+        <div class="p-6 overflow-visible">
             <form method="get" id="filterForm" class="space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-6">
+                <input type="hidden" id="progTypeValue" name="prog_type" value="{{ request.GET.prog_type|default:'' }}">
+                <input type="hidden" id="progCategoryValue" name="prog_category" value="{{ request.GET.prog_category|default:'' }}">
+                <input type="hidden" id="degreeValue" name="degree" value="{{ request.GET.degree|default:'' }}">
+                <input type="hidden" id="branchValue" name="branch" value="{{ request.GET.branch|default:'' }}">
+                <input type="hidden" id="progCodeValue" name="prog_code" value="{{ request.GET.prog_code|default:'' }}">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-6 overflow-visible">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program Type</label>
-                        <select name="prog_type" id="prog_type" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="">All Types</option>
-                            {% for prog_type in prog_types %}
-                            <option value="{{ prog_type }}" {% if request.GET.prog_type == prog_type %}selected{% endif %}>{{ prog_type }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="sms-dropdown relative" id="progTypeDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Type" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Type</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Types</li>
+                                    {% for prog_type in prog_types %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ prog_type }}">{{ prog_type }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program Category</label>
-                        <select name="prog_category" id="prog_category" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="">All Categories</option>
-                            {% for prog_category in prog_categories %}
-                            <option value="{{ prog_category }}" {% if request.GET.prog_category == prog_category %}selected{% endif %}>{{ prog_category }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="sms-dropdown relative" id="progCategoryDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Category" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Category</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Categories</li>
+                                    {% for prog_category in prog_categories %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ prog_category }}">{{ prog_category }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Degree</label>
-                        <select name="degree" id="degree" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="">All Degrees</option>
-                            {% for degree in degrees %}
-                            <option value="{{ degree }}" {% if request.GET.degree == degree %}selected{% endif %}>{{ degree }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="sms-dropdown relative" id="degreeDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Degree" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Degree</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Degrees</li>
+                                    {% for degree in degrees %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ degree }}">{{ degree }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Branch</label>
-                        <select name="branch" id="branch" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="">All Branches</option>
-                            {% for branch in branches %}
-                            <option value="{{ branch }}" {% if request.GET.branch == branch %}selected{% endif %}>{{ branch }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="sms-dropdown relative" id="branchDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Branch" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Branch</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Branches</li>
+                                    {% for branch in branches %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ branch }}">{{ branch }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program Code</label>
-                        <select name="prog_code" id="prog_code" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white">
-                            <option value="">All Codes</option>
-                            {% for prog_code in prog_codes %}
-                            <option value="{{ prog_code }}" {% if request.GET.prog_code == prog_code %}selected{% endif %}>{{ prog_code }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="sms-dropdown relative" id="progCodeDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Code" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Code</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Codes</li>
+                                    {% for prog_code in prog_codes %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ prog_code }}">{{ prog_code }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="flex justify-end gap-5">
                     <button type="button" id="clearFilters" class="px-4 py-2 w-[150px] border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition">Clear All</button>
-                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">Apply Filters</button>
+                    <button type="submit" id="programApplyFiltersBtn" disabled class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed disabled:hover:bg-slate-300">Apply Filters</button>
                 </div>
             </form>
         </div>
     </div>
 
+    {% if page_obj.paginator.count %}
     <!-- Programs Table -->
     <div class="mx-auto bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-100 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -350,6 +440,22 @@
             </div>
         </div>
     </div>
+    {% else %}
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center mb-8">
+        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+        </div>
+        {% if has_applied_filters %}
+        <h3 class="mt-4 text-lg font-bold text-slate-900">No programs found</h3>
+        <p class="mt-2 text-sm text-slate-500">No program records match your filters. Try adjusting your filter criteria.</p>
+        {% else %}
+        <h3 class="mt-4 text-lg font-bold text-slate-900">Apply filters to view records</h3>
+        <p class="mt-2 text-sm text-slate-500">Choose all filters and click Apply Filters to display program records.</p>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 
 {{ all_programs_for_search|json_script:"program-search-data" }}
