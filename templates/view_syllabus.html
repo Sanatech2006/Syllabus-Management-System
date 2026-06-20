@@ -158,7 +158,7 @@
     <div class="mx-auto">
         {% if courses %}
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-5">
-            <div class="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100">
+            <div class="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100">
                 <div class="flex items-center gap-2.5">
                     <h2 class="text-base font-semibold text-slate-900">Filtered Courses</h2>
                     <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600">
@@ -172,9 +172,7 @@
                     </svg>
                 </div>
             </div>
-        </div>
-        {% if selected_view_mode == "structure" %}
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            {% if selected_view_mode == "structure" %}
             <div class="overflow-x-auto overflow-y-auto max-h-[600px]">
                 <table class="w-full text-sm text-left">
                     <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200 sticky top-0 z-10 shadow-sm">
@@ -243,54 +241,50 @@
                     </div>
                 </div>
             </div>
-        </div>
-        {% else %}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {% for course in courses %}
-            <div class="view-syllabus-course-item bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group" data-course-code="{{ course.course_code|lower }}" data-course-title="{{ course.course_title|lower }}" data-program="{{ course.program.prog_code|lower }}">
-                <div class="p-5">
-                    <div class="flex items-start justify-between mb-3">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg">{{ course.program.prog_code }}</span>
-                                <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-lg">Year {{ course.year }}</span>
-                                <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-lg">Sem {{ course.sem }}</span>
-                            </div>
-                            <h3 class="text-lg font-bold text-slate-900 font-mono mb-1">{{ course.course_code }}</h3>
-                            <p class="text-sm text-slate-600">{{ course.course_title }}</p>
+            {% else %}
+            <div class="divide-y divide-slate-100">
+                {% for course in courses %}
+                <div class="view-syllabus-course-item flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 py-5 hover:bg-slate-50 transition-colors" data-course-code="{{ course.course_code|lower }}" data-course-title="{{ course.course_title|lower }}" data-program="{{ course.program.prog_code|lower }}">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg">{{ course.program.prog_code }}</span>
+                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-lg">Year {{ course.year }}</span>
+                            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-lg">Sem {{ course.sem }}</span>
+                            {% if course.course_category %}
+                            <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg">{{ course.course_category }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="flex flex-wrap items-baseline gap-3">
+                            <span class="font-mono font-bold text-blue-600 text-base">{{ course.course_code }}</span>
+                            <span class="text-sm text-slate-700">{{ course.course_title }}</span>
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">
+                            {{ course.program.degree }} &mdash; {{ course.program.branch }}
+                            {% if course.credit %}&nbsp;&bull;&nbsp;Credits: <span class="font-semibold text-slate-700">{{ course.credit|floatformat:-2 }}</span>{% endif %}
                         </div>
                     </div>
-                    
-                    <div class="mt-4 pt-3 border-t border-slate-100">
-                        <div class="flex items-center justify-between">
-                            <div class="text-xs text-slate-500">
-                                <div>Credits: <span class="font-semibold text-slate-700">{{ course.credit|floatformat:-2|default:"N/A" }}</span></div>
-                                <div>Category: <span class="font-semibold text-slate-700">{{ course.course_category|default:"N/A" }}</span></div>
-                            </div>
-                            <div class="flex flex-wrap justify-end gap-2">
-                                <a href="{% url 'view_syllabus:view_syllabus_pdf' course.id %}" target="_blank"
-                                   class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition text-sm font-medium">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                    View Syllabus
-                                </a>
-                                <a href="{% url 'view_syllabus:download_syllabus' course.id %}" 
-                                   class="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition text-sm font-medium">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                                    </svg>
-                                    Download Syllabus
-                                </a>
-                            </div>
-                        </div>
+                    <div class="flex flex-shrink-0 items-center gap-2">
+                        <a href="{% url 'view_syllabus:view_syllabus_pdf' course.id %}" target="_blank"
+                           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition text-sm font-medium whitespace-nowrap">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            View Syllabus
+                        </a>
+                        <a href="{% url 'view_syllabus:download_syllabus' course.id %}"
+                           class="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition text-sm font-medium whitespace-nowrap">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                            </svg>
+                            Download Syllabus
+                        </a>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+            {% endif %}
         </div>
-        {% endif %}
         <div id="viewSyllabusSearchEmpty" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center mt-5">
             <h3 class="text-lg font-bold text-slate-900">No matching courses</h3>
             <p class="mt-2 text-sm text-slate-500">Your search only checks the filtered courses currently shown.</p>

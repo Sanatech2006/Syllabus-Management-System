@@ -309,7 +309,7 @@ def course_management(request):
         value = request.GET.get(field)
         if value and value != "__all__":
             filters[field] = value
-    has_applied_filters = bool(filters)
+    has_applied_filters = bool(request.GET.get('year'))
     
     base_queryset = _get_accessible_course_queryset(request.user)
     filtered_queryset = _apply_course_filters(base_queryset, filters) if has_applied_filters else base_queryset.none()
