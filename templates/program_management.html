@@ -209,7 +209,6 @@
                             </div>
                             <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
                                 <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Type</li>
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Types</li>
                                     {% for prog_type in prog_types %}
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ prog_type }}">{{ prog_type }}</li>
@@ -232,7 +231,6 @@
                             </div>
                             <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
                                 <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Category</li>
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Categories</li>
                                     {% for prog_category in prog_categories %}
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ prog_category }}">{{ prog_category }}</li>
@@ -255,7 +253,6 @@
                             </div>
                             <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
                                 <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Degree</li>
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Degrees</li>
                                     {% for degree in degrees %}
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ degree }}">{{ degree }}</li>
@@ -278,7 +275,6 @@
                             </div>
                             <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
                                 <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Branch</li>
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Branches</li>
                                     {% for branch in branches %}
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ branch }}">{{ branch }}</li>
@@ -338,17 +334,17 @@
             </div>
         </div>
         
-        <div class="overflow-x-auto">
+        <div class="overflow-auto relative h-[65vh]">
             <table class="w-full min-w-full border-collapse text-left text-sm">
                 <thead class="bg-slate-50/90 border-y border-slate-200">
                     <tr class="text-center text-xs uppercase tracking-wider text-slate-700 font-bold">
-                        <th class="px-6 py-4 w-12 whitespace-nowrap">#</th>
-                        <th class="px-6 py-4 whitespace-nowrap">Program Type</th>
-                        <th class="px-6 py-4 whitespace-nowrap">Category</th>
-                        <th class="px-6 py-4 whitespace-nowrap">Degree</th>
-                        <th class="px-6 py-4 whitespace-nowrap">Branch</th>
-                        <th class="px-6 py-4 whitespace-nowrap">Program Code</th>
-                        <th class="px-6 py-4 text-center whitespace-nowrap">Actions</th>
+                        <th class="sticky top-0 z-30 bg-slate-50/90 px-6 py-4 w-12 whitespace-nowrap">#</th>
+                        <th class="sticky top-0 z-30 bg-slate-50/90 px-6 py-4 whitespace-nowrap">Program Type</th>
+                        <th class="sticky top-0 z-30 bg-slate-50/90 px-6 py-4 whitespace-nowrap">Category</th>
+                        <th class="sticky top-0 z-30 bg-slate-50/90 px-6 py-4 whitespace-nowrap">Degree</th>
+                        <th class="sticky top-0 z-30 bg-slate-50/90 px-6 py-4 whitespace-nowrap">Branch</th>
+                        <th class="sticky top-0 z-30 bg-slate-50/90 px-6 py-4 whitespace-nowrap">Program Code</th>
+                        <th class="sticky top-0 z-30 bg-slate-50/90 px-6 py-4 text-center whitespace-nowrap">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="programTableBody" class="divide-y divide-slate-100 bg-white">

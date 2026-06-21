@@ -414,6 +414,28 @@ class HodScopedCourseManagementTests(TestCase):
         self.assertEqual(returned_codes, ["MATH101"])
         self.assertTrue(response.context["has_applied_filters"])
 
+    def test_hod_course_management_shows_all_courses_when_all_filters_selected(self):
+        response = self.client.get(
+            reverse("course_management:course_management"),
+            {
+                "year": "__all__",
+                "prog_type": "__all__",
+                "prog_category": "__all__",
+                "degree": "__all__",
+                "branch": "__all__",
+                "program": "__all__",
+                "sem": "__all__",
+                "part": "__all__",
+                "course_category": "__all__",
+                "course_title": "__all__",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        returned_codes = [course.course_code for course in response.context["courses"].object_list]
+        self.assertEqual(returned_codes, ["MATH101"])
+        self.assertTrue(response.context["has_applied_filters"])
+
     def test_hod_cannot_access_course_outside_assigned_program(self):
         response = self.client.get(reverse("course_management:get_course", args=[self.physics_course.id]))
 

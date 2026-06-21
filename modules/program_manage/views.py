@@ -77,7 +77,7 @@ def _build_program_filter_options(base_queryset, filters):
 def program_management(request):
     
     # Get pagination and per page parameters
-    per_page = int(request.GET.get('per_page', 10))
+    per_page = int(request.GET.get('per_page', 100))
     page = request.GET.get('page', 1)
     
     # Apply filters

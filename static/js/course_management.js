@@ -224,10 +224,10 @@ function buildCourseRow(course, displayNumber) {
             <td class="px-6 py-4 text-center font-mono font-bold text-blue-600">${courseCode}</td>
             <td class="px-6 py-4 text-center text-slate-700">${courseTitle}</td>
             <td class="px-6 py-4 text-center">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">Year ${year}</span>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">${year}</span>
             </td>
             <td class="px-6 py-4 text-center">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">Sem ${sem}</span>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">${sem}</span>
             </td>
             <td class="px-6 py-4 text-center font-semibold">${credit}</td>
             <td class="px-6 py-4 text-center">

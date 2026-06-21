@@ -68,6 +68,23 @@ class ViewSyllabusScopeTests(TestCase):
         self.assertIn("MATH101", returned_codes)
         self.assertNotIn("PHYS101", returned_codes)
 
+    def test_hod_view_syllabus_shows_all_courses_when_all_selected(self):
+        response = self.client.get(
+            reverse("view_syllabus:view_syllabus"),
+            {
+                "program": "__all__",
+                "year": "__all__",
+                "sem": "__all__",
+                "view_mode": "structure",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        returned_codes = [course.course_code for course in response.context["courses"]]
+        self.assertIn("MATH101", returned_codes)
+        self.assertIn("PHYS101", returned_codes)
+        self.assertTrue(response.context["has_applied_filters"])
+
     def test_get_filter_options_returns_all_initially(self):
         response = self.client.get(reverse("view_syllabus:get_filter_options"))
         self.assertEqual(response.status_code, 200)

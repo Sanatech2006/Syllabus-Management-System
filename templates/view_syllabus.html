@@ -53,7 +53,7 @@
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Year</label>
                         <div class="sms-dropdown relative" id="yearDropdown">
                             <div class="relative w-full">
-                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="Select Year" autocomplete="off">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="Select" autocomplete="off">
                                 <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
                                     <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -62,10 +62,10 @@
                             </div>
                             <div class="sms-panel hidden absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
                                 <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Year</li>
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Years</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All</li>
                                     {% for y in years %}
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ y }}">Year {{ y }}</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ y }}">{{ y }}</li>
                                     {% endfor %}
                                 </ul>
                                 <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
@@ -103,7 +103,7 @@
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Semester</label>
                         <div class="sms-dropdown relative" id="semDropdown">
                             <div class="relative w-full">
-                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="Select Semester" autocomplete="off">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="Select" autocomplete="off">
                                 <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
                                     <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -112,10 +112,10 @@
                             </div>
                             <div class="sms-panel hidden absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
                                 <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Semester</li>
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Semesters</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All</li>
                                     {% for s in sems %}
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ s }}">Semester {{ s }}</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ s }}">{{ s }}</li>
                                     {% endfor %}
                                 </ul>
                                 <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
@@ -173,23 +173,23 @@
                 </div>
             </div>
             {% if selected_view_mode == "structure" %}
-            <div class="overflow-x-auto overflow-y-auto max-h-[600px]">
+            <div class="overflow-auto relative h-[600px]">
                 <table class="w-full text-sm text-left">
-                    <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
                         <tr>
-                            <th class="px-6 py-4 text-center">#</th>
-                            <th class="px-6 py-4 text-center">Program</th>
-                            <th class="px-6 py-4 text-center">Course Code</th>
-                            <th class="px-6 py-4 text-center">Course Title</th>
-                            <th class="px-6 py-4 text-center">Year</th>
-                            <th class="px-6 py-4 text-center">Sem</th>
-                            <th class="px-6 py-4 text-center">Category</th>
-                            <th class="px-6 py-4 text-center">Part</th>
-                            <th class="px-6 py-4 text-center">Hrs/Week</th>
-                            <th class="px-6 py-4 text-center">Credit</th>
-                            <th class="px-6 py-4 text-center">CIA</th>
-                            <th class="px-6 py-4 text-center">ESE</th>
-                            <th class="px-6 py-4 text-center">Total</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">#</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Program</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Course Code</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Course Title</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Year</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Sem</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Category</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Part</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Hrs/Week</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Credit</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">CIA</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">ESE</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Total</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
@@ -203,10 +203,10 @@
                             <td class="px-6 py-4 text-center font-mono font-bold text-blue-600">{{ course.course_code }}</td>
                             <td class="px-6 py-4 text-center text-slate-700">{{ course.course_title|truncatechars:40 }}</td>
                             <td class="px-6 py-4 text-center">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">Year {{ course.year }}</span>
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">{{ course.year }}</span>
                             </td>
                             <td class="px-6 py-4 text-center">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">Sem {{ course.sem }}</span>
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">{{ course.sem }}</span>
                             </td>
                             <td class="px-6 py-4 text-center text-slate-700">{{ course.course_category|default:"-" }}</td>
                             <td class="px-6 py-4 text-center text-slate-700">{{ course.part|default:"-" }}</td>
@@ -248,8 +248,8 @@
                     <div class="flex-1 min-w-0">
                         <div class="flex flex-wrap items-center gap-2 mb-2">
                             <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg">{{ course.program.prog_code }}</span>
-                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-lg">Year {{ course.year }}</span>
-                            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-lg">Sem {{ course.sem }}</span>
+                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-lg">{{ course.year }}</span>
+                            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-lg">{{ course.sem }}</span>
                             {% if course.course_category %}
                             <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg">{{ course.course_category }}</span>
                             {% endif %}
@@ -314,9 +314,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /* ── Searchable dropdown setup ── */
     const dropdownSequence = [
-        { id: 'yearDropdown',     valueId: 'yearValue',     placeholder: 'Select Year',      allText: 'All Years' },
+        { id: 'yearDropdown',     valueId: 'yearValue',     placeholder: 'Select',          allText: 'All' },
         { id: 'programDropdown',  valueId: 'programValue',  placeholder: 'Select Program',   allText: 'All Programs' },
-        { id: 'semDropdown',      valueId: 'semValue',      placeholder: 'Select Semester',  allText: 'All Semesters' }
+        { id: 'semDropdown',      valueId: 'semValue',      placeholder: 'Select',          allText: 'All' }
     ];
     
     const allDropdownConfigs = [
@@ -563,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 } else {
                     val = String(item);
-                    text = (placeholderText.toLowerCase().includes('year')) ? `Year ${item}` : ((placeholderText.toLowerCase().includes('semester')) ? `Semester ${item}` : String(item));
+                    text = String(item);
                 }
                 
                 li.dataset.value = val;
@@ -620,9 +620,9 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(res => res.json())
             .then(data => {
                 const keysMap = {
-                    'yearDropdown':    { list: data.years,    placeholder: 'Select Year',     all: 'All Years' },
+                    'yearDropdown':    { list: data.years,    placeholder: 'Select',          all: 'All' },
                     'programDropdown': { list: data.programs, placeholder: 'Select Program',  all: 'All Programs' },
-                    'semDropdown':     { list: data.sems,     placeholder: 'Select Semester', all: 'All Semesters' }
+                    'semDropdown':     { list: data.sems,     placeholder: 'Select',          all: 'All' }
                 };
                 
                 dropdownSequence.forEach(item => {

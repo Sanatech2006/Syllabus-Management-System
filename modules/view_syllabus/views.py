@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.db import models
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 
 # Import models from other apps
 from modules.program_manage.models import Program
@@ -16,7 +17,9 @@ def view_syllabus(request):
     year = request.GET.get('year')
     sem = request.GET.get('sem')
     view_mode = request.GET.get('view_mode', 'structure')
-    has_applied_filters = bool(request.GET)
+    per_page = int(request.GET.get('per_page', 100))
+    page = request.GET.get('page', 1)
+    has_applied_filters = any(key in request.GET for key in ('program', 'year', 'sem', 'view_mode'))
     
     if view_mode not in ('structure', 'syllabus'):
         view_mode = 'syllabus'
@@ -49,6 +52,9 @@ def view_syllabus(request):
         filtered_courses = filtered_courses.order_by('program__prog_code', 'year', 'sem', 'course_code')
     else:
         filtered_courses = CourseStructure.objects.none()
+
+    paginator = Paginator(filtered_courses, per_page)
+    page_obj = paginator.get_page(page)
     
     # Get filter options
     programs = Program.objects.filter(is_active=True).order_by('prog_code')
@@ -70,10 +76,12 @@ def view_syllabus(request):
     )
     
     context = {
-        'courses': filtered_courses,
+        'courses': page_obj,
+        'page_obj': page_obj,
         'programs': programs,
         'years': years,
         'sems': sems,
+        'per_page': per_page,
         'selected_program': program_id,
         'selected_year': year,
         'selected_sem': sem,
@@ -81,6 +89,10 @@ def view_syllabus(request):
         'has_applied_filters': has_applied_filters,
         'total_courses': filtered_courses.count(),
     }
+    query_params = request.GET.copy()
+    query_params.pop('page', None)
+    query_params.pop('per_page', None)
+    context['pagination_query'] = query_params.urlencode()
     
     return render(request, 'view_syllabus.html', context)
 
