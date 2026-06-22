@@ -847,16 +847,27 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
-                    <div class="min-w-0">
+                    <div class="min-w-0 flex-1">
                         <h3 id="uploadResultTitle" class="text-base font-bold text-slate-900">Upload Status</h3>
                         <p id="uploadResultMessage" class="text-sm text-slate-500 mt-1"></p>
                     </div>
+                    <button type="button" id="uploadResultDismiss"
+                        onclick="document.getElementById('uploadResultContainer').classList.add('hidden')"
+                        class="ml-auto p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition flex-shrink-0" title="Dismiss">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="grid grid-cols-3 gap-3">
                     <div class="rounded-xl border border-emerald-100 bg-emerald-50/80 p-4 text-center">
-                        <div class="text-xs font-bold uppercase tracking-wide text-emerald-700">Success</div>
+                        <div class="text-xs font-bold uppercase tracking-wide text-emerald-700">Imported</div>
                         <div id="uploadSuccessCount" class="mt-1 text-3xl font-black text-emerald-700">0</div>
+                    </div>
+                    <div class="rounded-xl border border-amber-100 bg-amber-50/80 p-4 text-center">
+                        <div class="text-xs font-bold uppercase tracking-wide text-amber-700">Skipped</div>
+                        <div id="uploadSkippedCount" class="mt-1 text-3xl font-black text-amber-700">0</div>
                     </div>
                     <div class="rounded-xl border border-rose-100 bg-rose-50/80 p-4 text-center">
                         <div class="text-xs font-bold uppercase tracking-wide text-rose-700">Errors</div>
@@ -864,9 +875,50 @@
                     </div>
                 </div>
 
+                <!-- Skipped (duplicates) section -->
+                <div id="uploadSkippedListContainer" class="hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-xs font-bold uppercase tracking-wide text-amber-600">Already exists — skipped</p>
+                        <span id="uploadSkippedPagerInfo" class="text-xs text-slate-500"></span>
+                    </div>
+                    <div id="uploadSkippedList" class="max-h-40 overflow-y-auto rounded-xl border border-amber-100 bg-amber-50/50 p-3 space-y-1 text-xs font-mono text-amber-700"></div>
+                    <div class="flex justify-end gap-2 mt-2">
+                        <button type="button" id="uploadSkippedPrevBtn" onclick="uploadListPage('skipped', -1)"
+                            class="text-xs px-3 py-1 rounded border border-amber-200 text-amber-700 hover:bg-amber-50 disabled:opacity-40" disabled>← Prev</button>
+                        <button type="button" id="uploadSkippedNextBtn" onclick="uploadListPage('skipped', 1)"
+                            class="text-xs px-3 py-1 rounded border border-amber-200 text-amber-700 hover:bg-amber-50 disabled:opacity-40" disabled>Next →</button>
+                    </div>
+                </div>
+
+                <!-- Error category breakdown -->
+                <div id="uploadErrorSummaryContainer" class="hidden">
+                    <p class="text-xs font-bold uppercase tracking-wide text-rose-600 mb-2">Error breakdown by type</p>
+                    <div id="uploadErrorSummary" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- Paginated error detail list -->
                 <div id="uploadErrorsListContainer" class="hidden">
-                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500 mb-2">Error details (first 10):</p>
-                    <div id="uploadErrorsList" class="max-h-48 overflow-y-auto rounded-xl border border-rose-100 bg-rose-50/50 p-4 space-y-2 text-sm font-mono text-rose-700"></div>
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Error details</p>
+                        <div class="flex items-center gap-3">
+                            <span id="uploadErrorsPagerInfo" class="text-xs text-slate-500"></span>
+                            <button type="button" id="uploadErrorsDownloadBtn"
+                                onclick="downloadUploadErrorReport()"
+                                class="text-xs px-3 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 font-medium flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                                </svg>
+                                Download report
+                            </button>
+                        </div>
+                    </div>
+                    <div id="uploadErrorsList" class="max-h-52 overflow-y-auto rounded-xl border border-rose-100 bg-rose-50/50 p-3 space-y-1 text-xs font-mono text-rose-700"></div>
+                    <div class="flex justify-end gap-2 mt-2">
+                        <button type="button" id="uploadErrorsPrevBtn" onclick="uploadListPage('errors', -1)"
+                            class="text-xs px-3 py-1 rounded border border-rose-200 text-rose-700 hover:bg-rose-50 disabled:opacity-40" disabled>← Prev</button>
+                        <button type="button" id="uploadErrorsNextBtn" onclick="uploadListPage('errors', 1)"
+                            class="text-xs px-3 py-1 rounded border border-rose-200 text-rose-700 hover:bg-rose-50 disabled:opacity-40" disabled>Next →</button>
+                    </div>
                 </div>
             </div>
         </div>

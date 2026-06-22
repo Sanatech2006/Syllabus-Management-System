@@ -776,9 +776,12 @@ function resetUploadFeedback() {
     const resultMessage = document.getElementById('uploadResultMessage');
     const resultIcon = document.getElementById('uploadResultIcon');
     const successCount = document.getElementById('uploadSuccessCount');
+    const skippedCount = document.getElementById('uploadSkippedCount');
     const errorCount = document.getElementById('uploadErrorCount');
     const errorsListContainer = document.getElementById('uploadErrorsListContainer');
     const errorsList = document.getElementById('uploadErrorsList');
+    const skippedListContainer = document.getElementById('uploadSkippedListContainer');
+    const skippedList = document.getElementById('uploadSkippedList');
 
     if (progressContainer) progressContainer.classList.add('hidden');
     if (progressText) progressText.innerText = 'Importing records...';
@@ -789,9 +792,12 @@ function resetUploadFeedback() {
     if (resultMessage) resultMessage.innerText = '';
     if (resultIcon) resultIcon.className = 'p-2 rounded-lg';
     if (successCount) successCount.innerText = '0';
+    if (skippedCount) skippedCount.innerText = '0';
     if (errorCount) errorCount.innerText = '0';
     if (errorsListContainer) errorsListContainer.classList.add('hidden');
     if (errorsList) errorsList.innerHTML = '';
+    if (skippedListContainer) skippedListContainer.classList.add('hidden');
+    if (skippedList) skippedList.innerHTML = '';
 }
 
 function updateUploadProgress(percent) {
@@ -813,10 +819,15 @@ function showUploadResult(data, isSuccess) {
     const resultMessage = document.getElementById('uploadResultMessage');
     const resultIcon = document.getElementById('uploadResultIcon');
     const successCount = document.getElementById('uploadSuccessCount');
+    const skippedCount = document.getElementById('uploadSkippedCount');
     const errorCount = document.getElementById('uploadErrorCount');
     const errorsListContainer = document.getElementById('uploadErrorsListContainer');
     const errorsList = document.getElementById('uploadErrorsList');
+    const skippedListContainer = document.getElementById('uploadSkippedListContainer');
+    const skippedList = document.getElementById('uploadSkippedList');
     const createdCount = Number(data?.created || 0);
+    const skipped = Number(data?.skipped || 0);
+    const skippedDetails = Array.isArray(data?.skipped_details) ? data.skipped_details : [];
     const errors = Array.isArray(data?.errors) ? data.errors : [];
     const message = data?.message || data?.error || '';
 
@@ -831,7 +842,17 @@ function showUploadResult(data, isSuccess) {
             : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86l-8.1 14.04A2 2 0 003.92 21h16.16a2 2 0 001.73-3.1l-8.1-14.04a2 2 0 00-3.46 0z"/></svg>';
     }
     if (successCount) successCount.innerText = String(createdCount);
+    if (skippedCount) skippedCount.innerText = String(skipped);
     if (errorCount) errorCount.innerText = String(errors.length);
+
+    // Skipped (duplicate) details panel
+    if (skippedListContainer) skippedListContainer.classList.toggle('hidden', skippedDetails.length === 0);
+    if (skippedList) {
+        skippedList.innerHTML = skippedDetails.length
+            ? skippedDetails.map(msg => `<div class="text-amber-700 whitespace-pre-wrap">${msg}</div>`).join('')
+            : '';
+    }
+
     if (errorsListContainer) errorsListContainer.classList.toggle('hidden', errors.length === 0);
     if (errorsList) {
         errorsList.innerHTML = errors.length
@@ -911,8 +932,18 @@ function initializeUploadForm() {
                 if (data.success) {
                     updateUploadProgress(100);
                     showUploadResult(data, true);
-                    showToast(data.message || 'Courses imported successfully!');
-                    setTimeout(() => location.reload(), 2500);
+                    const createdCount = Number(data?.created || 0);
+                    const skippedCount = Number(data?.skipped || 0);
+                    if (createdCount > 0) {
+                        showToast(data.message || 'Courses imported successfully!');
+                        // Only auto-reload if there are no skipped/duplicate notices to show
+                        if (skippedCount === 0) {
+                            setTimeout(() => location.reload(), 2500);
+                        }
+                    } else {
+                        // Only skips, no new rows — no reload needed
+                        showToast(data.message || 'No new courses were imported.', 'warning');
+                    }
                 } else {
                     showUploadResult(data, false);
                     showToast(data.error || 'Error uploading file', 'error');

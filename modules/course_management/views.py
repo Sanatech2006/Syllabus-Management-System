@@ -782,8 +782,17 @@ def upload_courses_excel(request):
             })
         
         created_courses = []
-        errors = []
-        
+        skipped_courses = []  # duplicate course codes — not real errors
+
+        # Categorised error buckets
+        cat_missing_fields   = []   # required field blank
+        cat_code_too_long    = []   # course_code > max_length
+        cat_program_missing  = []   # program code not found in DB
+        cat_no_permission    = []   # user lacks access to that program
+        cat_create_failed    = []   # unexpected DB / validation error on create
+
+        COURSE_CODE_MAX_LENGTH = 20  # matches CourseStructure.course_code max_length
+
         total_rows = len(df)
         if upload_id:
             set_upload_progress(upload_id, 0, total_rows, status="processing")
@@ -805,28 +814,57 @@ def upload_courses_excel(request):
             marks_cia = _parse_optional_decimal(row.get('marks_cia'))
             marks_ese = _parse_optional_decimal(row.get('marks_ese'))
             total_marks = _parse_optional_decimal(row.get('total_marks'))
-            
-            # Validate required fields
-            if not all([program_code, course_code, course_title, year, sem]):
-                errors.append(f'Row {index + 2}: Program Code, Course Code, Course Title, Year, and Semester are required')
+
+            row_label = f'Row {index + 2}'
+
+            # --- Validate required fields ---
+            missing = []
+            if not program_code: missing.append('Program Code')
+            if not course_code:  missing.append('Course Code')
+            if not course_title: missing.append('Course Title')
+            if not year:         missing.append('Year')
+            if not sem:          missing.append('Semester')
+            if missing:
+                missing_str = ', '.join(missing)
+                cat_missing_fields.append(
+                    f'{row_label}: Missing required field(s): {missing_str}'
+                )
                 continue
-            
-            # Get program
+
+            # --- Validate course_code length ---
+            if len(course_code) > COURSE_CODE_MAX_LENGTH:
+                cat_code_too_long.append(
+                    f'{row_label}: Course code "{course_code}" is too long '
+                    f'({len(course_code)} chars, max {COURSE_CODE_MAX_LENGTH}). '
+                    f'Shorten or split the code.'
+                )
+                continue
+
+            # --- Validate program exists ---
             try:
                 program = Program.objects.get(prog_code=program_code, is_active=True)
             except Program.DoesNotExist:
-                errors.append(f'Row {index + 2}: Program with code "{program_code}" not found')
+                cat_program_missing.append(
+                    f'{row_label}: Program "{program_code}" not found or inactive. '
+                    f'Check the program_code column.'
+                )
                 continue
 
+            # --- Permission check ---
             if not request.user.is_superuser and program.id not in accessible_program_ids:
-                errors.append(f'Row {index + 2}: You do not have permission to import courses for program "{program_code}"')
+                cat_no_permission.append(
+                    f'{row_label}: You do not have permission to import courses for program "{program_code}".'
+                )
                 continue
-            
-            # Check if course exists
+
+            # --- Duplicate check (skip, not an error) ---
             if CourseStructure.objects.filter(program=program, course_code=course_code).exists():
-                errors.append(f'Row {index + 2}: Course code "{course_code}" already exists for program "{program_code}"')
+                skipped_courses.append(
+                    f'{row_label}: Course code "{course_code}" already exists for program "{program_code}"'
+                )
                 continue
-            
+
+            # --- Create ---
             try:
                 CourseStructure.objects.create(
                     program=program,
@@ -844,33 +882,51 @@ def upload_courses_excel(request):
                 )
                 created_courses.append(f"{program_code}-{course_code}")
             except Exception as e:
-                errors.append(f'Row {index + 2}: Error - {str(e)}')
+                cat_create_failed.append(f'{row_label}: {str(e)}')
         
         if upload_id:
             set_upload_progress(upload_id, total_rows, total_rows, status="completed")
-            
-        if created_courses:
-            message = f'Successfully imported {len(created_courses)} courses.'
-            if errors:
-                message += f' {len(errors)} errors encountered.'
-            return JsonResponse({'success': True, 'message': message, 'created': len(created_courses), 'errors': errors[:10]})
-        if errors and all('already exists' in error for error in errors):
-            return JsonResponse({
-                'success': False,
-                'error': 'Existing courses cannot be uploaded.',
-                'message': 'Existing courses cannot be uploaded.',
-                'created': 0,
-                'errors': errors[:10],
-            })
+
+        # Aggregate all real errors
+        all_errors = (
+            cat_missing_fields +
+            cat_code_too_long +
+            cat_program_missing +
+            cat_no_permission +
+            cat_create_failed
+        )
+        error_count = len(all_errors)
+
+        # Categorised summary (only include non-zero categories)
+        error_summary = []
+        if cat_missing_fields:  error_summary.append({'label': 'Missing required fields',   'count': len(cat_missing_fields)})
+        if cat_code_too_long:   error_summary.append({'label': 'Course code too long',       'count': len(cat_code_too_long)})
+        if cat_program_missing: error_summary.append({'label': 'Program not found',          'count': len(cat_program_missing)})
+        if cat_no_permission:   error_summary.append({'label': 'Permission denied',          'count': len(cat_no_permission)})
+        if cat_create_failed:   error_summary.append({'label': 'Unexpected save error',      'count': len(cat_create_failed)})
+
+        # Build human-readable summary message
+        summary_parts = []
+        if created_courses: summary_parts.append(f'{len(created_courses)} course(s) imported.')
+        if skipped_courses: summary_parts.append(f'{len(skipped_courses)} skipped (already exist).')
+        if error_count:     summary_parts.append(f'{error_count} error(s) — see details below.')
+        summary_message = ' '.join(summary_parts) if summary_parts else 'No courses processed.'
+
+        payload = {
+            'created':         len(created_courses),
+            'skipped':         len(skipped_courses),
+            'skipped_details': skipped_courses,
+            'error_count':     error_count,
+            'error_summary':   error_summary,
+            'errors':          all_errors,   # full list — no arbitrary truncation
+            'message':         summary_message,
+        }
+
+        if created_courses or (skipped_courses and not error_count):
+            return JsonResponse({**payload, 'success': True})
         else:
-            return JsonResponse({
-                'success': False,
-                'error': f'No courses imported. Errors: {", ".join(errors[:5])}',
-                'message': f'No courses imported. Errors encountered: {len(errors)}',
-                'created': 0,
-                'errors': errors[:10],
-            })
-        
+            return JsonResponse({**payload, 'success': False, 'error': summary_message})
+
     except Exception as e:
         if upload_id:
             set_upload_progress(upload_id, 0, 0, status="failed")
