@@ -514,9 +514,9 @@ def get_course(request, course_id):
                 'part': _normalize_part_value(course.part) or '',
                 'hrs_per_week': str(course.hrs_per_week) if course.hrs_per_week else '',
                 'credit': str(course.credit) if course.credit else '',
-                'marks_cia': str(course.marks_cia) if course.marks_cia else '',
-                'marks_ese': str(course.marks_ese) if course.marks_ese else '',
-                'total_marks': str(course.total_marks) if course.total_marks else '',
+                'marks_cia': int(course.marks_cia) if course.marks_cia is not None else '',
+                'marks_ese': int(course.marks_ese) if course.marks_ese is not None else '',
+                'total_marks': int(course.total_marks) if course.total_marks is not None else '',
                 'has_syllabus': has_syllabus,
             }
         }
@@ -735,9 +735,9 @@ def download_courses_excel(request):
             'Part': _normalize_part_value(course.part) or '',
             'Hours/Week': course.hrs_per_week or '',
             'Credit': course.credit or '',
-            'CIA Marks': course.marks_cia or '',
-            'ESE Marks': course.marks_ese or '',
-            'Total Marks': course.total_marks or '',
+            'CIA Marks': int(course.marks_cia) if course.marks_cia is not None else '',
+            'ESE Marks': int(course.marks_ese) if course.marks_ese is not None else '',
+            'Total Marks': int(course.total_marks) if course.total_marks is not None else '',
         })
     
     df = pd.DataFrame(course_data)

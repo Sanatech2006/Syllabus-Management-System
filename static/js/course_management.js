@@ -765,6 +765,15 @@ function initializeSyllabusForm() {
     }
 }
 
+// ── Upload result state ─────────────────────────────────────────
+const _uploadState = {
+    errorsAll:    [],
+    errorsPage:   0,
+    skippedAll:   [],
+    skippedPage:  0,
+    PAGE_SIZE:    25,
+};
+
 // Handle Excel upload - UPDATED WITH CORRECT URL
 function resetUploadFeedback() {
     const progressContainer = document.getElementById('uploadProgressContainer');
@@ -782,6 +791,13 @@ function resetUploadFeedback() {
     const errorsList = document.getElementById('uploadErrorsList');
     const skippedListContainer = document.getElementById('uploadSkippedListContainer');
     const skippedList = document.getElementById('uploadSkippedList');
+    const errorSummaryContainer = document.getElementById('uploadErrorSummaryContainer');
+    const errorSummary = document.getElementById('uploadErrorSummary');
+
+    _uploadState.errorsAll = [];
+    _uploadState.errorsPage = 0;
+    _uploadState.skippedAll = [];
+    _uploadState.skippedPage = 0;
 
     if (progressContainer) progressContainer.classList.add('hidden');
     if (progressText) progressText.innerText = 'Importing records...';
@@ -798,6 +814,8 @@ function resetUploadFeedback() {
     if (errorsList) errorsList.innerHTML = '';
     if (skippedListContainer) skippedListContainer.classList.add('hidden');
     if (skippedList) skippedList.innerHTML = '';
+    if (errorSummaryContainer) errorSummaryContainer.classList.add('hidden');
+    if (errorSummary) errorSummary.innerHTML = '';
 }
 
 function updateUploadProgress(percent) {
@@ -812,28 +830,105 @@ function updateUploadProgress(percent) {
     if (progressBar) progressBar.style.width = `${Math.min(percent, 100)}%`;
 }
 
+// Render one page of a list into its container
+function _renderUploadPage(type) {
+    const isErrors = type === 'errors';
+    const all      = isErrors ? _uploadState.errorsAll  : _uploadState.skippedAll;
+    const page     = isErrors ? _uploadState.errorsPage : _uploadState.skippedPage;
+    const ps       = _uploadState.PAGE_SIZE;
+    const total    = all.length;
+    const totalPages = Math.ceil(total / ps) || 1;
+    const start    = page * ps;
+    const slice    = all.slice(start, start + ps);
+
+    const listEl   = document.getElementById(isErrors ? 'uploadErrorsList'      : 'uploadSkippedList');
+    const infoEl   = document.getElementById(isErrors ? 'uploadErrorsPagerInfo' : 'uploadSkippedPagerInfo');
+    const prevBtn  = document.getElementById(isErrors ? 'uploadErrorsPrevBtn'   : 'uploadSkippedPrevBtn');
+    const nextBtn  = document.getElementById(isErrors ? 'uploadErrorsNextBtn'   : 'uploadSkippedNextBtn');
+
+    const color    = isErrors ? 'text-rose-700' : 'text-amber-700';
+    if (listEl) {
+        listEl.innerHTML = slice.map(msg =>
+            `<div class="${color} whitespace-pre-wrap">${msg}</div>`
+        ).join('');
+    }
+    if (infoEl) infoEl.innerText = total > ps ? `Page ${page + 1} of ${totalPages} (${total} total)` : `${total} item${total !== 1 ? 's' : ''}`;
+    if (prevBtn) prevBtn.disabled = page === 0;
+    if (nextBtn) nextBtn.disabled = page >= totalPages - 1;
+}
+
+// Called by Prev/Next buttons
+function uploadListPage(type, dir) {
+    if (type === 'errors') {
+        const maxPage = Math.ceil(_uploadState.errorsAll.length / _uploadState.PAGE_SIZE) - 1;
+        _uploadState.errorsPage = Math.max(0, Math.min(_uploadState.errorsPage + dir, maxPage));
+    } else {
+        const maxPage = Math.ceil(_uploadState.skippedAll.length / _uploadState.PAGE_SIZE) - 1;
+        _uploadState.skippedPage = Math.max(0, Math.min(_uploadState.skippedPage + dir, maxPage));
+    }
+    _renderUploadPage(type);
+}
+
+// Download full error list as a .txt report
+function downloadUploadErrorReport() {
+    const errors  = _uploadState.errorsAll;
+    const skipped = _uploadState.skippedAll;
+    const lines   = [];
+    const now     = new Date().toLocaleString();
+    lines.push(`Bulk Upload Error Report — ${now}`);
+    lines.push('='.repeat(60));
+    if (errors.length) {
+        lines.push(`\nERRORS (${errors.length})`);
+        lines.push('-'.repeat(40));
+        errors.forEach(e => lines.push(e));
+    }
+    if (skipped.length) {
+        lines.push(`\nSKIPPED — already exist (${skipped.length})`);
+        lines.push('-'.repeat(40));
+        skipped.forEach(s => lines.push(s));
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `upload_errors_${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 function showUploadResult(data, isSuccess) {
-    const progressContainer = document.getElementById('uploadProgressContainer');
-    const resultContainer = document.getElementById('uploadResultContainer');
-    const resultTitle = document.getElementById('uploadResultTitle');
-    const resultMessage = document.getElementById('uploadResultMessage');
-    const resultIcon = document.getElementById('uploadResultIcon');
-    const successCount = document.getElementById('uploadSuccessCount');
-    const skippedCount = document.getElementById('uploadSkippedCount');
-    const errorCount = document.getElementById('uploadErrorCount');
-    const errorsListContainer = document.getElementById('uploadErrorsListContainer');
-    const errorsList = document.getElementById('uploadErrorsList');
-    const skippedListContainer = document.getElementById('uploadSkippedListContainer');
-    const skippedList = document.getElementById('uploadSkippedList');
-    const createdCount = Number(data?.created || 0);
-    const skipped = Number(data?.skipped || 0);
+    const progressContainer       = document.getElementById('uploadProgressContainer');
+    const resultContainer         = document.getElementById('uploadResultContainer');
+    const resultTitle             = document.getElementById('uploadResultTitle');
+    const resultMessage           = document.getElementById('uploadResultMessage');
+    const resultIcon              = document.getElementById('uploadResultIcon');
+    const successCountEl          = document.getElementById('uploadSuccessCount');
+    const skippedCountEl          = document.getElementById('uploadSkippedCount');
+    const errorCountEl            = document.getElementById('uploadErrorCount');
+    const errorsListContainer     = document.getElementById('uploadErrorsListContainer');
+    const skippedListContainer    = document.getElementById('uploadSkippedListContainer');
+    const errorSummaryContainer   = document.getElementById('uploadErrorSummaryContainer');
+    const errorSummaryEl          = document.getElementById('uploadErrorSummary');
+
+    const createdCount  = Number(data?.created     || 0);
+    const skipped       = Number(data?.skipped      || 0);
+    const errorCount    = Number(data?.error_count  ?? (Array.isArray(data?.errors) ? data.errors.length : 0));
     const skippedDetails = Array.isArray(data?.skipped_details) ? data.skipped_details : [];
-    const errors = Array.isArray(data?.errors) ? data.errors : [];
-    const message = data?.message || data?.error || '';
+    const errors         = Array.isArray(data?.errors)          ? data.errors          : [];
+    const errorSummary   = Array.isArray(data?.error_summary)   ? data.error_summary   : [];
+    const message        = data?.message || data?.error || '';
+
+    // Store in module-level state for pagination & download
+    _uploadState.errorsAll   = errors;
+    _uploadState.errorsPage  = 0;
+    _uploadState.skippedAll  = skippedDetails;
+    _uploadState.skippedPage = 0;
 
     if (progressContainer) progressContainer.classList.add('hidden');
-    if (resultContainer) resultContainer.classList.remove('hidden');
-    if (resultTitle) resultTitle.innerText = isSuccess ? 'Upload completed' : 'Upload finished with errors';
+    if (resultContainer)   resultContainer.classList.remove('hidden');
+    if (resultTitle)   resultTitle.innerText  = isSuccess ? 'Upload completed' : 'Upload finished with errors';
     if (resultMessage) resultMessage.innerText = message;
     if (resultIcon) {
         resultIcon.className = `p-2 rounded-lg ${isSuccess ? 'bg-green-50 text-green-600' : 'bg-rose-50 text-rose-600'}`;
@@ -841,24 +936,27 @@ function showUploadResult(data, isSuccess) {
             ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
             : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86l-8.1 14.04A2 2 0 003.92 21h16.16a2 2 0 001.73-3.1l-8.1-14.04a2 2 0 00-3.46 0z"/></svg>';
     }
-    if (successCount) successCount.innerText = String(createdCount);
-    if (skippedCount) skippedCount.innerText = String(skipped);
-    if (errorCount) errorCount.innerText = String(errors.length);
+    if (successCountEl) successCountEl.innerText = String(createdCount);
+    if (skippedCountEl) skippedCountEl.innerText = String(skipped);
+    if (errorCountEl)   errorCountEl.innerText   = String(errorCount);
 
-    // Skipped (duplicate) details panel
+    // Error category chips
+    if (errorSummaryContainer) errorSummaryContainer.classList.toggle('hidden', errorSummary.length === 0);
+    if (errorSummaryEl && errorSummary.length) {
+        errorSummaryEl.innerHTML = errorSummary.map(cat =>
+            `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700 border border-rose-200">
+                <span class="font-black">${cat.count}</span>${cat.label}
+            </span>`
+        ).join('');
+    }
+
+    // Skipped panel
     if (skippedListContainer) skippedListContainer.classList.toggle('hidden', skippedDetails.length === 0);
-    if (skippedList) {
-        skippedList.innerHTML = skippedDetails.length
-            ? skippedDetails.map(msg => `<div class="text-amber-700 whitespace-pre-wrap">${msg}</div>`).join('')
-            : '';
-    }
+    if (skippedDetails.length) _renderUploadPage('skipped');
 
+    // Errors panel
     if (errorsListContainer) errorsListContainer.classList.toggle('hidden', errors.length === 0);
-    if (errorsList) {
-        errorsList.innerHTML = errors.length
-            ? errors.slice(0, 10).map(error => `<div class="text-rose-700 whitespace-pre-wrap">${error}</div>`).join('')
-            : '';
-    }
+    if (errors.length) _renderUploadPage('errors');
 }
 
 function initializeUploadForm() {
