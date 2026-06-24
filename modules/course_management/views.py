@@ -555,7 +555,7 @@ def add_course(request):
             return JsonResponse({'success': False, 'error': 'Selected program does not exist.'})
 
         if not request.user.is_superuser and not get_accessible_programs(request.user).filter(id=program.id).exists():
-            return JsonResponse({'success': False, 'error': 'You do not have permission to add courses to that program.'})
+            return JsonResponse({'success': False, 'error': 'Access denied. You are authorized to upload records only for your department. You do not have permission to add courses to that program.'})
         
         # Check if course exists for this program
         if CourseStructure.objects.filter(program=program, course_code=course_code).exists():
@@ -628,7 +628,7 @@ def edit_course(request, course_id):
             return JsonResponse({'success': False, 'error': 'Selected program does not exist.'})
 
         if not request.user.is_superuser and not get_accessible_programs(request.user).filter(id=program.id).exists():
-            return JsonResponse({'success': False, 'error': 'You do not have permission to move courses into that program.'})
+            return JsonResponse({'success': False, 'error': 'Access denied. You are authorized to upload records only for your department. You do not have permission to modify courses for that program.'})
         
         # Check if course code exists for other courses
         if CourseStructure.objects.exclude(id=course_id).filter(program=program, course_code=course_code).exists():
@@ -793,6 +793,38 @@ def upload_courses_excel(request):
 
         COURSE_CODE_MAX_LENGTH = 20  # matches CourseStructure.course_code max_length
 
+        # --- Pre-flight scope validation for HOD users ---
+        if not request.user.is_superuser and accessible_program_ids is not None:
+            # Collect all unique program codes in the uploaded file
+            uploaded_program_codes = set()
+            for _, row in df.iterrows():
+                pc = str(row.get('program_code', '')).strip().upper().replace(' ', '')
+                if pc:
+                    uploaded_program_codes.add(pc)
+
+            # Find which of these actually exist in the DB and map them to IDs
+            existing_programs = Program.objects.filter(
+                prog_code__in=uploaded_program_codes, is_active=True
+            )
+            uploaded_program_ids = set(existing_programs.values_list('id', flat=True))
+
+            # Check if ALL uploaded programs fall outside the HOD's scope
+            if uploaded_program_ids and uploaded_program_ids.isdisjoint(accessible_program_ids):
+                authorized_codes = list(
+                    Program.objects.filter(
+                        id__in=accessible_program_ids, is_active=True
+                    ).values_list('prog_code', flat=True).order_by('prog_code')
+                )
+                authorized_str = ', '.join(authorized_codes) if authorized_codes else 'none'
+                return JsonResponse({
+                    'success': False,
+                    'error': (
+                        'Access denied. You are authorized to upload records only for your department. '
+                        f'Your authorized program(s): {authorized_str}. '
+                        'The uploaded file contains records for program(s) outside your scope.'
+                    )
+                })
+
         total_rows = len(df)
         if upload_id:
             set_upload_progress(upload_id, 0, total_rows, status="processing")
@@ -853,7 +885,8 @@ def upload_courses_excel(request):
             # --- Permission check ---
             if not request.user.is_superuser and program.id not in accessible_program_ids:
                 cat_no_permission.append(
-                    f'{row_label}: You do not have permission to import courses for program "{program_code}".'
+                    f'{row_label}: Access denied. You do not have permission to upload records for program "{program_code}". '
+                    f'You are authorized to upload records only for your department.'
                 )
                 continue
 
