@@ -890,30 +890,63 @@ def upload_courses_excel(request):
                 )
                 continue
 
-            # --- Duplicate check (skip, not an error) ---
-            if CourseStructure.objects.filter(program=program, course_code=course_code).exists():
-                skipped_courses.append(
-                    f'{row_label}: Course code "{course_code}" already exists for program "{program_code}"'
-                )
-                continue
-
-            # --- Create ---
+            # --- Check if course exists and update or create ---
             try:
-                CourseStructure.objects.create(
-                    program=program,
-                    course_code=course_code,
-                    course_title=course_title,
-                    year=year,
-                    sem=sem,
-                    course_category=course_category,
-                    part=part,
-                    hrs_per_week=hrs_per_week,
-                    credit=credit,
-                    marks_cia=marks_cia,
-                    marks_ese=marks_ese,
-                    total_marks=total_marks,
-                )
-                created_courses.append(f"{program_code}-{course_code}")
+                existing_course = CourseStructure.objects.filter(
+                    program=program, course_code=course_code
+                ).first()
+
+                if existing_course:
+                    # Course exists — check if data has changed
+                    has_changes = (
+                        existing_course.course_title != course_title or
+                        existing_course.year != year or
+                        existing_course.sem != sem or
+                        existing_course.course_category != course_category or
+                        existing_course.part != part or
+                        existing_course.hrs_per_week != hrs_per_week or
+                        existing_course.credit != credit or
+                        existing_course.marks_cia != marks_cia or
+                        existing_course.marks_ese != marks_ese or
+                        existing_course.total_marks != total_marks
+                    )
+
+                    if has_changes:
+                        # Update the existing course
+                        existing_course.course_title = course_title
+                        existing_course.year = year
+                        existing_course.sem = sem
+                        existing_course.course_category = course_category
+                        existing_course.part = part
+                        existing_course.hrs_per_week = hrs_per_week
+                        existing_course.credit = credit
+                        existing_course.marks_cia = marks_cia
+                        existing_course.marks_ese = marks_ese
+                        existing_course.total_marks = total_marks
+                        existing_course.save()
+                        created_courses.append(f"{program_code}-{course_code} (updated)")
+                    else:
+                        # No changes — silently skip
+                        skipped_courses.append(
+                            f'{row_label}: Course code "{course_code}" already exists with same data (no changes)'
+                        )
+                else:
+                    # New course — create it
+                    CourseStructure.objects.create(
+                        program=program,
+                        course_code=course_code,
+                        course_title=course_title,
+                        year=year,
+                        sem=sem,
+                        course_category=course_category,
+                        part=part,
+                        hrs_per_week=hrs_per_week,
+                        credit=credit,
+                        marks_cia=marks_cia,
+                        marks_ese=marks_ese,
+                        total_marks=total_marks,
+                    )
+                    created_courses.append(f"{program_code}-{course_code}")
             except Exception as e:
                 cat_create_failed.append(f'{row_label}: {str(e)}')
         
@@ -939,14 +972,20 @@ def upload_courses_excel(request):
         if cat_create_failed:   error_summary.append({'label': 'Unexpected save error',      'count': len(cat_create_failed)})
 
         # Build human-readable summary message
+        created_count = len([c for c in created_courses if '(updated)' not in c])
+        updated_count = len([c for c in created_courses if '(updated)' in c])
+        
         summary_parts = []
-        if created_courses: summary_parts.append(f'{len(created_courses)} course(s) imported.')
-        if skipped_courses: summary_parts.append(f'{len(skipped_courses)} skipped (already exist).')
+        if created_count: summary_parts.append(f'{created_count} new course(s) created.')
+        if updated_count: summary_parts.append(f'{updated_count} course(s) updated.')
+        if skipped_courses: summary_parts.append(f'{len(skipped_courses)} skipped (no changes needed).')
         if error_count:     summary_parts.append(f'{error_count} error(s) — see details below.')
         summary_message = ' '.join(summary_parts) if summary_parts else 'No courses processed.'
 
         payload = {
-            'created':         len(created_courses),
+            'created':         created_count,
+            'updated':         updated_count,
+            'total_processed': created_count + updated_count,
             'skipped':         len(skipped_courses),
             'skipped_details': skipped_courses,
             'error_count':     error_count,
