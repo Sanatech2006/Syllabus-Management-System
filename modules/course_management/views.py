@@ -321,6 +321,19 @@ def course_management(request):
             ).exclude(pdf='')
         )
     )
+
+    # Apply syllabus status filter
+    syllabus_status = request.GET.get('syllabus_status', '__all__')
+    if syllabus_status == 'uploaded':
+        courses_with_pdf_codes = CourseSyllabus.objects.filter(
+            pdf__isnull=False
+        ).exclude(pdf='').values_list('course_code', flat=True)
+        courses = courses.filter(course_code__in=courses_with_pdf_codes)
+    elif syllabus_status == 'not_uploaded':
+        courses_with_pdf_codes = CourseSyllabus.objects.filter(
+            pdf__isnull=False
+        ).exclude(pdf='').values_list('course_code', flat=True)
+        courses = courses.exclude(course_code__in=courses_with_pdf_codes)
     
     # Get filter options for dropdowns
     filter_options = _build_course_filter_options(base_queryset, filters)

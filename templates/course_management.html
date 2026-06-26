@@ -59,8 +59,11 @@
     .sms-panel {
         overflow: visible;
     }
+    /* Panels rendered as fixed overlays to escape any ancestor overflow context */
     .sms-panel {
+        position: fixed !important;
         z-index: 9999;
+        width: auto; /* width is set by JS from trigger rect */
     }
     #filterForm .sms-trigger {
         cursor: text !important;
@@ -216,6 +219,7 @@
                 <input type="hidden" id="partValue" name="part" value="{{ request.GET.part|default:'__all__' }}">
                 <input type="hidden" id="courseCategoryValue" name="course_category" value="{{ request.GET.course_category|default:'__all__' }}">
                 <input type="hidden" id="courseTitleValue" name="course_title" value="{{ request.GET.course_title|default:'__all__' }}">
+                <input type="hidden" id="syllabusStatusValue" name="syllabus_status" value="{{ request.GET.syllabus_status|default:'__all__' }}">
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-6 overflow-visible">
                     <div>
@@ -299,6 +303,34 @@
                     </div>
 
                 </div>
+
+                <!-- Syllabus Upload Status Filter -->
+                <div class="border-t border-slate-100 pt-4">
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Syllabus Upload Status</label>
+                    <div class="flex gap-2 flex-wrap">
+                        <button type="button" id="syllabusFilterAll"
+                            onclick="setSyllabusFilter('__all__')"
+                            class="syllabus-filter-btn px-4 py-2 rounded-lg text-sm font-medium border transition-all
+                                   {% if request.GET.syllabus_status == '__all__' or not request.GET.syllabus_status %}bg-blue-600 text-white border-blue-600{% else %}bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600{% endif %}">
+                            All
+                        </button>
+                        <button type="button" id="syllabusFilterUploaded"
+                            onclick="setSyllabusFilter('uploaded')"
+                            class="syllabus-filter-btn px-4 py-2 rounded-lg text-sm font-medium border transition-all flex items-center gap-2
+                                   {% if request.GET.syllabus_status == 'uploaded' %}bg-green-600 text-white border-green-600{% else %}bg-white text-slate-600 border-slate-200 hover:border-green-400 hover:text-green-600{% endif %}">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            Uploaded Syllabus
+                        </button>
+                        <button type="button" id="syllabusFilterNotUploaded"
+                            onclick="setSyllabusFilter('not_uploaded')"
+                            class="syllabus-filter-btn px-4 py-2 rounded-lg text-sm font-medium border transition-all flex items-center gap-2
+                                   {% if request.GET.syllabus_status == 'not_uploaded' %}bg-amber-500 text-white border-amber-500{% else %}bg-white text-slate-600 border-slate-200 hover:border-amber-400 hover:text-amber-600{% endif %}">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z"/></svg>
+                            Not Uploaded Syllabus
+                        </button>
+                    </div>
+                </div>
+
                 <div class="flex justify-end gap-5 w-full">
                     <button type="button" id="clearFilters" class="px-4 py-2 w-[150px] border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition">Clear All</button>
                     <button type="submit" id="courseApplyFiltersBtn" disabled class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed disabled:hover:bg-slate-300">Apply Filters</button>
@@ -309,13 +341,24 @@
 
     {% if page_obj.paginator.count %}
     <!-- Courses Table -->
-    <div class="mx-auto bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="mx-auto bg-white rounded-xl border border-slate-200 shadow-sm">
         <div class="px-6 py-4 border-b border-slate-100 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div class="flex items-center gap-2.5">
                 <h2 class="text-base font-semibold text-slate-900">Course Directory</h2>
                 <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600">
                     {{ page_obj.paginator.count }} total
                 </span>
+                {% if request.GET.syllabus_status == 'uploaded' %}
+                <span class="inline-flex items-center gap-1 rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 border border-green-200">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Uploaded
+                </span>
+                {% elif request.GET.syllabus_status == 'not_uploaded' %}
+                <span class="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 border border-amber-200">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/></svg>
+                    Not Uploaded
+                </span>
+                {% endif %}
             </div>
             <div class="relative w-full sm:w-64">
                 <input type="text" id="searchInput" placeholder="Search courses..." class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg">
@@ -360,7 +403,7 @@
     {{ course.credit|floatformat:0|default:"-" }}
 </td>
                         <td class="px-6 py-4 text-center">
-                            <button onclick="manageSyllabus({{ course.id }}, '{{ course.course_code }}')" class="p-2 {% if course.has_syllabus_pdf %}text-green-600 bg-green-50 hover:bg-green-100{% else %}text-blue-600 bg-blue-50 hover:bg-blue-100{% endif %} rounded-lg transition" title="Manage Syllabus">
+                        <button onclick="manageSyllabus({{ course.id }}, '{{ course.course_code }}')" class="p-2 {% if course.has_syllabus_pdf %}text-green-600 bg-green-50 hover:bg-green-100{% else %}text-red-500 bg-red-50 hover:bg-red-100{% endif %} rounded-lg transition" title="Manage Syllabus">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
@@ -644,79 +687,123 @@
 
 <!-- SYLLABUS MANAGEMENT DRAWER -->
 <div id="syllabusDrawer" class="drawer fixed inset-0 z-50 hidden" role="dialog">
-    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onclick="closeDrawer('syllabusDrawer')"></div>
-    
-    <div class="absolute inset-y-0 right-0 w-full max-w-xl bg-slate-50 shadow-2xl flex flex-col h-full overflow-hidden">
-        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
-            <div>
-                <h2 class="text-xl font-bold text-green-700">Manage Syllabus</h2>
-                <p id="syllabusCourseCode" class="text-sm text-slate-500 mt-0.5">Course: Loading...</p>
+    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="closeDrawer('syllabusDrawer')"></div>
+
+    <div class="absolute inset-y-0 right-0 w-full max-w-lg bg-white shadow-2xl flex flex-col h-full overflow-hidden">
+        <!-- Header -->
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-800 to-slate-700 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-white/10 rounded-lg">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-white">Syllabus Manager</h2>
+                    <p id="syllabusCourseCode" class="text-xs text-slate-300 mt-0.5 font-mono">Loading...</p>
+                </div>
             </div>
-            <button onclick="closeDrawer('syllabusDrawer')" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
+            <button onclick="closeDrawer('syllabusDrawer')" class="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
             </button>
         </div>
-        
-        <div class="flex-1 overflow-y-auto p-6 space-y-6">
-            <div id="syllabusContent">
-                <div class="bg-white rounded-xl border border-slate-200 p-6 text-center">
-                    <div class="flex items-center justify-center h-14 w-14 rounded-full bg-green-50 mx-auto mb-4">
-                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+
+        <div class="flex-1 overflow-y-auto">
+            <!-- Current Status Card -->
+            <div id="syllabusContent" class="p-6">
+                <div id="syllabusStatusCard" class="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+                    <div id="syllabusStatusIcon" class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+                        <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
                     </div>
+                    <div id="syllabusStatusBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-200 text-slate-600 mb-3">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                        No Syllabus
+                    </div>
                     <h3 id="syllabusStatus" class="text-base font-bold text-slate-900">No Syllabus Uploaded</h3>
-                    <p id="syllabusMessage" class="text-sm text-slate-500 mt-2">Upload a PDF syllabus for this course.</p>
-                    <div id="syllabusActions" class="mt-6 flex justify-center gap-3">
-                        <button type="button" id="viewSyllabusBtn" class="hidden px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">View Syllabus</button>
-                        <button type="button" id="downloadSyllabusBtn" class="hidden px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Download Syllabus</button>
-                        <button type="button" id="deleteSyllabusBtn" class="hidden px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete Syllabus</button>
+                    <p id="syllabusMessage" class="text-sm text-slate-500 mt-1.5">Upload a PDF to associate a syllabus with this course.</p>
+                    <div id="syllabusActions" class="mt-5 flex justify-center gap-2">
+                        <button type="button" id="viewSyllabusBtn" class="hidden inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            View
+                        </button>
+                        <button type="button" id="downloadSyllabusBtn" class="hidden inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Download
+                        </button>
+                        <button type="button" id="deleteSyllabusBtn" class="hidden inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 text-sm font-semibold rounded-xl border border-red-200 hover:bg-red-100 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            Delete
+                        </button>
                     </div>
                 </div>
             </div>
-            
-            <form id="syllabusForm" enctype="multipart/form-data" class="space-y-5">
-                {% csrf_token %}
-                <input type="hidden" id="syllabusCourseId" name="course_id">
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-4">Upload New Syllabus (PDF)</label>
-                    
-                    <div class="relative group flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-8 text-center hover:border-green-400 transition">
-                        <input type="file" name="syllabus_pdf" id="syllabusPdf" accept=".pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                        
-                        <div id="syllabusFileEmptyState" class="space-y-2 pointer-events-none">
-                            <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-white text-slate-400">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+
+            <!-- Upload Section -->
+            <div class="px-6 pb-6">
+                <div class="mb-4">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                        Upload New Syllabus
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">PDF format only. Replaces any existing syllabus.</p>
+                </div>
+
+                <form id="syllabusForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" id="syllabusCourseId" name="course_id">
+
+                    <!-- Drop Zone -->
+                    <div id="syllabusDragZone"
+                         class="relative rounded-2xl border-2 border-dashed border-slate-300 bg-gradient-to-b from-slate-50 to-white p-8 text-center transition-all duration-200 hover:border-green-400 hover:from-green-50/30 hover:to-white cursor-pointer group">
+                        <input type="file" name="syllabus_pdf" id="syllabusPdf" accept=".pdf"
+                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+
+                        <!-- Empty State -->
+                        <div id="syllabusFileEmptyState">
+                            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-200 group-hover:border-green-300 group-hover:bg-green-50 transition-all">
+                                <svg class="h-7 w-7 text-slate-400 group-hover:text-green-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/>
                                 </svg>
                             </div>
-                            <div class="text-xs font-medium text-slate-600">
-                                <span class="font-semibold text-green-600">Click to upload</span> or drag and drop
-                            </div>
-                            <p class="text-[11px] text-slate-400">PDF format only</p>
+                            <p class="text-sm font-semibold text-slate-700">
+                                <span class="text-green-600">Click to browse</span> or drag &amp; drop
+                            </p>
+                            <p class="text-xs text-slate-400 mt-1">PDF files only &bull; Max 50 MB</p>
                         </div>
-                        
-                        <div id="syllabusFileSelectedState" class="hidden space-y-2">
-                            <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-1.125 1.125-1.125V11.25a9 9 0 00-9-9z" />
+
+                        <!-- Selected State -->
+                        <div id="syllabusFileSelectedState" class="hidden">
+                            <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 border border-emerald-200">
+                                <svg class="h-7 w-7 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-1.125 1.125-1.125V11.25a9 9 0 00-9-9z"/>
                                 </svg>
                             </div>
-                            <div id="syllabusFileNameDisplay" class="text-xs font-semibold text-slate-800 truncate max-w-[240px] px-2">No file selected</div>
-                            <button type="button" id="syllabusRemoveFileBtn" class="text-[11px] font-medium text-slate-400 hover:text-rose-500">Remove file</button>
+                            <div id="syllabusFileNameDisplay" class="text-sm font-bold text-slate-800 truncate max-w-xs mx-auto">file.pdf</div>
+                            <div id="syllabusFileSizeDisplay" class="text-xs text-slate-500 mt-0.5"></div>
+                            <button type="button" id="syllabusRemoveFileBtn"
+                                    class="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-rose-500 transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                Remove
+                            </button>
                         </div>
                     </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
-        
-        <div class="px-6 pb-6 flex gap-3 bg-slate-50 shrink-0 pt-6 border-t border-slate-200">
-            <button onclick="closeDrawer('syllabusDrawer')" class="flex-1 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-sm rounded-xl border border-slate-200">Close</button>
-            <button type="submit" form="syllabusForm" class="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md">
+
+        <!-- Footer Actions -->
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-3 shrink-0">
+            <button onclick="closeDrawer('syllabusDrawer')" class="flex-1 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 font-semibold text-sm rounded-xl border border-slate-200 transition">
+                Cancel
+            </button>
+            <button type="submit" form="syllabusForm"
+                    class="flex-1 px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                 </svg>
                 Upload Syllabus
             </button>
@@ -1098,11 +1185,6 @@
                 }
             }
 
-            function closePanel() {
-                panel.classList.add('hidden');
-                chevron.classList.remove('rotate-180');
-            }
-
             function filterOptions(term) {
                 const lower = term.toLowerCase().trim();
                 let visibleCount = 0;
@@ -1123,14 +1205,49 @@
                 highlightOption(getVisibleOptions()[0]);
             }
 
+            function positionPanel() {
+
+                const rect = trigger.getBoundingClientRect();
+                const panelHeight = panel.offsetHeight || 220; // fallback estimate
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const showAbove = spaceBelow < panelHeight && rect.top > panelHeight;
+                panel.style.width = rect.width + 'px';
+                panel.style.left = rect.left + 'px';
+                if (showAbove) {
+                    panel.style.top = '';
+                    panel.style.bottom = (window.innerHeight - rect.top) + 'px';
+                } else {
+                    panel.style.bottom = '';
+                    panel.style.top = (rect.bottom + 4) + 'px';
+                }
+            }
+
+            let _panelScrollHandler = null;
+
+            function closePanel() {
+                panel.classList.add('hidden');
+                chevron.classList.remove('rotate-180');
+                if (_panelScrollHandler) {
+                    window.removeEventListener('scroll', _panelScrollHandler, true);
+                    _panelScrollHandler = null;
+                }
+            }
+
             function openPanel() {
                 panel.classList.remove('hidden');
                 chevron.classList.add('rotate-180');
+                positionPanel();
                 filterOptions('');
                 const currentSelected = getOptions().find(option => option.dataset.value === hidden.value);
                 highlightOption(currentSelected || getVisibleOptions()[0]);
                 trigger.select();
+                // Keep panel aligned when the main scroller scrolls
+                if (!_panelScrollHandler) {
+                    _panelScrollHandler = () => positionPanel();
+                    window.addEventListener('scroll', _panelScrollHandler, true);
+                }
             }
+
 
             function revertInvalidInput() {
                 let match = getOptions().find(option => option.dataset.value === hidden.value);
@@ -1332,6 +1449,71 @@
         updateAllDropdownsState();
         onDropdownValueChange();
         window.initializeClearFilters();
+
+        // Syllabus filter button logic
+        window.setSyllabusFilter = function(value) {
+            const hiddenInput = document.getElementById('syllabusStatusValue');
+            if (!hiddenInput) return;
+            hiddenInput.value = value;
+
+            // Update button active states
+            const allBtn = document.getElementById('syllabusFilterAll');
+            const uploadedBtn = document.getElementById('syllabusFilterUploaded');
+            const notUploadedBtn = document.getElementById('syllabusFilterNotUploaded');
+
+            const resetCls = 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600';
+            const resetClsGreen = 'bg-white text-slate-600 border-slate-200 hover:border-green-400 hover:text-green-600';
+            const resetClsAmber = 'bg-white text-slate-600 border-slate-200 hover:border-amber-400 hover:text-amber-600';
+
+            if (allBtn) allBtn.className = allBtn.className.replace(/bg-blue-600 text-white border-blue-600/, resetCls);
+            if (uploadedBtn) uploadedBtn.className = uploadedBtn.className.replace(/bg-green-600 text-white border-green-600/, resetClsGreen);
+            if (notUploadedBtn) notUploadedBtn.className = notUploadedBtn.className.replace(/bg-amber-500 text-white border-amber-500/, resetClsAmber);
+
+            if (value === '__all__' && allBtn) {
+                allBtn.className = allBtn.className.replace(resetCls, 'bg-blue-600 text-white border-blue-600');
+            } else if (value === 'uploaded' && uploadedBtn) {
+                uploadedBtn.className = uploadedBtn.className.replace(resetClsGreen, 'bg-green-600 text-white border-green-600');
+            } else if (value === 'not_uploaded' && notUploadedBtn) {
+                notUploadedBtn.className = notUploadedBtn.className.replace(resetClsAmber, 'bg-amber-500 text-white border-amber-500');
+            }
+
+            // Enable the apply filters button
+            const applyBtn = document.getElementById('courseApplyFiltersBtn');
+            if (applyBtn) { applyBtn.disabled = false; }
+        };
+
+        // Enhanced file input: show file size in syllabus drawer
+        const syllabusPdfInput = document.getElementById('syllabusPdf');
+        if (syllabusPdfInput) {
+            syllabusPdfInput.addEventListener('change', function() {
+                const file = this.files[0];
+                const sizeEl = document.getElementById('syllabusFileSizeDisplay');
+                if (file && sizeEl) {
+                    const kb = file.size / 1024;
+                    sizeEl.textContent = kb > 1024
+                        ? (kb / 1024).toFixed(1) + ' MB'
+                        : Math.round(kb) + ' KB';
+                }
+            });
+        }
+
+        // Drag-and-drop styling for syllabus drop zone
+        const dragZone = document.getElementById('syllabusDragZone');
+        if (dragZone) {
+            dragZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('border-green-500', 'bg-green-50/40');
+                this.classList.remove('border-slate-300');
+            });
+            dragZone.addEventListener('dragleave', function() {
+                this.classList.remove('border-green-500', 'bg-green-50/40');
+                this.classList.add('border-slate-300');
+            });
+            dragZone.addEventListener('drop', function(e) {
+                this.classList.remove('border-green-500', 'bg-green-50/40');
+                this.classList.add('border-slate-300');
+            });
+        }
     });
 </script>
 
