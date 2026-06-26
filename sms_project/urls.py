@@ -14,6 +14,7 @@ urlpatterns = [
     path('hod-management/', include('modules.hod_management.urls')),
     path('course-management/', include('modules.course_management.urls', namespace='course_management')),
     path('view-syllabus/', include('modules.view_syllabus.urls', namespace='view_syllabus')), 
+    path('reports/', include('modules.reports.urls', namespace='reports')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
