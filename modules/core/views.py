@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import get_user_model
 from django.contrib import messages
 from modules.dashboard.views import dashboard as dashboard_view
 
@@ -35,26 +36,39 @@ def login_view(request):
         post_next = request.POST.get('next', '/dashboard/').strip()
         post_role = request.POST.get('role', '').strip()
 
+        # HOD usernames are stored in uppercase
+        if post_role == 'hod':
+            username = username.upper()
+
         # Always ensure a safe redirect path
         if not post_next or not post_next.startswith('/'):
             post_next = '/dashboard/'
 
-        user = authenticate(request, username=username, password=password)
+        try:
+            User = get_user_model()
+            user_exists = User.objects.filter(username=username).exists()
 
-        if user is not None:
-            if not _role_matches_user(post_role, user):
-                messages.error(request, 'Those credentials do not match the selected role.')
-                return render(request, 'login.html', {'next': post_next, 'role': post_role})
+            if not user_exists:
+                messages.error(request, 'Username not found.')
+            else:
+                user = authenticate(request, username=username, password=password)
 
-            login(request, user)
-            messages.success(request, f'Welcome, {user.get_full_name() or username}!')
+                if user is not None:
+                    if not _role_matches_user(post_role, user):
+                        messages.error(request, 'Those credentials do not match the selected role.')
+                        return render(request, 'login.html', {'next': post_next, 'role': post_role})
 
-            if post_role in {'admin', 'hod'}:
-                return redirect(_get_role_home(user))
+                    login(request, user)
+                    messages.success(request, f'Welcome, {user.get_full_name() or username}!')
 
-            return redirect(post_next or _get_role_home(user))
-        else:
-            messages.error(request, 'Invalid username or password. Please try again.')
+                    if post_role in {'admin', 'hod'}:
+                        return redirect(_get_role_home(user))
+
+                    return redirect(post_next or _get_role_home(user))
+                else:
+                    messages.error(request, 'Incorrect password.')
+        except Exception:
+            messages.error(request, 'Server error. Please try again later.')
 
     return render(request, 'login.html', {'next': next_url, 'role': role})
 

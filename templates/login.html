@@ -193,8 +193,10 @@
                             <input 
                                 type="text" 
                                 name="username" 
+                                id="username"
                                 required 
                                 autofocus
+                                tabindex="1"
                                 placeholder="Enter your username"
                                 class="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-xl text-slate-700 placeholder:text-slate-400 focus:border-sky-400 focus:ring-4 focus:ring-sky-100 transition-all input-glow"
                             />
@@ -204,31 +206,33 @@
 
                     <!-- Password Field -->
                     <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <label class="text-xs font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                                <i class="text-sky-500 fa-solid fa-lock"></i>
-                                Password
-                            </label>
-                            <a href="#" class="text-xs text-sky-600 hover:text-sky-800 font-medium transition-colors">
-                                Forgot?
-                            </a>
-                        </div>
+                        <label class="text-xs font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                            <i class="text-sky-500 fa-solid fa-lock"></i>
+                            Password
+                        </label>
                         <div class="relative">
                             <input 
                                 type="password" 
                                 id="password"
                                 name="password" 
                                 required
+                                tabindex="2"
                                 placeholder="••••••••"
                                 class="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-xl text-slate-700 placeholder:text-slate-400 focus:border-sky-400 focus:ring-4 focus:ring-sky-100 transition-all input-glow"
                             />
                             <button 
                                 type="button" 
                                 onclick="togglePassword()" 
+                                tabindex="-1"
                                 class="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-sky-600 transition-colors"
                             >
                                 <i id="eyeIcon" class="fa-regular fa-eye-slash"></i>
                             </button>
+                        </div>
+                        <div class="flex justify-end">
+                            <a href="#" tabindex="3" class="text-xs text-sky-600 hover:text-sky-800 font-medium transition-colors">
+                                Forgot password?
+                            </a>
                         </div>
                     </div>
 
@@ -277,6 +281,20 @@
             btn.disabled = true;
             btn.classList.add('opacity-90');
         });
+
+        // Auto-uppercase username for HOD login
+        {% if role == 'hod' %}
+        (function () {
+            const usernameInput = document.getElementById('username');
+            if (usernameInput) {
+                usernameInput.addEventListener('input', function () {
+                    const pos = this.selectionStart;
+                    this.value = this.value.toUpperCase();
+                    this.setSelectionRange(pos, pos);
+                });
+            }
+        })();
+        {% endif %}
     </script>
 </body>
 </html>

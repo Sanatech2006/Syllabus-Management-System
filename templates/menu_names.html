@@ -27,7 +27,7 @@
                 <a href="{% url 'dashboard:dashboard' %}"
                     class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'dashboard' %}bg-white/10 text-white{% endif %}">
                     <i data-lucide="layout-dashboard"
-                        class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
+                        class="w-[20px] h-[20px] {% if request.resolver_match.namespace == 'dashboard' %}text-blue-400{% else %}text-slate-500 group-hover:text-blue-400{% endif %}"></i>
                     <span class="text-[14px]">Dashboard</span>
                 </a>
             </div>
@@ -41,8 +41,8 @@
             <div class="space-y-2">
                 <!-- View Syllabus - Using # for now -->
                 <a href="{% url 'view_syllabus:view_syllabus' %}"
-                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white">
-                    <i data-lucide="eye" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
+                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'view_syllabus' %}bg-white/10 text-white{% endif %}">
+                    <i data-lucide="eye" class="w-[20px] h-[20px] {% if request.resolver_match.namespace == 'view_syllabus' %}text-blue-400{% else %}text-slate-500 group-hover:text-blue-400{% endif %}"></i>
                     <span class="text-[14px]">View Syllabus</span>
                 </a>
                 
@@ -106,8 +106,8 @@
             </p>
             <div class="space-y-2">
                 <a href="{% url 'dashboard:dashboard' %}"
-                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-white">
-                    <i data-lucide="layout-dashboard" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
+                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all duration-200 hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'dashboard' %}bg-white/10 text-white{% endif %}">
+                    <i data-lucide="layout-dashboard" class="w-[20px] h-[20px] {% if request.resolver_match.namespace == 'dashboard' %}text-blue-400{% else %}text-slate-500 group-hover:text-blue-400{% endif %}"></i>
                     <span class="text-[14px]">Dashboard</span>
                 </a>
             </div>
@@ -120,8 +120,8 @@
             <div class="space-y-2">
                 <!-- View Syllabus - Using # for guests -->
                 <a href="{% url 'view_syllabus:view_syllabus' %}"
-                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white">
-                    <i data-lucide="eye" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
+                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'view_syllabus' %}bg-white/10 text-white{% endif %}">
+                    <i data-lucide="eye" class="w-[20px] h-[20px] {% if request.resolver_match.namespace == 'view_syllabus' %}text-blue-400{% else %}text-slate-500 group-hover:text-blue-400{% endif %}"></i>
                     <span class="text-[14px]">View Syllabus</span>
                 </a>
             </div>

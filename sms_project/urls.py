@@ -8,7 +8,7 @@ admin.site.has_permission = lambda request: request.user.is_active and request.u
 urlpatterns = [
     path('', include('modules.core.urls', namespace='core')),
     path('admin/', admin.site.urls),
-    path('dashboard/', include('modules.dashboard.urls')),
+    path('dashboard/', include('modules.dashboard.urls', namespace='dashboard')),
     path('programs/', include('modules.program_manage.urls', namespace='program_manage')),
     path('users/', include('modules.user_manage.urls', namespace='user_manage')),
     path('hod-management/', include('modules.hod_management.urls')),
