@@ -535,12 +535,6 @@ function initializeProgramFilterDependencies() {
             const currentValue = hidden.value;
             list.innerHTML = '';
 
-            const placeholderOption = document.createElement('li');
-            placeholderOption.className = 'sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer';
-            placeholderOption.dataset.value = '';
-            placeholderOption.textContent = config.placeholder;
-            list.appendChild(placeholderOption);
-
             const allOption = document.createElement('li');
             allOption.className = 'sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer';
             allOption.dataset.value = '__all__';

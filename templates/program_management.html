@@ -189,18 +189,18 @@
         </div>
         <div class="p-6 overflow-visible">
             <form method="get" id="filterForm" class="space-y-4">
-                <input type="hidden" id="progTypeValue" name="prog_type" value="{{ request.GET.prog_type|default:'' }}">
-                <input type="hidden" id="progCategoryValue" name="prog_category" value="{{ request.GET.prog_category|default:'' }}">
-                <input type="hidden" id="degreeValue" name="degree" value="{{ request.GET.degree|default:'' }}">
-                <input type="hidden" id="branchValue" name="branch" value="{{ request.GET.branch|default:'' }}">
-                <input type="hidden" id="progCodeValue" name="prog_code" value="{{ request.GET.prog_code|default:'' }}">
+                <input type="hidden" id="progTypeValue" name="prog_type" value="{{ request.GET.prog_type|default:'__all__' }}">
+                <input type="hidden" id="progCategoryValue" name="prog_category" value="{{ request.GET.prog_category|default:'__all__' }}">
+                <input type="hidden" id="degreeValue" name="degree" value="{{ request.GET.degree|default:'__all__' }}">
+                <input type="hidden" id="branchValue" name="branch" value="{{ request.GET.branch|default:'__all__' }}">
+                <input type="hidden" id="progCodeValue" name="prog_code" value="{{ request.GET.prog_code|default:'__all__' }}">
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-6 overflow-visible">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program Type</label>
                         <div class="sms-dropdown relative" id="progTypeDropdown">
                             <div class="relative w-full">
-                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Type" autocomplete="off">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="All Types" autocomplete="off">
                                 <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
                                     <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -222,7 +222,7 @@
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program Category</label>
                         <div class="sms-dropdown relative" id="progCategoryDropdown">
                             <div class="relative w-full">
-                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Category" autocomplete="off">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="All Categories" autocomplete="off">
                                 <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
                                     <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -244,7 +244,7 @@
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Degree</label>
                         <div class="sms-dropdown relative" id="degreeDropdown">
                             <div class="relative w-full">
-                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Degree" autocomplete="off">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="All Degrees" autocomplete="off">
                                 <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
                                     <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -297,7 +297,6 @@
                             </div>
                             <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
                                 <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select Code</li>
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Codes</li>
                                     {% for prog_code in prog_codes %}
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ prog_code }}">{{ prog_code }}</li>
