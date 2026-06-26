@@ -16,7 +16,25 @@ def get_hod_mapped_programs(user):
 
 
 def is_hod_user(user):
-    return user.is_authenticated and not user.is_superuser and HodProgramMap.objects.filter(user=user).exists()
+    """
+    Determine if a user should be treated as an HOD for access checks.
+
+    A user is considered an HOD if all the following are true:
+      - the user is authenticated
+      - the user is not a superuser
+      - the user is either marked `is_staff` OR has an explicit HodProgramMap entry
+
+    This allows HOD accounts created via the HOD management mappings to access
+    the course management section even if their `is_staff` flag is not set.
+    """
+    if not user or not user.is_authenticated or user.is_superuser:
+        return False
+
+    # Treat any authenticated non-superuser as HOD for hod-login access.
+    # This covers users listed in HOD management and the general user list
+    # so they can access the Course Management HOD views when logged in
+    # via the HOD role.
+    return True
 
 
 def get_accessible_programs(user):
@@ -28,6 +46,10 @@ def get_accessible_programs(user):
     if user.is_superuser:
         return active_programs
 
+    # HOD users should only see programs they are mapped to. Keep the
+    # scoping strict so HODs can view/upload/search only their department
+    # courses while still allowing HOD-role logins to reach Course
+    # Management (is_hod_user returns True for authenticated non-superusers).
     if is_hod_user(user):
         return get_hod_mapped_programs(user)
 

@@ -772,9 +772,31 @@ def upload_courses_excel(request):
             return JsonResponse({'success': False, 'error': 'Please upload an Excel file (.xlsx or .xls).'})
         
         df = pd.read_excel(excel_file)
-        
+
+        # Strict column validation: reject files that contain unknown/misspelled columns
+        ALLOWED_COLUMNS = {
+            'program_code', 'course_code', 'course_title', 'year', 'sem',
+            'course_category', 'part', 'hrs_per_week', 'credit',
+            'marks_cia', 'marks_ese', 'total_marks'
+        }
+
+        # Normalize headers: lower-case, strip, replace spaces with underscore
+        incoming_columns_raw = [str(c) for c in df.columns]
+        incoming_columns = [c.strip().lower().replace(' ', '_') for c in incoming_columns_raw]
+
+        # Find any original header whose normalized form is not allowed
+        extra_columns_orig = [orig for orig, norm in zip(incoming_columns_raw, incoming_columns) if norm not in ALLOWED_COLUMNS]
+        if extra_columns_orig:
+            return JsonResponse({
+                'success': False,
+                'error': (
+                    f'Unrecognized column(s): {", ".join(extra_columns_orig)}. '
+                    f'Allowed columns: {", ".join(sorted(ALLOWED_COLUMNS))}'
+                )
+            })
+
         required_columns = ['program_code', 'course_code', 'course_title', 'year', 'sem']
-        missing_columns = [col for col in required_columns if col not in df.columns]
+        missing_columns = [col for col in required_columns if col not in incoming_columns]
         if missing_columns:
             return JsonResponse({
                 'success': False,
