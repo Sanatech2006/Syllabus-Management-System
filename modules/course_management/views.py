@@ -125,7 +125,14 @@ def _build_course_filter_options(base_queryset, filters):
         "programs": programs,
         "degrees" : degrees,
         "years": _distinct_non_empty(option_querysets["year"], "year"),
-        "sems": _distinct_non_empty(option_querysets["sem"], "sem"),
+        "sems": sorted({
+            normalized_sem
+            for normalized_sem in (
+                _normalize_semester_value(sem_value)
+                for sem_value in _distinct_non_empty(option_querysets["sem"], "sem")
+            )
+            if normalized_sem
+        }, key=lambda item: int(item) if str(item).isdigit() else str(item)),
         "course_categories": _distinct_non_empty(option_querysets["course_category"], "course_category"),
         "branches": _distinct_non_empty(option_querysets["branch"], "program__branch"),
         "prog_types": _distinct_non_empty(option_querysets["prog_type"], "program__prog_type"),
@@ -193,6 +200,29 @@ def _normalize_part_value(value):
         return str(int(Decimal(text)))
     except (InvalidOperation, ValueError, TypeError):
         return text
+
+
+def _normalize_semester_value(value):
+    """
+    Normalize semester values to valid integers (1, 2, 3, 4, 5, 6 for UG or 1, 2, 3, 4 for PG).
+    Returns None if value is invalid.
+    """
+    if value is None or pd.isna(value):
+        return None
+
+    text = str(value).strip()
+    if not text:
+        return None
+
+    try:
+        # Convert to int and validate it's a valid semester
+        sem_int = int(float(text))  # Handle "1.0" -> 1
+        if sem_int >= 1 and sem_int <= 6:
+            return str(sem_int)
+    except (InvalidOperation, ValueError, TypeError):
+        pass
+    
+    return None
 
 
 def _part_lookup_values(value):
@@ -547,7 +577,7 @@ def add_course(request):
         course_code = request.POST.get("course_code", "").strip().upper().replace(" ", "")
         course_title = request.POST.get("course_title", "").strip()
         year = request.POST.get("year", "").strip()
-        sem = request.POST.get("sem", "").strip()
+        sem = _normalize_semester_value(request.POST.get("sem", ""))
         course_category = request.POST.get("course_category", "").strip()
         part = _normalize_part_value(request.POST.get("part", ""))
         hrs_per_week = request.POST.get("hrs_per_week", "")
@@ -619,7 +649,7 @@ def edit_course(request, course_id):
         course_code = request.POST.get("course_code", "").strip().upper().replace(" ", "")
         course_title = request.POST.get("course_title", "").strip()
         year = request.POST.get("year", "").strip()
-        sem = request.POST.get("sem", "").strip()
+        sem = _normalize_semester_value(request.POST.get("sem", ""))
         course_category = request.POST.get("course_category", "").strip()
         part = _normalize_part_value(request.POST.get("part", ""))
         hrs_per_week = request.POST.get("hrs_per_week", "")
@@ -873,7 +903,7 @@ def upload_courses_excel(request):
             course_code = str(row.get('course_code', '')).strip().upper().replace(" ", "")
             course_title = str(row.get('course_title', '')).strip()
             year = str(row.get('year', '')).strip()
-            sem = str(row.get('sem', '')).strip()
+            sem = _normalize_semester_value(row.get('sem'))
             course_category = str(row.get('course_category', '')).strip() if pd.notna(row.get('course_category')) else None
             part = _normalize_part_value(row.get('part'))
             hrs_per_week = _parse_optional_decimal(row.get('hrs_per_week'))

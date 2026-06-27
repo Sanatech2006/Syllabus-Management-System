@@ -1129,6 +1129,47 @@ function initializeEscapeKey() {
 }
 
 // Initialize everything
+function initializeSemesterDynamicFilter() {
+    const progTypeValue = document.getElementById('progTypeValue');
+    const semDropdown = document.getElementById('semDropdown');
+    
+    if (!progTypeValue || !semDropdown) return;
+    
+    function updateSemesterOptions() {
+        const progType = progTypeValue.value;
+        const semList = semDropdown.querySelector('.sms-list');
+        if (!semList) return;
+        
+        // Define semester options based on program type
+        const semesterMap = {
+            'UG': ['1', '2', '3', '4', '5', '6'],
+            'PG': ['1', '2', '3', '4'],
+        };
+        
+        // Get allowed semesters based on current selection
+        const allowedSems = semesterMap[progType] || [];
+        
+        // Get all semester options except "All"
+        const options = semList.querySelectorAll('.sms-option[data-value!="__all__"]');
+        
+        // Hide/show options based on allowed semesters
+        options.forEach(option => {
+            const value = option.getAttribute('data-value');
+            if (allowedSems.length === 0) {
+                // If no program type selected, show all
+                option.style.display = '';
+            } else if (allowedSems.includes(value)) {
+                option.style.display = '';
+            } else {
+                option.style.display = 'none';
+            }
+        });
+    }
+    
+    // Update semester options when program type changes
+    progTypeValue.addEventListener('change', updateSemesterOptions);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     try { initializeFileInput(); } catch (e) { console.error('Error initializing file input:', e); }
     try { initializeSyllabusFileInput(); } catch (e) { console.error('Error initializing syllabus file input:', e); }
@@ -1145,4 +1186,5 @@ document.addEventListener('DOMContentLoaded', function() {
     try { initializeViewSyllabus(); } catch (e) { console.error('Error initializing view syllabus:', e); }
     try { initializeDownloadSyllabus(); } catch (e) { console.error('Error initializing download syllabus:', e); }
     try { initializeDeleteSyllabus(); } catch (e) { console.error('Error initializing delete syllabus:', e); }
+    try { initializeSemesterDynamicFilter(); } catch (e) { console.error('Error initializing semester dynamic filter:', e); }
 });
