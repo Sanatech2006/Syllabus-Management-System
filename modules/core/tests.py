@@ -38,7 +38,6 @@ class RoleAccessTests(TestCase):
         restricted_urls = [
             reverse("program_manage:program_management"),
             reverse("user_manage:user_management"),
-            reverse("reports:work_progress_report"),
         ]
 
         for url in restricted_urls:

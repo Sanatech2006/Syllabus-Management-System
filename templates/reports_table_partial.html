@@ -1,0 +1,34 @@
+{% for course in courses %}
+<tr class="hover:bg-gray-50 transition report-row">
+    <td class="px-6 py-4 text-center">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+    <td class="px-6 py-4 text-sm text-gray-900">
+        <div class="font-medium">{{ course.course_code|default:"—" }}</div>
+        <div class="text-xs text-gray-500">{{ course.course_title|default:"—" }}</div>
+    </td>
+    <td class="px-6 py-4 text-center text-gray-600">{{ course.year|default:"—" }}</td>
+    <td class="px-6 py-4 text-center text-gray-600">
+        <div class="font-medium">{{ course.program.prog_code|default:"—" }}</div>
+        <div class="text-xs text-gray-500">{{ course.program.branch|default:"—" }}</div>
+    </td>
+    <td class="px-6 py-4 text-center text-gray-600">{{ course.hod_names }}</td>
+    <td class="px-6 py-4 text-center text-gray-600">{{ course.sem|default:"—" }}</td>
+    <td class="px-6 py-4 text-center">
+        {% with content=course.get_content %}
+            {% if content and content.pdf %}
+                <span class="px-3 py-1 inline-flex text-xs font-semibold rounded-full bg-green-100 text-green-800">Uploaded</span>
+            {% else %}
+                <span class="px-3 py-1 inline-flex text-xs font-semibold rounded-full bg-red-100 text-red-800">Not Uploaded</span>
+            {% endif %}
+        {% endwith %}
+    </td>
+    <td class="px-6 py-4 text-center text-gray-600">
+        {% with content=course.get_content %}
+            {% if content and content.created_at %}{{ content.created_at|date:"d-m-Y" }}{% else %}—{% endif %}
+        {% endwith %}
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="8" class="px-6 py-12 text-center text-gray-500">No report records available.</td>
+</tr>
+{% endfor %}

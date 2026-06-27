@@ -2,224 +2,376 @@
 {% block title %}Work Progress Report{% endblock %}
 
 {% block content %}
-
 <div class="min-h-screen">
-
-    <!-- Header -->
     <div class="mx-auto mb-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                    <span class="bg-indigo-600 text-white p-3 rounded-xl shadow-lg">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 17v-6h13M9 5v6h13M3 12h6"/>
+                <h1 class="text-2xl font-bold text-blue-700 flex items-center gap-3">
+                    <span class="bg-blue-600 text-white p-3 rounded-xl shadow-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6h13M9 5v6h13M3 12h6"/>
                         </svg>
                     </span>
                     Work Progress Report
                 </h1>
+                <p class="text-sm text-slate-500 mt-1">Track syllabus upload progress by program, HOD, year, and status</p>
             </div>
         </div>
     </div>
 
-    <!-- Stats -->
-    <div class="mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-
-        <!-- Total Courses -->
-        <div class="bg-white rounded-2xl shadow-md p-6 border-l-4 border-blue-500 hover:shadow-lg transition">
+    <div class="mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Courses</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ total }}</p>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">No.Of Programs</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ no_of_programs }}</p>
+                </div>
+                <div class="bg-purple-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Total Courses</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ total }}</p>
                 </div>
                 <div class="bg-blue-100 p-3 rounded-xl">
-                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 6v6l4 2"/>
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/>
                     </svg>
                 </div>
             </div>
         </div>
 
-        <!-- Uploaded -->
-        <div class="bg-white rounded-2xl shadow-md p-6 border-l-4 border-green-500 hover:shadow-lg transition">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">PDFs Uploaded</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ uploaded }}</p>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">PDFs Uploaded</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ uploaded }}</p>
                 </div>
                 <div class="bg-green-100 p-3 rounded-xl">
-                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M5 13l4 4L19 7"/>
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
                 </div>
             </div>
         </div>
 
-        <!-- Completion -->
-        <div class="bg-white rounded-2xl shadow-md p-6 border-l-4 border-indigo-500 hover:shadow-lg transition">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition">
             <div>
-                <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Completion</p>
-                <p class="text-3xl font-bold text-gray-900">{{ percentage }}%</p>
+                <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Completion</p>
+                <p class="text-3xl font-bold text-slate-900">{{ percentage }}%</p>
+                <div class="w-full bg-slate-200 rounded-full h-2 mt-4">
+                    <div class="bg-indigo-600 h-2 rounded-full" style="width: {{ percentage }}%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                <!-- Progress -->
-                <div class="w-full bg-gray-200 rounded-full h-2 mt-4">
-                    <div class="bg-indigo-600 h-2 rounded-full"
-                         style="width: {{ percentage }}%;">
+    <div class="mx-auto bg-white rounded-xl border border-slate-200 shadow-sm mb-8 relative z-30 overflow-visible">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <h2 class="text-base font-semibold text-slate-900 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                </svg>
+                Filter Reports
+            </h2>
+        </div>
+        <div class="p-6 overflow-visible">
+            <form method="get" id="filterForm" class="space-y-4">
+                <input type="hidden" name="search" value="{{ selected_search|default:'' }}">
+                <input type="hidden" id="yearValue" name="year" value="{{ selected_year|default:'__all__' }}">
+                <input type="hidden" id="programValue" name="program" value="{{ selected_program|default:'__all__' }}">
+                <input type="hidden" id="hodValue" name="hod" value="{{ selected_hod|default:'__all__' }}">
+                <input type="hidden" id="statusValue" name="status" value="{{ selected_status|default:'__all__' }}">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6 overflow-visible">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Year</label>
+                        <div class="sms-dropdown relative" id="yearDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All</li>
+                                    {% for year in years %}<li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ year }}">{{ year }}</li>{% endfor %}
+                                </ul>
+                            </div>
+                        </div>
                     </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program</label>
+                        <div class="sms-dropdown relative" id="programDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="All Programs" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Programs</li>
+                                    {% for program in programs %}<li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ program.id }}">{{ program.prog_code }} - {{ program.branch }}</li>{% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">HOD</label>
+                        <div class="sms-dropdown relative" id="hodDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="All HODs" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All HODs</li>
+                                    {% for hod in hods %}<li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ hod.id }}">{{ hod.name }}</li>{% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Status</label>
+                        <div class="sms-dropdown relative" id="statusDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="All Status" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Status</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="uploaded">Uploaded</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="not_uploaded">Not Uploaded</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-5 w-full">
+                    <a href="{% url 'reports:work_progress_report' %}" class="px-4 py-2 w-[150px] border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition text-center">Clear All</a>
+                    <button type="submit" id="reportApplyFiltersBtn" disabled class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed disabled:hover:bg-slate-300">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="mx-auto bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-center gap-2.5">
+                <h2 class="text-base font-semibold text-slate-900">Course Upload Status</h2>
+                <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600">{{ page_obj.paginator.count }} total</span>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <a href="{% url 'reports:download_work_progress_excel' %}{% if pagination_query %}?{{ pagination_query }}{% endif %}" class="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                    </svg>
+                    Download Excel
+                </a>
+                <div class="relative">
+                    <input id="reportSearch" name="search" value="{{ selected_search|default:'' }}" type="text" placeholder="Search course, program or HOD..." class="pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-64" autocomplete="off">
+                    <svg class="absolute left-3 top-3.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
                 </div>
             </div>
         </div>
 
-    </div>
-
-    <!-- Table -->
-    <div class="mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
-
-        <!-- Table Header -->
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-                </svg>
-                Course Upload Status
-                <span class="ml-2 px-3 py-1 bg-indigo-100 text-indigo-800 text-sm rounded-full">
-                    {{ page_obj.paginator.count }} total
-                </span>
-            </h2>
-
-            <!-- Search (optional UI match) -->
-            <div class="relative">
-                <input type="text" placeholder="Search courses..."
-                    class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-64">
-                <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
-                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
-            </div>
-        </div>
-
-        <!-- Table Body -->
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase">#</th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase">Course</th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase">Branch</th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase">Semester</th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase">Status</th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase">Uploaded On</th>
+        <div class="overflow-auto relative h-[65vh]">
+            <table class="w-full min-w-full border-collapse text-left text-sm">
+                <thead class="bg-slate-50/90 border-y border-slate-200">
+                    <tr class="text-center text-xs uppercase tracking-wider text-slate-700 font-bold">
+                        <th class="sticky top-0 z-30 bg-slate-50/90 px-6 py-4 w-12">#</th>
+                        <th class="sticky top-0 z-30 bg-slate-50/90 px-6 py-4">Course</th>
+                        <th class="sticky top-0 z-30 bg-slate-50/90 px-6 py-4">Year</th>
+                        <th class="sticky top-0 z-30 bg-slate-50/90 px-6 py-4">Program</th>
+                        <th class="sticky top-0 z-30 bg-slate-50/90 px-6 py-4">HOD</th>
+                        <th class="sticky top-0 z-30 bg-slate-50/90 px-6 py-4">Semester</th>
+                        <th class="sticky top-0 z-30 bg-slate-50/90 px-6 py-4">Status</th>
+                        <th class="sticky top-0 z-30 bg-slate-50/90 px-6 py-4">Uploaded On</th>
                     </tr>
                 </thead>
 
-                <tbody class="bg-white divide-y divide-gray-200">
-
-                    {% for course in courses %}
-                    <tr class="hover:bg-gray-50 transition">
-                        <td class="px-6 py-4 text-center">
-                            {{ page_obj.start_index|add:forloop.counter0 }}
-                        </td>
-
-                        <!-- Course -->
-                        <td class="px-6 py-4 text-sm text-gray-900">
-                            <div class="font-medium">
-                                {{ course.course_code|default:"—" }}
-                            </div>
-                            <div class="text-xs text-gray-500">
-                                {{ course.course_title|default:"—" }}
-                            </div>
-                        </td>
-
-                        <!-- Branch -->
-                        <td class="px-6 py-4 text-center text-gray-600">
-                            {{ course.branch|default:"—" }}
-                        </td>
-
-                        <!-- Semester -->
-                        <td class="px-6 py-4 text-center text-gray-600">
-                            {{ course.sem|default:"—" }}
-                        </td>
-
-                        <!-- Status -->
-                        <td class="px-6 py-4 text-center">
-                            {% with content=course.get_content %}
-                                {% if content and content.pdf %}
-                                    <span class="px-3 py-1 inline-flex text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                        Uploaded
-                                    </span>
-                                {% else %}
-                                    <span class="px-3 py-1 inline-flex text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                        Not Uploaded
-                                    </span>
-                                {% endif %}
-                            {% endwith %}
-                        </td>
-
-                        <!-- Uploaded Date -->
-                        <td class="px-6 py-4 text-center text-gray-600">
-                            {% with content=course.get_content %}
-                                {% if content and content.created_at %}
-                                    {{ content.created_at|date:"d-m-Y" }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            {% endwith %}
-                        </td>
-
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
-                            No courses available.
-                        </td>
-                    </tr>
-                    {% endfor %}
-
+                <tbody id="reportTableBody" class="divide-y divide-slate-100 bg-white">
+                    {% include "reports_table_partial.html" %}
                 </tbody>
-
             </table>
         </div>
 
-        {% if page_obj.has_other_pages %}
-        <div class="px-6 py-3 bg-gray-50 border-t border-gray-200">
-            <div class="flex items-center justify-between">
-                <p class="text-sm text-gray-600">
-                    Showing <span class="font-medium">{{ page_obj.start_index }}</span> to <span class="font-medium">{{ page_obj.end_index }}</span> of <span class="font-medium">{{ page_obj.paginator.count }}</span> results
+        <div id="reportPagination" class="px-6 py-4 bg-slate-50 border-t border-slate-200">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p id="reportResultsSummary" class="text-sm text-slate-600">
+                    Showing <span class="font-medium">{{ page_obj.start_index }}</span> to
+                    <span class="font-medium">{{ page_obj.end_index }}</span> of
+                    <span class="font-medium">{{ page_obj.paginator.count }}</span> results
                 </p>
-                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-slate-600">Items per page:</label>
+                        <select id="perPageSelect" class="p-1.5 border border-slate-200 rounded-lg text-sm">
+                            <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                            <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                            <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                        </select>
+                    </div>
+
+                    {% if page_obj.has_other_pages %}
+                    <nav class="flex gap-1">
                     {% if page_obj.has_previous %}
-                    <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                        <span class="sr-only">Previous</span>
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                    </a>
+                    <a href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}{% if pagination_query %}&{{ pagination_query }}{% endif %}" class="px-3 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition">Previous</a>
                     {% endif %}
-
-                    {% for num in page_obj.paginator.page_range %}
-                        {% if page_obj.number == num %}
-                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-indigo-50 text-sm font-medium text-indigo-600">{{ num }}</span>
-                        {% else %}
-                        <a href="?page={{ num }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">{{ num }}</a>
-                        {% endif %}
-                    {% endfor %}
-
+                    <span class="px-3 py-1 bg-blue-600 text-white rounded-lg">{{ page_obj.number }}</span>
                     {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                        <span class="sr-only">Next</span>
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    </a>
+                    <a href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}{% if pagination_query %}&{{ pagination_query }}{% endif %}" class="px-3 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition">Next</a>
                     {% endif %}
-                </nav>
+                    </nav>
+                    {% endif %}
+                </div>
             </div>
         </div>
-        {% endif %}
-
     </div>
-
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const dropdowns = [
+        { id: 'yearDropdown', valueId: 'yearValue' },
+        { id: 'programDropdown', valueId: 'programValue' },
+        { id: 'hodDropdown', valueId: 'hodValue' },
+        { id: 'statusDropdown', valueId: 'statusValue' },
+    ];
+
+    function closeAll(except) {
+        dropdowns.forEach(({ id }) => {
+            if (id === except) return;
+            const dropdown = document.getElementById(id);
+            if (!dropdown) return;
+            dropdown.querySelector('.sms-panel')?.classList.add('hidden');
+            dropdown.querySelector('.sms-chevron')?.classList.remove('rotate-180');
+        });
+    }
+
+    function updateApplyButtonState() {
+        const applyBtn = document.getElementById('reportApplyFiltersBtn');
+        if (!applyBtn) return;
+
+        applyBtn.disabled = dropdowns.some(({ valueId }) => {
+            const value = document.getElementById(valueId)?.value;
+            return !value || value === '__all__';
+        });
+    }
+
+    dropdowns.forEach(({ id, valueId }) => {
+        const dropdown = document.getElementById(id);
+        const valueInput = document.getElementById(valueId);
+        if (!dropdown || !valueInput) return;
+
+        const trigger = dropdown.querySelector('.sms-trigger');
+        const panel = dropdown.querySelector('.sms-panel');
+        const chevron = dropdown.querySelector('.sms-chevron');
+        const options = Array.from(dropdown.querySelectorAll('.sms-option'));
+
+        function syncLabel() {
+            const selected = options.find(option => option.dataset.value === valueInput.value) || options[0];
+            if (selected && trigger) trigger.value = selected.textContent.trim();
+        }
+
+        trigger?.addEventListener('click', function () {
+            closeAll(id);
+            panel?.classList.toggle('hidden');
+            chevron?.classList.toggle('rotate-180');
+        });
+
+        trigger?.addEventListener('input', function () {
+            const term = trigger.value.toLowerCase();
+            options.forEach(option => option.classList.toggle('hidden', !option.textContent.toLowerCase().includes(term)));
+            panel?.classList.remove('hidden');
+        });
+
+        options.forEach(option => {
+            option.addEventListener('click', function () {
+                valueInput.value = option.dataset.value;
+                trigger.value = option.textContent.trim();
+                panel?.classList.add('hidden');
+                chevron?.classList.remove('rotate-180');
+                updateApplyButtonState();
+            });
+        });
+
+        syncLabel();
+    });
+
+    updateApplyButtonState();
+
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('.sms-dropdown')) closeAll();
+    });
+
+    const reportSearch = document.getElementById('reportSearch');
+    const filterForm = document.getElementById('filterForm');
+    const reportTableBody = document.getElementById('reportTableBody');
+    const reportResultsSummary = document.getElementById('reportResultsSummary');
+    const reportPagination = document.getElementById('reportPagination');
+    let reportSearchTimer;
+
+    function submitReportSearch() {
+        if (!reportSearch) return;
+        const searchValue = reportSearch.value.trim();
+        const url = new URL(window.location.href);
+        if (searchValue) {
+            url.searchParams.set('search', searchValue);
+        } else {
+            url.searchParams.delete('search');
+        }
+        url.searchParams.set('page', '1');
+        url.searchParams.set('partial', '1');
+
+        const currentUrl = url.toString();
+        fetch(currentUrl, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.text())
+        .then(html => {
+            if (reportTableBody) {
+                reportTableBody.innerHTML = html;
+            }
+        })
+        .catch(error => console.error('Report search failed:', error));
+    }
+
+    reportSearch?.addEventListener('input', function () {
+        clearTimeout(reportSearchTimer);
+        reportSearchTimer = setTimeout(submitReportSearch, 500);
+    });
+
+    reportSearch?.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            clearTimeout(reportSearchTimer);
+            submitReportSearch();
+        }
+    });
+
+    document.getElementById('perPageSelect')?.addEventListener('change', function () {
+        const url = new URL(window.location.href);
+        url.searchParams.set('per_page', this.value);
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+    });
+});
+</script>
 {% endblock %}
