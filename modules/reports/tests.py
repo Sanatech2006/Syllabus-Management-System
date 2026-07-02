@@ -2,10 +2,12 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from modules.course_management.models import CourseStructure, CourseSyllabus
 from modules.hod_management.models import HodProgramMap
 from modules.program_manage.models import Program
+from modules.reports.models import CourseVerification
 
 
 User = get_user_model()
@@ -115,3 +117,115 @@ class WorkProgressReportTests(TestCase):
             response["Content-Type"],
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
+
+
+class VerificationFlowTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(
+            username="admin_verify",
+            password="secret123",
+            is_superuser=True,
+            is_staff=True,
+        )
+        self.hod_user = User.objects.create_user(
+            username="hod_verify",
+            password="secret123",
+            is_superuser=False,
+            is_staff=True,
+        )
+        self.program = Program.objects.create(
+            prog_code="BSC",
+            degree="B.Sc",
+            branch="Computer Science",
+            prog_type="UG",
+            prog_category="Science",
+        )
+        HodProgramMap.objects.create(user=self.hod_user, program=self.program)
+        self.course = CourseStructure.objects.create(
+            program=self.program,
+            course_code="CSC101",
+            course_title="Programming Basics",
+            year="I",
+            sem="I",
+            course_category="Core",
+        )
+        self.other_course = CourseStructure.objects.create(
+            program=self.program,
+            course_code="CSC102",
+            course_title="Data Structures",
+            year="I",
+            sem="I",
+            course_category="Core",
+        )
+
+    def test_hod_verification_page_renders_checkbox(self):
+        self.client.force_login(self.hod_user)
+
+        response = self.client.get(reverse("reports:verification_center"), {"year": "I"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="verified_courses"')
+
+    def test_hod_verification_page_shows_rows_without_filters(self):
+        self.client.force_login(self.hod_user)
+
+        response = self.client.get(reverse("reports:verification_center"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Programming Basics")
+        self.assertContains(response, 'name="verified_courses"')
+
+    def test_admin_report_stays_hidden_until_filters_are_applied(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.get(reverse("reports:verification_report"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Programming Basics")
+        self.assertContains(response, "Apply filters to view records")
+
+    def test_save_and_finish_publishes_to_admin_report(self):
+        self.client.force_login(self.hod_user)
+
+        response = self.client.post(
+            reverse("reports:verification_center") + "?year=I",
+            {
+                "action": "finish",
+                "verified_courses": [str(self.course.id)],
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        verification = CourseVerification.objects.get(course=self.course, verifier=self.hod_user)
+        self.assertTrue(verification.is_verified)
+        self.assertEqual(verification.status, CourseVerification.STATUS_SUBMITTED)
+
+        self.client.force_login(self.admin_user)
+        report_response = self.client.get(reverse("reports:verification_report"), {"year": "I"})
+
+        self.assertEqual(report_response.status_code, 200)
+        self.assertContains(report_response, "Programming Basics")
+        self.assertContains(report_response, "hod_verify")
+
+    def test_save_only_updates_current_page_courses(self):
+        CourseVerification.objects.create(
+            course=self.other_course,
+            verifier=self.hod_user,
+            is_verified=True,
+            status=CourseVerification.STATUS_SUBMITTED,
+            finished_at=timezone.now(),
+        )
+
+        self.client.force_login(self.hod_user)
+
+        response = self.client.post(
+            reverse("reports:verification_center") + "?year=I&per_page=1",
+            {
+                "action": "finish",
+                "verified_courses": [str(self.course.id)],
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(CourseVerification.objects.filter(course=self.course, verifier=self.hod_user).exists())
+        self.assertTrue(CourseVerification.objects.filter(course=self.other_course, verifier=self.hod_user).exists())

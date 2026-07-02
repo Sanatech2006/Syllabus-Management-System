@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'modules.login.apps.LoginConfig', 
     'modules.core',
     'modules.view_syllabus', 
+    'modules.reports',
 ]
 
 MIDDLEWARE = [

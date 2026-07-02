@@ -1,0 +1,921 @@
+{% extends "base_layout.html" %}
+{% load static %}
+
+{% block title %}{% if page_mode == "report" %}Verification Report{% else %}Verification Centre{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sms-dropdown,
+    .sms-panel {
+        overflow: visible;
+    }
+
+    .sms-panel {
+        position: absolute;
+        z-index: 9999;
+    }
+
+    .sms-trigger:disabled {
+        cursor: not-allowed !important;
+    }
+
+    .verification-checkbox {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 1.1rem;
+        height: 1.1rem;
+        border-radius: 0.375rem;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        display: inline-grid;
+        place-content: center;
+        cursor: pointer;
+        transition: all 150ms ease;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    }
+
+    .verification-checkbox::before {
+        content: "";
+        width: 0.58rem;
+        height: 0.58rem;
+        transform: scale(0);
+        transition: transform 120ms ease-in-out;
+        box-shadow: inset 1em 1em #ffffff;
+        clip-path: polygon(14% 44%, 0 65%, 40% 100%, 100% 16%, 80% 0, 38% 62%);
+    }
+
+    .verification-checkbox:checked {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        border-color: #1d4ed8;
+    }
+
+    .verification-checkbox:checked::before {
+        transform: scale(1);
+    }
+
+    .verification-checkbox:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18), 0 1px 2px rgba(15, 23, 42, 0.06);
+    }
+
+    .verification-checkbox:hover {
+        border-color: #60a5fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen">
+    <div class="mx-auto mb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-blue-700 flex items-center gap-3">
+                    <span class="bg-blue-600 text-white p-3 rounded-xl shadow-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2z" />
+                        </svg>
+                    </span>
+                    {% if page_mode == "report" %}Verification Report{% else %}Verification Centre{% endif %}
+                </h1>
+                <p class="text-sm text-slate-500 mt-1">
+                    {% if page_mode == "report" %}
+                        Review which verifier confirmed each course structure.
+                    {% else %}
+                        Review course structures, mark them checked, and submit verification.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">UG Verified</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ ug_verified|default:"0" }}</p>
+                </div>
+                <div class="bg-blue-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">PG Verified</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ pg_verified|default:"0" }}</p>
+                </div>
+                <div class="bg-indigo-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m6-6H6" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Arts Verified</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ arts_verified|default:"0" }}</p>
+                </div>
+                <div class="bg-amber-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16M12 4v16" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Science Verified</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ science_verified|default:"0" }}</p>
+                </div>
+                <div class="bg-green-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v8m-4-4h8" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mx-auto bg-white rounded-xl border border-slate-200 shadow-sm mb-8 relative z-30 overflow-visible">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <h2 class="text-base font-semibold text-slate-900 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filter Courses
+            </h2>
+        </div>
+        <div class="p-6 overflow-visible">
+            <form method="get" id="filterForm" class="space-y-4">
+                <input type="hidden" id="yearValue" name="year" value="{{ selected_year|default:'__all__' }}">
+                <input type="hidden" id="progTypeValue" name="prog_type" value="{{ selected_prog_type|default:'__all__' }}">
+                <input type="hidden" id="progCategoryValue" name="prog_category" value="{{ selected_prog_category|default:'__all__' }}">
+                <input type="hidden" id="degreeValue" name="degree" value="{{ selected_degree|default:'__all__' }}">
+                <input type="hidden" id="branchValue" name="branch" value="{{ selected_branch|default:'__all__' }}">
+                <input type="hidden" id="programValue" name="program" value="{{ selected_program|default:'__all__' }}">
+                <input type="hidden" id="semValue" name="sem" value="{{ selected_sem|default:'__all__' }}">
+                <input type="hidden" id="partValue" name="part" value="{{ selected_part|default:'__all__' }}">
+                <input type="hidden" id="courseCategoryValue" name="course_category" value="{{ selected_course_category|default:'__all__' }}">
+                <input type="hidden" id="courseTitleValue" name="course_title" value="{{ selected_course_title|default:'__all__' }}">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-6 overflow-visible">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Year</label>
+                        <div class="sms-dropdown relative" id="yearDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="Select" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All</li>
+                                    {% for year in years %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ year }}">{{ year }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program type</label>
+                        <div class="sms-dropdown relative" id="progTypeDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All Types" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Types</li>
+                                    {% for item in prog_types %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ item }}">{{ item }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program category</label>
+                        <div class="sms-dropdown relative" id="progCategoryDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All Categories" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Categories</li>
+                                    {% for item in prog_categories %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ item }}">{{ item }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Degree</label>
+                        <div class="sms-dropdown relative" id="degreeDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All Degrees" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Degrees</li>
+                                    {% for item in degrees %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ item }}">{{ item }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Branch</label>
+                        <div class="sms-dropdown relative" id="branchDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All Branches" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Branches</li>
+                                    {% for item in branches %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ item }}">{{ item }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program code</label>
+                        <div class="sms-dropdown relative" id="programDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All Programs" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Programs</li>
+                                    {% for program in programs %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ program.id }}">{{ program.prog_code }} - {{ program.degree }} ({{ program.branch }})</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Semester</label>
+                        <div class="sms-dropdown relative" id="semDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All</li>
+                                    {% for sem in sems %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ sem }}">{{ sem }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Part</label>
+                        <div class="sms-dropdown relative" id="partDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All Parts" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Parts</li>
+                                    {% for item in parts %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ item }}">{{ item }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Course category</label>
+                        <div class="sms-dropdown relative" id="courseCategoryDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All Categories" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Categories</li>
+                                    {% for item in course_categories %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ item }}">{{ item }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Course code with title</label>
+                        <div class="sms-dropdown relative" id="courseTitleDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All Courses" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Courses</li>
+                                    {% for item in all_courses_for_search %}
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ item.code }}">{{ item.code }} - {{ item.title }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-5">
+                    <a href="{% if page_mode == 'report' %}{% url 'reports:verification_report' %}{% else %}{% url 'reports:verification_center' %}{% endif %}" class="px-4 py-2 w-[150px] border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition text-center">Clear All</a>
+                    <button id="applyFiltersBtn" type="submit" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="mx-auto">
+        {% if courses or records %}
+        {% if page_mode == "center" %}
+        <form method="post" action="{{ post_action_url }}{% if pagination_query %}?{{ pagination_query }}{% endif %}">
+            {% csrf_token %}
+        {% endif %}
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-5">
+            <div class="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <h2 class="text-base font-semibold text-slate-900">{% if page_mode == "report" %}Verification Report{% else %}Verification Queue{% endif %}</h2>
+                    <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600">
+                        {% if page_mode == "report" %}{{ records|length }} shown{% else %}{{ courses|length }} shown{% endif %}
+                    </span>
+                </div>
+                <div class="relative w-full sm:w-72">
+                    <input type="text" id="verificationSearchInput" placeholder="Search courses..." class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg">
+                    <svg class="absolute left-3 top-2.5 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="overflow-auto relative h-[600px]">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
+                        <tr>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">#</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Program</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Course Code</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Course Title</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Year</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Sem</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Category</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Part</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Hrs/Week</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Credit</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">CIA</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">ESE</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Total</th>
+                            {% if page_mode == "center" %}
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Checkbox</th>
+                            {% else %}
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Verified By</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Verified On</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 bg-white">
+                        {% if page_mode == "center" %}
+                        {% for course in courses %}
+                        <tr class="verification-row hover:bg-slate-50 transition" data-course-code="{{ course.course_code|lower }}" data-course-title="{{ course.course_title|default:''|lower }}" data-program="{{ course.program.prog_code|lower }}">
+                            <td class="px-6 py-4 text-center text-sm text-slate-500">{{ forloop.counter }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="text-sm font-medium text-slate-900">{{ course.program.prog_code }}</div>
+                                <div class="text-xs text-slate-500">{{ course.program.degree }} - {{ course.program.branch }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-center font-mono font-bold text-blue-600">{{ course.course_code }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ course.course_title|truncatechars:40 }}</td>
+                            <td class="px-6 py-4 text-center"><span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">{{ course.year }}</span></td>
+                            <td class="px-6 py-4 text-center"><span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">{{ course.sem }}</span></td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ course.course_category|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ course.part|floatformat:0|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ course.hrs_per_week|floatformat:-2|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center font-semibold">{{ course.credit|floatformat:-2|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ course.marks_cia|floatformat:0|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ course.marks_ese|floatformat:0|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center font-semibold text-slate-900">{{ course.total_marks|floatformat:0|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <input type="checkbox" name="verified_courses" value="{{ course.id }}" class="verification-checkbox" {% if course.is_verified_checked %}checked{% endif %}>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        {% for record in records %}
+                        <tr class="verification-row hover:bg-slate-50 transition" data-course-code="{{ record.course.course_code|lower }}" data-course-title="{{ record.course.course_title|default:''|lower }}" data-program="{{ record.course.program.prog_code|lower }}" data-verifier="{{ record.verifier.username|lower }}">
+                            <td class="px-6 py-4 text-center text-sm text-slate-500">{{ forloop.counter }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="text-sm font-medium text-slate-900">{{ record.course.program.prog_code }}</div>
+                                <div class="text-xs text-slate-500">{{ record.course.program.degree }} - {{ record.course.program.branch }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-center font-mono font-bold text-blue-600">{{ record.course.course_code }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ record.course.course_title|truncatechars:40 }}</td>
+                            <td class="px-6 py-4 text-center"><span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">{{ record.course.year }}</span></td>
+                            <td class="px-6 py-4 text-center"><span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">{{ record.course.sem }}</span></td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ record.course.course_category|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ record.course.part|floatformat:0|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ record.course.hrs_per_week|floatformat:-2|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center font-semibold">{{ record.course.credit|floatformat:-2|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ record.course.marks_cia|floatformat:0|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ record.course.marks_ese|floatformat:0|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center font-semibold text-slate-900">{{ record.course.total_marks|floatformat:0|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ record.verifier.get_full_name|default:record.verifier.username }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ record.finished_at|default:record.updated_at|date:"d M Y, h:i A" }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p class="text-sm text-slate-600">
+                        Showing <span class="font-medium">{{ page_obj.start_index }}</span> to
+                        <span class="font-medium">{{ page_obj.end_index }}</span> of
+                        <span class="font-medium">{{ page_obj.paginator.count }}</span> results
+                    </p>
+
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-slate-600">Items per page:</label>
+                            <select id="perPageSelect" class="p-1.5 border border-slate-200 rounded-lg text-sm">
+                                <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                                <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                                <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                                <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                            </select>
+                        </div>
+
+                        {% if page_obj.has_other_pages %}
+                        <nav class="flex gap-1">
+                            {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}{% if pagination_query %}&{{ pagination_query }}{% endif %}" class="px-3 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition">Previous</a>
+                            {% endif %}
+                            <span class="px-3 py-1 bg-blue-600 text-white rounded-lg">{{ page_obj.number }}</span>
+                            {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}{% if pagination_query %}&{{ pagination_query }}{% endif %}" class="px-3 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition">Next</a>
+                            {% endif %}
+                        </nav>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if page_mode == "center" %}
+        <div class="flex justify-end gap-3 pb-4">
+            <button type="submit" name="action" value="save" class="px-5 py-2.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition">Save</button>
+            <button type="submit" name="action" value="finish" class="px-5 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition">Save and Finish</button>
+        </div>
+        </form>
+        {% endif %}
+
+        <div id="verificationSearchEmpty" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center mt-5">
+            <h3 class="text-lg font-bold text-slate-900">No matching courses</h3>
+            <p class="mt-2 text-sm text-slate-500">Your search only checks the filtered courses currently shown.</p>
+        </div>
+        {% else %}
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
+            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            </div>
+            {% if has_applied_filters %}
+            <h3 class="mt-4 text-lg font-bold text-slate-900">No records found</h3>
+            <p class="mt-2 text-sm text-slate-500">No verification records match your filters.</p>
+            {% else %}
+            <h3 class="mt-4 text-lg font-bold text-slate-900">Apply filters to view records</h3>
+            <p class="mt-2 text-sm text-slate-500">Choose your filters and click Apply Filters to display verification records.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const endpoint = "{% url 'reports:verification_filter_options' %}";
+    const dropdownSequence = [
+        { id: 'yearDropdown', valueId: 'yearValue', placeholder: 'Select', allText: 'All' },
+        { id: 'progTypeDropdown', valueId: 'progTypeValue', placeholder: 'Select Type', allText: 'All Types' },
+        { id: 'progCategoryDropdown', valueId: 'progCategoryValue', placeholder: 'Select Category', allText: 'All Categories' },
+        { id: 'degreeDropdown', valueId: 'degreeValue', placeholder: 'Select Degree', allText: 'All Degrees' },
+        { id: 'branchDropdown', valueId: 'branchValue', placeholder: 'Select Branch', allText: 'All Branches' },
+        { id: 'programDropdown', valueId: 'programValue', placeholder: 'Select Program', allText: 'All Programs' },
+        { id: 'semDropdown', valueId: 'semValue', placeholder: 'Select', allText: 'All' },
+        { id: 'partDropdown', valueId: 'partValue', placeholder: 'Select Part', allText: 'All Parts' },
+        { id: 'courseCategoryDropdown', valueId: 'courseCategoryValue', placeholder: 'Select Category', allText: 'All Categories' },
+        { id: 'courseTitleDropdown', valueId: 'courseTitleValue', placeholder: 'Select Course', allText: 'All Courses' }
+    ];
+
+    const hiddenInputIds = dropdownSequence.map(item => item.valueId);
+    const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+
+    function updateApplyButtonState() {
+        const yearInput = document.getElementById('yearValue');
+        if (!applyFiltersBtn) return;
+        applyFiltersBtn.disabled = !yearInput || yearInput.value === '';
+    }
+
+    function getDropdownConfig(id, data) {
+        const map = {
+            yearDropdown: { list: data.years || [], placeholder: 'Select', all: 'All' },
+            progTypeDropdown: { list: data.prog_types || [], placeholder: 'Select Type', all: 'All Types' },
+            progCategoryDropdown: { list: data.prog_categories || [], placeholder: 'Select Category', all: 'All Categories' },
+            degreeDropdown: { list: data.degrees || [], placeholder: 'Select Degree', all: 'All Degrees' },
+            branchDropdown: { list: data.branches || [], placeholder: 'Select Branch', all: 'All Branches' },
+            programDropdown: { list: data.programs || [], placeholder: 'Select Program', all: 'All Programs' },
+            semDropdown: { list: data.sems || [], placeholder: 'Select', all: 'All' },
+            partDropdown: { list: data.parts || [], placeholder: 'Select Part', all: 'All Parts' },
+            courseCategoryDropdown: { list: data.course_categories || [], placeholder: 'Select Category', all: 'All Categories' },
+            courseTitleDropdown: { list: data.courses || [], placeholder: 'Select Course', all: 'All Courses' }
+        };
+        return map[id];
+    }
+
+    function setRowVisibility() {
+        const searchInput = document.getElementById('verificationSearchInput');
+        const emptyState = document.getElementById('verificationSearchEmpty');
+        if (!searchInput) return;
+
+        const term = searchInput.value.toLowerCase().trim();
+        const rows = Array.from(document.querySelectorAll('.verification-row'));
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const courseCode = row.dataset.courseCode || '';
+            const courseTitle = row.dataset.courseTitle || '';
+            const program = row.dataset.program || '';
+            const verifier = row.dataset.verifier || '';
+            const matches = !term || courseCode.includes(term) || courseTitle.includes(term) || program.includes(term) || verifier.includes(term);
+            row.style.display = matches ? '' : 'none';
+            if (matches) visibleCount++;
+        });
+
+        if (emptyState) {
+            emptyState.classList.toggle('hidden', visibleCount > 0);
+        }
+    }
+
+    dropdownSequence.forEach(({ id, valueId }) => {
+        const dropdown = document.getElementById(id);
+        if (!dropdown) return;
+
+        const hidden = document.getElementById(valueId);
+        const trigger = dropdown.querySelector('.sms-trigger');
+        const chevron = dropdown.querySelector('.sms-chevron');
+        const panel = dropdown.querySelector('.sms-panel');
+        const list = dropdown.querySelector('.sms-list');
+        const emptyMsg = dropdown.querySelector('.sms-empty');
+
+        function getOptions() {
+            return Array.from(dropdown.querySelectorAll('.sms-option'));
+        }
+
+        function markSelected(option) {
+            getOptions().forEach(item => {
+                item.classList.remove('bg-blue-50', 'text-blue-700', 'font-medium');
+                item.classList.add('text-slate-700');
+            });
+            option.classList.add('bg-blue-50', 'text-blue-700', 'font-medium');
+            option.classList.remove('text-slate-700');
+        }
+
+        function highlightOption(option) {
+            getOptions().forEach(item => item.classList.remove('bg-slate-100'));
+            if (option) {
+                option.classList.add('bg-slate-100');
+                option.scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        function getVisibleOptions() {
+            return getOptions().filter(item => item.style.display !== 'none');
+        }
+
+        function filterOptions(term) {
+            const lower = term.toLowerCase().trim();
+            let visibleCount = 0;
+            getOptions().forEach(option => {
+                const isPlaceholder = option.dataset.value === '';
+                const matches = option.textContent.toLowerCase().includes(lower);
+                if (lower === '') {
+                    option.style.display = '';
+                    visibleCount++;
+                } else if (isPlaceholder) {
+                    option.style.display = 'none';
+                } else {
+                    option.style.display = matches ? '' : 'none';
+                    if (matches) visibleCount++;
+                }
+            });
+            if (emptyMsg) emptyMsg.classList.toggle('hidden', visibleCount > 0);
+            highlightOption(getVisibleOptions()[0]);
+        }
+
+        function selectOption(option) {
+            const value = option.dataset.value;
+            hidden.value = value;
+            trigger.value = value ? option.textContent.trim() : '';
+            markSelected(option);
+            panel.classList.add('hidden');
+            chevron.classList.remove('rotate-180');
+            updateDropdownState();
+            updateApplyButtonState();
+            refreshOptions();
+        }
+
+        function openPanel() {
+            panel.classList.remove('hidden');
+            chevron.classList.add('rotate-180');
+            filterOptions('');
+            const current = getOptions().find(item => item.dataset.value === hidden.value);
+            highlightOption(current || getVisibleOptions()[0]);
+            trigger.select();
+        }
+
+        function closePanel() {
+            panel.classList.add('hidden');
+            chevron.classList.remove('rotate-180');
+        }
+
+        function revertInvalidInput() {
+            const current = getOptions().find(item => item.dataset.value === hidden.value);
+            trigger.value = current && hidden.value ? current.textContent.trim() : '';
+        }
+
+        const currentValue = hidden.value;
+        if (currentValue) {
+            const match = getOptions().find(option => option.dataset.value === currentValue);
+            if (match) {
+                trigger.value = match.textContent.trim();
+                markSelected(match);
+            }
+        }
+
+        trigger.addEventListener('focus', () => {
+            document.querySelectorAll('.sms-dropdown').forEach(otherDropdown => {
+                if (otherDropdown !== dropdown) {
+                    const otherPanel = otherDropdown.querySelector('.sms-panel');
+                    const otherChevron = otherDropdown.querySelector('.sms-chevron');
+                    if (otherPanel) otherPanel.classList.add('hidden');
+                    if (otherChevron) otherChevron.classList.remove('rotate-180');
+                }
+            });
+            openPanel();
+        });
+
+        trigger.addEventListener('click', event => {
+            event.stopPropagation();
+            if (panel.classList.contains('hidden')) openPanel();
+        });
+
+        trigger.addEventListener('input', () => {
+            if (panel.classList.contains('hidden')) openPanel();
+            filterOptions(trigger.value);
+        });
+
+        trigger.addEventListener('keydown', event => {
+            if (event.key === 'Tab' || event.key === 'Escape') {
+                closePanel();
+                revertInvalidInput();
+                return;
+            }
+
+            if (panel.classList.contains('hidden')) {
+                if (['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) {
+                    openPanel();
+                    event.preventDefault();
+                }
+                return;
+            }
+
+            const visible = getVisibleOptions();
+            if (!visible.length) return;
+            const currentIndex = visible.indexOf(getOptions().find(item => item.classList.contains('bg-slate-100')));
+
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                highlightOption(visible[(currentIndex + 1) % visible.length]);
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                highlightOption(visible[(currentIndex - 1 + visible.length) % visible.length]);
+            } else if (event.key === 'Enter') {
+                event.preventDefault();
+                const highlighted = getOptions().find(item => item.classList.contains('bg-slate-100'));
+                if (highlighted) selectOption(highlighted);
+            }
+        });
+
+        list.addEventListener('mouseover', event => {
+            const option = event.target.closest('.sms-option');
+            if (option) highlightOption(option);
+        });
+
+        list.addEventListener('click', event => {
+            const option = event.target.closest('.sms-option');
+            if (option) selectOption(option);
+        });
+
+        document.addEventListener('click', event => {
+            if (!dropdown.contains(event.target)) {
+                closePanel();
+                revertInvalidInput();
+            }
+        });
+
+        dropdown.updateOptions = function(optionList, placeholderText, allText) {
+            list.innerHTML = '';
+
+            if (allText) {
+                const allLi = document.createElement('li');
+                allLi.className = 'sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer';
+                allLi.dataset.value = '__all__';
+                allLi.textContent = allText;
+                list.appendChild(allLi);
+            }
+
+            const currentValue = hidden.value;
+            optionList.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer';
+
+                let value = '';
+                let text = '';
+                if (typeof item === 'object') {
+                    if (item.id) {
+                        value = String(item.id);
+                        text = `${item.code} - ${item.degree} (${item.branch})`;
+                    } else if (item.code) {
+                        value = String(item.code);
+                        text = `${item.code} - ${item.title}`;
+                    }
+                } else {
+                    value = String(item);
+                    text = String(item);
+                }
+
+                li.dataset.value = value;
+                li.textContent = text;
+                if (currentValue && value === currentValue) {
+                    li.classList.add('bg-blue-50', 'text-blue-700', 'font-medium');
+                    li.classList.remove('text-slate-700');
+                }
+                list.appendChild(li);
+            });
+
+            revertInvalidInput();
+        };
+    });
+
+    function refreshOptions() {
+        const params = new URLSearchParams();
+        dropdownSequence.forEach(item => {
+            const hidden = document.getElementById(item.valueId);
+            if (hidden && hidden.value !== '') {
+                params.append(hidden.name, hidden.value);
+            }
+        });
+
+        fetch(`${endpoint}?${params.toString()}`)
+            .then(response => response.json())
+            .then(data => {
+                dropdownSequence.forEach(item => {
+                    const dropdown = document.getElementById(item.id);
+                    const trigger = dropdown ? dropdown.querySelector('.sms-trigger') : null;
+                    if (!dropdown || !dropdown.updateOptions || !trigger || trigger.disabled) return;
+                    const config = getDropdownConfig(item.id, data);
+                    if (config) dropdown.updateOptions(config.list, config.placeholder, config.all);
+                });
+            })
+            .catch(error => console.error('Error fetching verification filters:', error));
+    }
+
+    function updateDropdownState() {
+        for (let index = 1; index < dropdownSequence.length; index++) {
+            const previousHidden = document.getElementById(dropdownSequence[index - 1].valueId);
+            const currentDropdown = document.getElementById(dropdownSequence[index].id);
+            if (currentDropdown && currentDropdown.setEnabled) {
+                currentDropdown.setEnabled = currentDropdown.setEnabled || function(enabled) {
+                    const trigger = currentDropdown.querySelector('.sms-trigger');
+                    trigger.disabled = !enabled;
+                };
+            }
+            if (currentDropdown) {
+                const trigger = currentDropdown.querySelector('.sms-trigger');
+                const enabled = previousHidden && previousHidden.value !== '';
+                trigger.disabled = !enabled;
+                if (!enabled) {
+                    trigger.classList.add('bg-slate-100', 'cursor-not-allowed');
+                    trigger.classList.remove('bg-white', 'cursor-text');
+                    const hidden = document.getElementById(dropdownSequence[index].valueId);
+                    hidden.value = '';
+                    trigger.value = '';
+                } else {
+                    trigger.classList.remove('bg-slate-100', 'cursor-not-allowed');
+                    trigger.classList.add('bg-white', 'cursor-text');
+                }
+            }
+        }
+    }
+
+    updateDropdownState();
+    refreshOptions();
+    updateApplyButtonState();
+    setRowVisibility();
+
+    document.getElementById('perPageSelect')?.addEventListener('change', function () {
+        const url = new URL(window.location.href);
+        url.searchParams.set('per_page', this.value);
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+    });
+
+    const searchInput = document.getElementById('verificationSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', setRowVisibility);
+    }
+});
+</script>
+{% endblock %}
