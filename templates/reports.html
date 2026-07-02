@@ -159,7 +159,7 @@
                 </div>
 
                 <div class="flex justify-end gap-5 w-full">
-                    <a href="{% url 'reports:work_progress_report' %}" class="px-4 py-2 w-[150px] border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition text-center">Clear All</a>
+                    <button type="button" id="clearFilters" class="px-4 py-2 w-[150px] border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition text-center">Clear All</button>
                     <button type="submit" id="reportApplyFiltersBtn" disabled class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed disabled:hover:bg-slate-300">Apply Filters</button>
                 </div>
             </form>
@@ -269,10 +269,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const applyBtn = document.getElementById('reportApplyFiltersBtn');
         if (!applyBtn) return;
 
-        applyBtn.disabled = dropdowns.some(({ valueId }) => {
-            const value = document.getElementById(valueId)?.value;
-            return !value || value === '__all__';
-        });
+        const hiddenValues = dropdowns.map(({ valueId }) => document.getElementById(valueId)?.value || '');
+        applyBtn.disabled = hiddenValues.every(value => !value || value === '__all__');
     }
 
     dropdowns.forEach(({ id, valueId }) => {
@@ -284,10 +282,23 @@ document.addEventListener('DOMContentLoaded', function () {
         const panel = dropdown.querySelector('.sms-panel');
         const chevron = dropdown.querySelector('.sms-chevron');
         const options = Array.from(dropdown.querySelectorAll('.sms-option'));
+        const defaultOption = options[0] || null;
 
         function syncLabel() {
             const selected = options.find(option => option.dataset.value === valueInput.value) || options[0];
             if (selected && trigger) trigger.value = selected.textContent.trim();
+        }
+
+        function resetDropdown() {
+            if (!defaultOption) return;
+            valueInput.value = defaultOption.dataset.value || '__all__';
+            if (trigger) trigger.value = defaultOption.textContent.trim();
+            options.forEach(option => {
+                option.classList.remove('bg-blue-50', 'text-blue-700', 'font-medium');
+                option.classList.add('text-slate-700');
+            });
+            defaultOption.classList.add('bg-blue-50', 'text-blue-700', 'font-medium');
+            defaultOption.classList.remove('text-slate-700');
         }
 
         trigger?.addEventListener('click', function () {
@@ -313,9 +324,38 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         syncLabel();
+        dropdown.resetDropdown = resetDropdown;
     });
 
     updateApplyButtonState();
+
+    const clearFiltersBtn = document.getElementById('clearFilters');
+    clearFiltersBtn?.addEventListener('click', function () {
+        dropdowns.forEach(({ id, valueId }) => {
+            const dropdown = document.getElementById(id);
+            const valueInput = document.getElementById(valueId);
+            if (!dropdown || !valueInput) return;
+
+            const trigger = dropdown.querySelector('.sms-trigger');
+            const panel = dropdown.querySelector('.sms-panel');
+            const chevron = dropdown.querySelector('.sms-chevron');
+
+            valueInput.value = '__all__';
+            if (typeof dropdown.resetDropdown === 'function') {
+                dropdown.resetDropdown();
+            } else if (trigger) {
+                trigger.value = '';
+            }
+            panel?.classList.add('hidden');
+            chevron?.classList.remove('rotate-180');
+        });
+
+        const reportSearch = document.getElementById('reportSearch');
+        if (reportSearch) reportSearch.value = '';
+
+        updateApplyButtonState();
+        if (reportSearch) reportSearch.focus();
+    });
 
     document.addEventListener('click', function (event) {
         if (!event.target.closest('.sms-dropdown')) closeAll();
