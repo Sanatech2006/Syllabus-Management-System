@@ -22,8 +22,8 @@ def hod_program_map_management(request):
     
     mappings = HodProgramMap.objects.select_related('user', 'program').all().order_by('-created_at')
     
-    # Get all HODs Make sure we get users with both id and username
-    hods = User.objects.filter(is_staff=False).order_by('username')
+    # HODs are represented by staff users who are not superusers.
+    hods = User.objects.filter(is_staff=True, is_superuser=False).order_by('username')
     
     # Print for debugging (check your console)
     print(f"Found {hods.count()} HODs")

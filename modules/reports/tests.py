@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
@@ -7,6 +8,7 @@ from django.utils import timezone
 from modules.course_management.models import CourseStructure, CourseSyllabus
 from modules.hod_management.models import HodProgramMap
 from modules.program_manage.models import Program
+from modules.core.roles import VERIFIER_GROUP_NAME
 from modules.reports.models import CourseVerification
 
 
@@ -133,6 +135,13 @@ class VerificationFlowTests(TestCase):
             is_superuser=False,
             is_staff=True,
         )
+        self.verifier_user = User.objects.create_user(
+            username="verifier_verify",
+            password="secret123",
+            is_superuser=False,
+            is_staff=False,
+        )
+        self.verifier_user.groups.add(Group.objects.create(name=VERIFIER_GROUP_NAME))
         self.program = Program.objects.create(
             prog_code="BSC",
             degree="B.Sc",
@@ -158,16 +167,16 @@ class VerificationFlowTests(TestCase):
             course_category="Core",
         )
 
-    def test_hod_verification_page_renders_checkbox(self):
-        self.client.force_login(self.hod_user)
+    def test_verifier_verification_page_renders_checkbox(self):
+        self.client.force_login(self.verifier_user)
 
         response = self.client.get(reverse("reports:verification_center"), {"year": "I"})
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'name="verified_courses"')
 
-    def test_hod_verification_page_shows_rows_without_filters(self):
-        self.client.force_login(self.hod_user)
+    def test_verifier_verification_page_shows_rows_without_filters(self):
+        self.client.force_login(self.verifier_user)
 
         response = self.client.get(reverse("reports:verification_center"))
 
@@ -181,11 +190,22 @@ class VerificationFlowTests(TestCase):
         response = self.client.get(reverse("reports:verification_report"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "Programming Basics")
         self.assertContains(response, "Apply filters to view records")
+        self.assertNotContains(response, 'name="verified_courses"')
+
+    def test_admin_verification_filter_options_include_course_choices(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.get(reverse("reports:verification_filter_options"))
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn("years", payload)
+        self.assertIn("programs", payload)
+        self.assertTrue(payload["years"])
 
     def test_save_and_finish_publishes_to_admin_report(self):
-        self.client.force_login(self.hod_user)
+        self.client.force_login(self.verifier_user)
 
         response = self.client.post(
             reverse("reports:verification_center") + "?year=I",
@@ -196,7 +216,7 @@ class VerificationFlowTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        verification = CourseVerification.objects.get(course=self.course, verifier=self.hod_user)
+        verification = CourseVerification.objects.get(course=self.course, verifier=self.verifier_user)
         self.assertTrue(verification.is_verified)
         self.assertEqual(verification.status, CourseVerification.STATUS_SUBMITTED)
 
@@ -205,7 +225,7 @@ class VerificationFlowTests(TestCase):
 
         self.assertEqual(report_response.status_code, 200)
         self.assertContains(report_response, "Programming Basics")
-        self.assertContains(report_response, "hod_verify")
+        self.assertContains(report_response, "verifier_verify")
 
     def test_save_only_updates_current_page_courses(self):
         CourseVerification.objects.create(
@@ -216,7 +236,7 @@ class VerificationFlowTests(TestCase):
             finished_at=timezone.now(),
         )
 
-        self.client.force_login(self.hod_user)
+        self.client.force_login(self.verifier_user)
 
         response = self.client.post(
             reverse("reports:verification_center") + "?year=I&per_page=1",
@@ -227,5 +247,12 @@ class VerificationFlowTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(CourseVerification.objects.filter(course=self.course, verifier=self.hod_user).exists())
-        self.assertTrue(CourseVerification.objects.filter(course=self.other_course, verifier=self.hod_user).exists())
+        self.assertTrue(CourseVerification.objects.filter(course=self.course, verifier=self.verifier_user).exists())
+        self.assertFalse(CourseVerification.objects.filter(course=self.other_course, verifier=self.verifier_user).exists())
+
+    def test_hod_cannot_open_verification_center(self):
+        self.client.force_login(self.hod_user)
+
+        response = self.client.get(reverse("reports:verification_center"))
+
+        self.assertRedirects(response, "/dashboard/")

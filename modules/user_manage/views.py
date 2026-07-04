@@ -9,7 +9,14 @@ from django.core.exceptions import ValidationError
 import pandas as pd
 import io
 from datetime import datetime
+from modules.core.decorators import admin_required
 from modules.core.utils import set_upload_progress, delete_upload_progress
+from modules.core.roles import (
+    ROLE_USER,
+    get_user_role,
+    get_user_role_label,
+    set_user_role,
+)
 
 User = get_user_model()
 
@@ -17,9 +24,12 @@ User = get_user_model()
 # Display the user management page with list of users and total count
 # ---------------------------------------------------------------------------------------------------
 
-@login_required
+@admin_required
 def user_management(request):
     users = User.objects.all().order_by('-date_joined')
+    for user in users:
+        user.display_role = get_user_role(user)
+        user.display_role_label = get_user_role_label(user)
     context = {
         "users": users,
         "total_users": users.count(),
@@ -30,7 +40,7 @@ def user_management(request):
 # AJAX endpoints for user CRUD operations
 # ---------------------------------------------------------------------------------------------------
 
-@login_required
+@admin_required
 def get_user(request, user_id):
     try:
         user = get_object_or_404(User, id=user_id)
@@ -44,6 +54,7 @@ def get_user(request, user_id):
                 'first_name': user.first_name,
                 'last_name': user.last_name,
                 'is_active': user.is_active,
+                'role': get_user_role(user),
                 'date_joined': user.date_joined.strftime('%Y-%m-%d') if user.date_joined else '',
                 'last_login': user.last_login.strftime('%Y-%m-%d %H:%M:%S') if user.last_login else '',
             }
@@ -54,7 +65,7 @@ def get_user(request, user_id):
 
 # ---------------------------------------------------------------------------------------------------
 
-@login_required
+@admin_required
 @require_http_methods(["POST"])
 def add_user(request):
     try:
@@ -63,6 +74,7 @@ def add_user(request):
         email = request.POST.get("email", "").strip()
         username = request.POST.get("username", "").strip()
         password = request.POST.get("password", "")
+        role = request.POST.get("role", ROLE_USER).strip()
         
         # Validate required fields
         if not all([username, password]):
@@ -83,11 +95,6 @@ def add_user(request):
         if User.objects.filter(username=username).exists():
             return JsonResponse({'success': False, 'error': 'Username already exists.'})
         
-        # Check if email exists
-        if User.objects.filter(email=email).exists():
-            return JsonResponse({'success': False, 'error': 'Email already exists.'})
-        
-        # Create user
         user = User.objects.create_user(
             username=username,
             email=email if email else '',
@@ -98,6 +105,7 @@ def add_user(request):
             is_staff=False,
             is_superuser=False
         )
+        set_user_role(user, role)
         
         return JsonResponse({'success': True, 'message': 'User created successfully.', 'user_id': user.id})
         
@@ -106,7 +114,7 @@ def add_user(request):
 
 # ---------------------------------------------------------------------------------------------------
 
-@login_required
+@admin_required
 @require_http_methods(["POST"])
 def edit_user(request, user_id):
     try:
@@ -117,6 +125,7 @@ def edit_user(request, user_id):
         last_name = request.POST.get("last_name", "").strip()
         email = request.POST.get("email", "").strip()
         username = request.POST.get("username", "").strip()
+        role = request.POST.get("role", ROLE_USER).strip()
 
         # Validate required fields 
         if not username:
@@ -142,15 +151,15 @@ def edit_user(request, user_id):
         user.email = email if email else '',
         user.first_name = first_name
         user.last_name = last_name
-        
+
         # Handle password update
         new_password = request.POST.get("password")
         if new_password:
             user.set_password(new_password)
             if request.user == user:
                 update_session_auth_hash(request, user)
-        
-        user.save()
+
+        set_user_role(user, role)
         
         return JsonResponse({'success': True, 'message': 'User updated successfully.'})
         
@@ -159,7 +168,7 @@ def edit_user(request, user_id):
 
 # ---------------------------------------------------------------------------------------------------
 
-@login_required
+@admin_required
 @require_http_methods(["POST"])
 def delete_user(request, user_id):
     try:
@@ -175,7 +184,7 @@ def delete_user(request, user_id):
 # Excel Operations - Simplified (No styling)
 # ---------------------------------------------------------------------------------------------------
 
-@login_required
+@admin_required
 def download_sample_excel(request):
     
     sample_data = {
@@ -201,7 +210,7 @@ def download_sample_excel(request):
     return response
 # ---------------------------------------------------------------------------------------------------
 
-@login_required
+@admin_required
 def download_users_excel(request):
     
     users = User.objects.all().order_by('username')
@@ -238,7 +247,7 @@ def download_users_excel(request):
 # Handle Excel file upload for bulk user import
 # ---------------------------------------------------------------------------------------------------
 
-@login_required
+@admin_required
 @require_http_methods(["POST"])
 def upload_users_excel(request):
     upload_id = request.POST.get('upload_id') or request.GET.get('upload_id')
@@ -307,6 +316,7 @@ def upload_users_excel(request):
                     is_staff=False,
                     is_superuser=False
                 )
+                set_user_role(user, ROLE_USER)
                 created_users.append(username)
             except Exception as e:
                 errors.append(f'Row {index + 2}: Error creating user {username} - {str(e)}')

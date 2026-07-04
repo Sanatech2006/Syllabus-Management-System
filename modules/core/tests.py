@@ -1,6 +1,9 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.test import TestCase
 from django.urls import reverse
+
+from modules.core.roles import VERIFIER_GROUP_NAME
 
 
 User = get_user_model()
@@ -21,16 +24,14 @@ class RoleAccessTests(TestCase):
             is_staff=True,
         )
 
-    def test_hod_can_access_dashboard_course_and_upload_center(self):
+    def test_hod_can_access_dashboard_and_course_management(self):
         self.client.force_login(self.hod_user)
 
         dashboard_response = self.client.get("/dashboard/")
-        course_response = self.client.get(reverse("course_manage:course_management"))
-        upload_response = self.client.get(reverse("upload_center:upload_center"))
+        course_response = self.client.get(reverse("course_management:course_management"))
 
         self.assertEqual(dashboard_response.status_code, 200)
         self.assertEqual(course_response.status_code, 200)
-        self.assertEqual(upload_response.status_code, 200)
 
     def test_hod_cannot_access_admin_only_sections(self):
         self.client.force_login(self.hod_user)
@@ -83,7 +84,7 @@ class RoleAccessTests(TestCase):
 
         self.assertRedirects(response, "/dashboard/")
 
-    def test_hod_role_login_allows_standard_user_accounts(self):
+    def test_hod_role_login_rejects_standard_user_accounts(self):
         standard_user = User.objects.create_user(
             username="hod_like_user",
             password="secret123",
@@ -97,6 +98,31 @@ class RoleAccessTests(TestCase):
                 "username": standard_user.username,
                 "password": "secret123",
                 "role": "hod",
+                "next": "/dashboard/",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "do not match the selected role")
+        self.assertFalse(response.context["user"].is_authenticated)
+
+    def test_verifier_role_login_redirects_to_dashboard(self):
+        verifier_group = Group.objects.create(name=VERIFIER_GROUP_NAME)
+        verifier_user = User.objects.create_user(
+            username="verifier",
+            password="secret123",
+            is_superuser=False,
+            is_staff=False,
+        )
+        verifier_user.groups.add(verifier_group)
+
+        response = self.client.post(
+            reverse("core:login"),
+            {
+                "username": "verifier",
+                "password": "secret123",
+                "role": "verifier",
                 "next": "/dashboard/",
             },
         )

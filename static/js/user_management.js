@@ -183,6 +183,9 @@ function resetUserForm() {
         drawerPassword.required = true;
         drawerPassword.value = '';
     }
+
+    const drawerRole = document.getElementById('drawerRole');
+    if (drawerRole) drawerRole.value = 'user';
 }
 
 // Edit user function
@@ -196,6 +199,7 @@ function editUser(userId) {
                 document.getElementById('drawerLastName').value = data.user.last_name || '';
                 document.getElementById('drawerUsername').value = data.user.username;
                 document.getElementById('drawerEmail').value = data.user.email;
+                document.getElementById('drawerRole').value = data.user.role || 'user';
                 document.getElementById('drawerPassword').value = '';
                 document.getElementById('drawerPassword').required = false;
                 document.getElementById('passwordRequired').innerHTML = '(Optional)';

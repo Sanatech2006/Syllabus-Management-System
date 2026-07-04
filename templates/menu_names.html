@@ -1,4 +1,5 @@
 {% load static %}
+{% load role_tags %}
 <script src="https://unpkg.com/lucide@latest"></script>
 
 <aside class="w-78 bg-[#0b0f1a] text-slate-400 flex flex-col h-screen border-r border-white/5 font-sans">
@@ -53,17 +54,20 @@
                     <span class="text-[14px]">Course Management</span>
                 </a>
 
+                {% user_is_verifier user as is_verifier %}
                 {% if not user.is_superuser %}
                 <a href="{% url 'reports:work_progress_report' %}"
                     class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'work_progress_report' %}bg-white/10 text-white{% endif %}">
                     <i data-lucide="pie-chart" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
                     <span class="text-[14px]">Report Center</span>
                 </a>
+                {% if is_verifier %}
                 <a href="{% url 'reports:verification_center' %}"
                     class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'verification_center' %}bg-white/10 text-white{% endif %}">
                     <i data-lucide="check-square" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
                     <span class="text-[14px]">Verification Centre</span>
                 </a>
+                {% endif %}
                 {% endif %}
                 
                 <!-- Program Management - Admin only -->
@@ -209,6 +213,13 @@
                         class="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] hover:bg-white/5 transition-colors">
                         <i data-lucide="users" class="w-3.5 h-3.5 text-blue-400"></i>
                         HOD Login
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:login' %}?role=verifier"
+                        class="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] hover:bg-white/5 transition-colors">
+                        <i data-lucide="badge-check" class="w-3.5 h-3.5 text-blue-400"></i>
+                        Verifier Login
                     </a>
                 </li>
                 {% endif %}

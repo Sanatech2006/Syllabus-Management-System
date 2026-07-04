@@ -3,6 +3,7 @@ import io
 import pandas as pd
 from django.contrib.auth import get_user_model
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.db import transaction
@@ -13,7 +14,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from modules.core.decorators import admin_required
-from modules.course_management.access import course_management_access_required, get_accessible_programs
+from modules.course_management.access import course_management_access_required, get_accessible_programs, is_hod_user
+from modules.core.roles import is_verifier_user
 from modules.course_management.models import CourseStructure, CourseSyllabus
 from modules.hod_management.models import HodProgramMap
 from modules.program_manage.models import Program
@@ -277,7 +279,7 @@ def _part_lookup_values(value):
 
 def _verification_base_courses(user):
     courses = CourseStructure.objects.select_related("program")
-    if user.is_superuser:
+    if user.is_superuser or is_verifier_user(user):
         return courses
     accessible_ids = get_accessible_programs(user).values_list("id", flat=True)
     return courses.filter(program_id__in=accessible_ids)
@@ -325,6 +327,16 @@ def _apply_verification_filters(queryset, filters, prefix="", exclude_field=None
         queryset = queryset.filter(
             Q(**{f"{prefix}course_code__icontains": course_title})
             | Q(**{f"{prefix}course_title__icontains": course_title})
+        )
+
+    syllabus_status = filters.get("syllabus_status")
+    if exclude_field != "syllabus_status" and syllabus_status in {"uploaded", "not_uploaded"}:
+        uploaded_codes = CourseSyllabus.objects.filter(pdf__isnull=False).exclude(pdf="").values_list(
+            "course_code", flat=True
+        )
+        course_code_field = f"{prefix}course_code"
+        queryset = queryset.filter(**{f"{course_code_field}__in": uploaded_codes}) if syllabus_status == "uploaded" else queryset.exclude(
+            **{f"{course_code_field}__in": uploaded_codes}
         )
 
     return queryset
@@ -423,12 +435,16 @@ def _verification_record_map(user, course_ids):
     return {record.course_id: record for record in records}
 
 
-@course_management_access_required
+@login_required
 @require_http_methods(["GET", "POST"])
 def verification_center(request):
     if request.user.is_superuser:
         messages.info(request, "Use Verification Report for admin review.")
         return redirect("reports:verification_report")
+
+    if not is_verifier_user(request.user):
+        messages.error(request, "You do not have permission to access that section.")
+        return redirect("/dashboard/")
 
     per_page = int(request.GET.get("per_page", 100))
     page = request.GET.get("page", 1)
@@ -443,6 +459,7 @@ def verification_center(request):
         "part": request.GET.get("part", "__all__"),
         "course_category": request.GET.get("course_category", "__all__"),
         "course_title": request.GET.get("course_title", "__all__"),
+        "syllabus_status": request.GET.get("syllabus_status", "__all__"),
     }
     has_applied_filters = bool(request.GET.get("year"))
 
@@ -502,8 +519,10 @@ def verification_center(request):
         "selected_part": filters["part"],
         "selected_course_category": filters["course_category"],
         "selected_course_title": filters["course_title"],
+        "selected_syllabus_status": filters["syllabus_status"],
         "verification_map": verification_map,
         "all_courses_for_search": filter_options["course_options"],
+        "all_courses_list": filter_options["course_options"],
         "page_mode": "center",
         "post_action_url": request.path,
         **filter_options,
@@ -533,6 +552,7 @@ def verification_report(request):
         "part": request.GET.get("part", "__all__"),
         "course_category": request.GET.get("course_category", "__all__"),
         "course_title": request.GET.get("course_title", "__all__"),
+        "syllabus_status": request.GET.get("syllabus_status", "__all__"),
     }
     has_applied_filters = bool(request.GET.get("year"))
 
@@ -546,12 +566,7 @@ def verification_report(request):
     paginator = Paginator(filtered_queryset, per_page)
     page_obj = paginator.get_page(page)
     filter_options = _build_verification_filter_options(
-        _verification_base_courses(request.user).filter(
-            id__in=CourseVerification.objects.filter(
-                status=CourseVerification.STATUS_SUBMITTED,
-                is_verified=True,
-            ).values_list("course_id", flat=True)
-        ),
+        _verification_base_courses(request.user),
         filters,
     )
 
@@ -575,7 +590,9 @@ def verification_report(request):
         "selected_part": filters["part"],
         "selected_course_category": filters["course_category"],
         "selected_course_title": filters["course_title"],
+        "selected_syllabus_status": filters["syllabus_status"],
         "all_courses_for_search": filter_options["course_options"],
+        "all_courses_list": filter_options["course_options"],
         "page_mode": "report",
         "post_action_url": request.path,
         **filter_options,
@@ -589,8 +606,11 @@ def _verification_query_options(user, filters):
     return _build_verification_filter_options(base_queryset, filters)
 
 
-@course_management_access_required
+@login_required
 def verification_filter_options(request):
+    if not (request.user.is_superuser or is_verifier_user(request.user)):
+        return JsonResponse({"error": "Permission denied"}, status=403)
+
     filters = {
         "year": request.GET.get("year", ""),
         "program": request.GET.get("program", "__all__"),

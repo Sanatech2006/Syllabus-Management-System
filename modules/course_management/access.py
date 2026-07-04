@@ -30,11 +30,7 @@ def is_hod_user(user):
     if not user or not user.is_authenticated or user.is_superuser:
         return False
 
-    # Treat any authenticated non-superuser as HOD for hod-login access.
-    # This covers users listed in HOD management and the general user list
-    # so they can access the Course Management HOD views when logged in
-    # via the HOD role.
-    return True
+    return user.is_staff or HodProgramMap.objects.filter(user=user).exists()
 
 
 def get_accessible_programs(user):

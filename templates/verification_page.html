@@ -155,253 +155,129 @@
         </div>
         <div class="p-6 overflow-visible">
             <form method="get" id="filterForm" class="space-y-4">
-                <input type="hidden" id="yearValue" name="year" value="{{ selected_year|default:'__all__' }}">
-                <input type="hidden" id="progTypeValue" name="prog_type" value="{{ selected_prog_type|default:'__all__' }}">
-                <input type="hidden" id="progCategoryValue" name="prog_category" value="{{ selected_prog_category|default:'__all__' }}">
-                <input type="hidden" id="degreeValue" name="degree" value="{{ selected_degree|default:'__all__' }}">
-                <input type="hidden" id="branchValue" name="branch" value="{{ selected_branch|default:'__all__' }}">
-                <input type="hidden" id="programValue" name="program" value="{{ selected_program|default:'__all__' }}">
-                <input type="hidden" id="semValue" name="sem" value="{{ selected_sem|default:'__all__' }}">
-                <input type="hidden" id="partValue" name="part" value="{{ selected_part|default:'__all__' }}">
-                <input type="hidden" id="courseCategoryValue" name="course_category" value="{{ selected_course_category|default:'__all__' }}">
-                <input type="hidden" id="courseTitleValue" name="course_title" value="{{ selected_course_title|default:'__all__' }}">
+                <input type="hidden" id="yearValue" name="year" value="{{ request.GET.year|default:'' }}">
+                <input type="hidden" id="progTypeValue" name="prog_type" value="{{ request.GET.prog_type|default:'__all__' }}">
+                <input type="hidden" id="progCategoryValue" name="prog_category" value="{{ request.GET.prog_category|default:'__all__' }}">
+                <input type="hidden" id="degreeValue" name="degree" value="{{ request.GET.degree|default:'__all__' }}">
+                <input type="hidden" id="branchValue" name="branch" value="{{ request.GET.branch|default:'__all__' }}">
+                <input type="hidden" id="programValue" name="program" value="{{ request.GET.program|default:'__all__' }}">
+                <input type="hidden" id="semValue" name="sem" value="{{ request.GET.sem|default:'__all__' }}">
+                <input type="hidden" id="partValue" name="part" value="{{ request.GET.part|default:'__all__' }}">
+                <input type="hidden" id="courseCategoryValue" name="course_category" value="{{ request.GET.course_category|default:'__all__' }}">
+                <input type="hidden" id="courseTitleValue" name="course_title" value="{{ request.GET.course_title|default:'__all__' }}">
+                <input type="hidden" id="syllabusStatusValue" name="syllabus_status" value="{{ request.GET.syllabus_status|default:'__all__' }}">
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-6 overflow-visible">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Year</label>
                         <div class="sms-dropdown relative" id="yearDropdown">
                             <div class="relative w-full">
-                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="Select" autocomplete="off">
-                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div>
                             </div>
                             <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
                                 <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="">Select</li>
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All</li>
-                                    {% for year in years %}
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ year }}">{{ year }}</li>
-                                    {% endfor %}
+                                    {% for year in years %}<li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ year }}">{{ year }}</li>{% endfor %}
                                 </ul>
                                 <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
                             </div>
                         </div>
                     </div>
-
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program type</label>
                         <div class="sms-dropdown relative" id="progTypeDropdown">
-                            <div class="relative w-full">
-                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All Types" autocomplete="off">
-                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Types</li>
-                                    {% for item in prog_types %}
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ item }}">{{ item }}</li>
-                                    {% endfor %}
-                                </ul>
-                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
-                            </div>
+                            <div class="relative w-full"><input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Type" autocomplete="off"><div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div></div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"><ul class="sms-list max-h-52 overflow-y-auto py-1"><li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Types</li><li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="UG">UG</li><li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="PG">PG</li></ul><p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p></div>
                         </div>
                     </div>
-
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program category</label>
                         <div class="sms-dropdown relative" id="progCategoryDropdown">
-                            <div class="relative w-full">
-                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All Categories" autocomplete="off">
-                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Categories</li>
-                                    {% for item in prog_categories %}
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ item }}">{{ item }}</li>
-                                    {% endfor %}
-                                </ul>
-                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
-                            </div>
+                            <div class="relative w-full"><input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Category" autocomplete="off"><div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div></div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"><ul class="sms-list max-h-52 overflow-y-auto py-1"><li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Categories</li><li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="Arts">Arts</li><li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="Science">Science</li></ul><p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p></div>
                         </div>
                     </div>
-
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Degree</label>
                         <div class="sms-dropdown relative" id="degreeDropdown">
-                            <div class="relative w-full">
-                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All Degrees" autocomplete="off">
-                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Degrees</li>
-                                    {% for item in degrees %}
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ item }}">{{ item }}</li>
-                                    {% endfor %}
-                                </ul>
-                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
-                            </div>
+                            <div class="relative w-full"><input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Degree" autocomplete="off"><div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div></div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"><ul class="sms-list max-h-52 overflow-y-auto py-1"><li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Degrees</li>{% for degree in degrees %}<li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ degree }}">{{ degree }}</li>{% endfor %}</ul><p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p></div>
                         </div>
                     </div>
-
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Branch</label>
                         <div class="sms-dropdown relative" id="branchDropdown">
-                            <div class="relative w-full">
-                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All Branches" autocomplete="off">
-                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Branches</li>
-                                    {% for item in branches %}
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ item }}">{{ item }}</li>
-                                    {% endfor %}
-                                </ul>
-                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
-                            </div>
+                            <div class="relative w-full"><input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Branch" autocomplete="off"><div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div></div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"><ul class="sms-list max-h-52 overflow-y-auto py-1"><li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Branches</li>{% for branch in branches %}<li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ branch }}">{{ branch }}</li>{% endfor %}</ul><p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p></div>
                         </div>
                     </div>
-
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program code</label>
                         <div class="sms-dropdown relative" id="programDropdown">
-                            <div class="relative w-full">
-                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All Programs" autocomplete="off">
-                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Programs</li>
-                                    {% for program in programs %}
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ program.id }}">{{ program.prog_code }} - {{ program.degree }} ({{ program.branch }})</li>
-                                    {% endfor %}
-                                </ul>
-                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
-                            </div>
+                            <div class="relative w-full"><input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Program code" autocomplete="off"><div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div></div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"><ul class="sms-list max-h-52 overflow-y-auto py-1"><li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Programs</li>{% for program in programs %}<li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ program.id }}">{{ program.prog_code }} - {{ program.degree }} ({{ program.branch }})</li>{% endfor %}</ul><p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p></div>
                         </div>
                     </div>
-
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Semester</label>
                         <div class="sms-dropdown relative" id="semDropdown">
-                            <div class="relative w-full">
-                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All" autocomplete="off">
-                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All</li>
-                                    {% for sem in sems %}
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ sem }}">{{ sem }}</li>
-                                    {% endfor %}
-                                </ul>
-                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
-                            </div>
+                            <div class="relative w-full"><input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select" autocomplete="off"><div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div></div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"><ul class="sms-list max-h-52 overflow-y-auto py-1"><li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All</li>{% for sem in sems %}<li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ sem }}">{{ sem }}</li>{% endfor %}</ul><p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p></div>
                         </div>
                     </div>
-
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Part</label>
                         <div class="sms-dropdown relative" id="partDropdown">
-                            <div class="relative w-full">
-                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All Parts" autocomplete="off">
-                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Parts</li>
-                                    {% for item in parts %}
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ item }}">{{ item }}</li>
-                                    {% endfor %}
-                                </ul>
-                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
-                            </div>
+                            <div class="relative w-full"><input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Part" autocomplete="off"><div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div></div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"><ul class="sms-list max-h-52 overflow-y-auto py-1"><li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Parts</li>{% for part in parts %}<li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ part }}">{{ part }}</li>{% endfor %}</ul><p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p></div>
                         </div>
                     </div>
-
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Course category</label>
                         <div class="sms-dropdown relative" id="courseCategoryDropdown">
-                            <div class="relative w-full">
-                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All Categories" autocomplete="off">
-                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Categories</li>
-                                    {% for item in course_categories %}
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ item }}">{{ item }}</li>
-                                    {% endfor %}
-                                </ul>
-                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
-                            </div>
+                            <div class="relative w-full"><input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Category" autocomplete="off"><div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div></div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"><ul class="sms-list max-h-52 overflow-y-auto py-1"><li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Categories</li>{% for category in course_categories %}<li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ category }}">{{ category }}</li>{% endfor %}</ul><p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p></div>
                         </div>
                     </div>
-
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Course code with title</label>
                         <div class="sms-dropdown relative" id="courseTitleDropdown">
-                            <div class="relative w-full">
-                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text" placeholder="All Courses" autocomplete="off">
-                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Courses</li>
-                                    {% for item in all_courses_for_search %}
-                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ item.code }}">{{ item.code }} - {{ item.title }}</li>
-                                    {% endfor %}
-                                </ul>
-                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
-                            </div>
+                            <div class="relative w-full"><input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Course" autocomplete="off"><div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div></div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"><ul class="sms-list max-h-52 overflow-y-auto py-1"><li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Courses</li>{% for course in all_courses_list %}<li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ course.code }}">{{ course.code }} - {{ course.title }}</li>{% endfor %}</ul><p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex justify-end gap-5">
-                    <a href="{% if page_mode == 'report' %}{% url 'reports:verification_report' %}{% else %}{% url 'reports:verification_center' %}{% endif %}" class="px-4 py-2 w-[150px] border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition text-center">Clear All</a>
-                    <button id="applyFiltersBtn" type="submit" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed">Apply Filters</button>
+                <div class="border-t border-slate-100 pt-4">
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Syllabus Upload Status</label>
+                    <div class="flex gap-2 flex-wrap">
+                        <button type="button" id="syllabusFilterAll"
+                            onclick="setSyllabusFilter('__all__')"
+                            class="syllabus-filter-btn px-4 py-2 rounded-lg text-sm font-medium border transition-all
+                                   {% if request.GET.syllabus_status == '__all__' or not request.GET.syllabus_status %}bg-blue-600 text-white border-blue-600{% else %}bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600{% endif %}">
+                            All
+                        </button>
+                        <button type="button" id="syllabusFilterUploaded"
+                            onclick="setSyllabusFilter('uploaded')"
+                            class="syllabus-filter-btn px-4 py-2 rounded-lg text-sm font-medium border transition-all flex items-center gap-2
+                                   {% if request.GET.syllabus_status == 'uploaded' %}bg-green-600 text-white border-green-600{% else %}bg-white text-slate-600 border-slate-200 hover:border-green-400 hover:text-green-600{% endif %}">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            Uploaded Syllabus
+                        </button>
+                        <button type="button" id="syllabusFilterNotUploaded"
+                            onclick="setSyllabusFilter('not_uploaded')"
+                            class="syllabus-filter-btn px-4 py-2 rounded-lg text-sm font-medium border transition-all flex items-center gap-2
+                                   {% if request.GET.syllabus_status == 'not_uploaded' %}bg-amber-500 text-white border-amber-500{% else %}bg-white text-slate-600 border-slate-200 hover:border-amber-400 hover:text-amber-600{% endif %}">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z"/></svg>
+                            Not Uploaded Syllabus
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-5 w-full">
+                    <button type="button" id="clearFilters" class="px-4 py-2 w-[150px] border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition">Clear All</button>
+                    <button type="submit" id="courseApplyFiltersBtn" disabled class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed disabled:hover:bg-slate-300">Apply Filters</button>
                 </div>
             </form>
         </div>
@@ -589,13 +465,20 @@ document.addEventListener('DOMContentLoaded', function () {
         { id: 'courseTitleDropdown', valueId: 'courseTitleValue', placeholder: 'Select Course', allText: 'All Courses' }
     ];
 
-    const hiddenInputIds = dropdownSequence.map(item => item.valueId);
-    const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+    const hiddenInputIds = dropdownSequence.map(item => item.valueId).concat(['syllabusStatusValue']);
+    const applyFiltersBtn = document.getElementById('courseApplyFiltersBtn');
 
     function updateApplyButtonState() {
-        const yearInput = document.getElementById('yearValue');
-        if (!applyFiltersBtn) return;
-        applyFiltersBtn.disabled = !yearInput || yearInput.value === '';
+        const form = document.getElementById('filterForm');
+        if (!applyFiltersBtn || !form) return;
+
+        const hiddenInputs = hiddenInputIds
+            .map(id => document.getElementById(id))
+            .filter(Boolean);
+        const selects = Array.from(form.querySelectorAll('select'));
+        const controls = hiddenInputs.length > 0 ? hiddenInputs : selects;
+        const allSelected = controls.length > 0 && controls.every(control => control.value && control.value !== '');
+        applyFiltersBtn.disabled = !allSelected;
     }
 
     function getDropdownConfig(id, data) {
@@ -609,10 +492,38 @@ document.addEventListener('DOMContentLoaded', function () {
             semDropdown: { list: data.sems || [], placeholder: 'Select', all: 'All' },
             partDropdown: { list: data.parts || [], placeholder: 'Select Part', all: 'All Parts' },
             courseCategoryDropdown: { list: data.course_categories || [], placeholder: 'Select Category', all: 'All Categories' },
-            courseTitleDropdown: { list: data.courses || [], placeholder: 'Select Course', all: 'All Courses' }
+            courseTitleDropdown: { list: data.course_options || [], placeholder: 'Select Course', all: 'All Courses' }
         };
         return map[id];
     }
+
+    window.setSyllabusFilter = function(value) {
+        const hiddenInput = document.getElementById('syllabusStatusValue');
+        if (!hiddenInput) return;
+        hiddenInput.value = value;
+
+        const allBtn = document.getElementById('syllabusFilterAll');
+        const uploadedBtn = document.getElementById('syllabusFilterUploaded');
+        const notUploadedBtn = document.getElementById('syllabusFilterNotUploaded');
+
+        const resetCls = 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600';
+        const resetClsGreen = 'bg-white text-slate-600 border-slate-200 hover:border-green-400 hover:text-green-600';
+        const resetClsAmber = 'bg-white text-slate-600 border-slate-200 hover:border-amber-400 hover:text-amber-600';
+
+        if (allBtn) allBtn.className = allBtn.className.replace(/bg-blue-600 text-white border-blue-600/, resetCls);
+        if (uploadedBtn) uploadedBtn.className = uploadedBtn.className.replace(/bg-green-600 text-white border-green-600/, resetClsGreen);
+        if (notUploadedBtn) notUploadedBtn.className = notUploadedBtn.className.replace(/bg-amber-500 text-white border-amber-500/, resetClsAmber);
+
+        if (value === '__all__' && allBtn) {
+            allBtn.className = allBtn.className.replace(resetCls, 'bg-blue-600 text-white border-blue-600');
+        } else if (value === 'uploaded' && uploadedBtn) {
+            uploadedBtn.className = uploadedBtn.className.replace(resetClsGreen, 'bg-green-600 text-white border-green-600');
+        } else if (value === 'not_uploaded' && notUploadedBtn) {
+            notUploadedBtn.className = notUploadedBtn.className.replace(resetClsAmber, 'bg-amber-500 text-white border-amber-500');
+        }
+
+        if (applyFiltersBtn) applyFiltersBtn.disabled = false;
+    };
 
     function setRowVisibility() {
         const searchInput = document.getElementById('verificationSearchInput');
@@ -857,6 +768,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 params.append(hidden.name, hidden.value);
             }
         });
+        const syllabusStatus = document.getElementById('syllabusStatusValue');
+        if (syllabusStatus && syllabusStatus.value !== '') {
+            params.append(syllabusStatus.name, syllabusStatus.value);
+        }
 
         fetch(`${endpoint}?${params.toString()}`)
             .then(response => response.json())
@@ -904,6 +819,27 @@ document.addEventListener('DOMContentLoaded', function () {
     refreshOptions();
     updateApplyButtonState();
     setRowVisibility();
+
+    document.getElementById('clearFilters')?.addEventListener('click', function() {
+        const filterForm = document.getElementById('filterForm');
+        if (!filterForm) return;
+
+        filterForm.querySelectorAll('select').forEach(select => {
+            if (select.tomselect) {
+                select.tomselect.setValue('');
+            } else {
+                select.value = '';
+            }
+        });
+        filterForm.querySelectorAll('input').forEach(input => {
+            if (input.type !== 'hidden' || input.name !== 'csrfmiddlewaretoken') {
+                input.value = '';
+            }
+        });
+        const searchInput = document.getElementById('verificationSearchInput');
+        if (searchInput) searchInput.value = '';
+        filterForm.submit();
+    });
 
     document.getElementById('perPageSelect')?.addEventListener('change', function () {
         const url = new URL(window.location.href);

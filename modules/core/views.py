@@ -3,6 +3,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import get_user_model
 from django.contrib import messages
 from modules.dashboard.views import dashboard as dashboard_view
+from modules.course_management.access import is_hod_user
+from modules.core.roles import is_verifier_user
 
 
 def _get_role_home(user):
@@ -19,7 +21,9 @@ def _role_matches_user(role, user):
     if role == 'admin':
         return user.is_superuser
     if role == 'hod':
-        return not user.is_superuser
+        return is_hod_user(user)
+    if role == 'verifier':
+        return is_verifier_user(user)
     return False
 
 
@@ -36,22 +40,24 @@ def login_view(request):
         post_next = request.POST.get('next', '/dashboard/').strip()
         post_role = request.POST.get('role', '').strip()
 
-        # HOD usernames are stored in uppercase
-        if post_role == 'hod':
-            username = username.upper()
-
         # Always ensure a safe redirect path
         if not post_next or not post_next.startswith('/'):
             post_next = '/dashboard/'
 
         try:
             User = get_user_model()
-            user_exists = User.objects.filter(username=username).exists()
+            login_username = username
+            user_exists = User.objects.filter(username=login_username).exists()
+            if not user_exists and post_role == 'hod':
+                uppercase_username = username.upper()
+                if User.objects.filter(username=uppercase_username).exists():
+                    login_username = uppercase_username
+                    user_exists = True
 
             if not user_exists:
                 messages.error(request, 'Username not found.')
             else:
-                user = authenticate(request, username=username, password=password)
+                user = authenticate(request, username=login_username, password=password)
 
                 if user is not None:
                     if not _role_matches_user(post_role, user):
