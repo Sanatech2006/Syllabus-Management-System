@@ -71,6 +71,54 @@ class UserRoleManagementTests(TestCase):
         self.assertEqual(get_user_role(user), "hod")
         self.assertTrue(is_hod_user(user))
 
+    def test_hod_can_also_be_assigned_verifier_role(self):
+        response = self.client.post(
+            reverse("user_manage:add_user"),
+            {
+                "first_name": "Combined",
+                "username": "combined_user",
+                "password": "secret123",
+                "role": "hod",
+                "additional_role": "verifier",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["success"])
+
+        user = User.objects.get(username="combined_user")
+        self.assertTrue(user.is_staff)
+        self.assertFalse(user.is_superuser)
+        self.assertTrue(user.groups.filter(name=VERIFIER_GROUP_NAME).exists())
+        self.assertEqual(get_user_role(user), "hod")
+        self.assertTrue(is_hod_user(user))
+
+    def test_editing_user_can_add_verifier_role_to_hod(self):
+        user = User.objects.create_user(
+            username="hod_user",
+            password="secret123",
+            is_superuser=False,
+            is_staff=False,
+        )
+
+        response = self.client.post(
+            reverse("user_manage:edit_user", args=[user.id]),
+            {
+                "first_name": "HOD",
+                "username": "hod_user",
+                "role": "hod",
+                "additional_role": "verifier",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["success"])
+
+        user.refresh_from_db()
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.groups.filter(name=VERIFIER_GROUP_NAME).exists())
+        self.assertEqual(get_user_role(user), "hod")
+
     def test_mapped_hod_displays_as_hod_without_staff_flag(self):
         user = User.objects.create_user(
             username="mapped_hod",

@@ -186,6 +186,9 @@ function resetUserForm() {
 
     const drawerRole = document.getElementById('drawerRole');
     if (drawerRole) drawerRole.value = 'user';
+
+    const drawerAdditionalRole = document.getElementById('drawerAdditionalRole');
+    if (drawerAdditionalRole) drawerAdditionalRole.value = '';
 }
 
 // Edit user function
@@ -200,6 +203,7 @@ function editUser(userId) {
                 document.getElementById('drawerUsername').value = data.user.username;
                 document.getElementById('drawerEmail').value = data.user.email;
                 document.getElementById('drawerRole').value = data.user.role || 'user';
+                document.getElementById('drawerAdditionalRole').value = data.user.additional_role || '';
                 document.getElementById('drawerPassword').value = '';
                 document.getElementById('drawerPassword').required = false;
                 document.getElementById('passwordRequired').innerHTML = '(Optional)';

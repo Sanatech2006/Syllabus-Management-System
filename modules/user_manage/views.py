@@ -13,6 +13,7 @@ from modules.core.decorators import admin_required
 from modules.core.utils import set_upload_progress, delete_upload_progress
 from modules.core.roles import (
     ROLE_USER,
+    VERIFIER_GROUP_NAME,
     get_user_role,
     get_user_role_label,
     set_user_role,
@@ -55,6 +56,7 @@ def get_user(request, user_id):
                 'last_name': user.last_name,
                 'is_active': user.is_active,
                 'role': get_user_role(user),
+                'additional_role': 'verifier' if user.groups.filter(name=VERIFIER_GROUP_NAME).exists() and get_user_role(user) != 'verifier' else '',
                 'date_joined': user.date_joined.strftime('%Y-%m-%d') if user.date_joined else '',
                 'last_login': user.last_login.strftime('%Y-%m-%d %H:%M:%S') if user.last_login else '',
             }
@@ -75,6 +77,7 @@ def add_user(request):
         username = request.POST.get("username", "").strip()
         password = request.POST.get("password", "")
         role = request.POST.get("role", ROLE_USER).strip()
+        additional_role = request.POST.get("additional_role", "").strip()
         
         # Validate required fields
         if not all([username, password]):
@@ -105,7 +108,7 @@ def add_user(request):
             is_staff=False,
             is_superuser=False
         )
-        set_user_role(user, role)
+        set_user_role(user, role, [additional_role] if additional_role else [])
         
         return JsonResponse({'success': True, 'message': 'User created successfully.', 'user_id': user.id})
         
@@ -126,6 +129,7 @@ def edit_user(request, user_id):
         email = request.POST.get("email", "").strip()
         username = request.POST.get("username", "").strip()
         role = request.POST.get("role", ROLE_USER).strip()
+        additional_role = request.POST.get("additional_role", "").strip()
 
         # Validate required fields 
         if not username:
@@ -148,7 +152,7 @@ def edit_user(request, user_id):
         
         # Update user fields
         user.username = username
-        user.email = email if email else '',
+        user.email = email if email else ''
         user.first_name = first_name
         user.last_name = last_name
 
@@ -159,7 +163,7 @@ def edit_user(request, user_id):
             if request.user == user:
                 update_session_auth_hash(request, user)
 
-        set_user_role(user, role)
+        set_user_role(user, role, [additional_role] if additional_role else [])
         
         return JsonResponse({'success': True, 'message': 'User updated successfully.'})
         
