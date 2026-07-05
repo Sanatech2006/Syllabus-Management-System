@@ -184,14 +184,16 @@ class VerificationFlowTests(TestCase):
         self.assertContains(response, "Programming Basics")
         self.assertContains(response, 'name="verified_courses"')
 
-    def test_admin_report_stays_hidden_until_filters_are_applied(self):
+    def test_admin_verification_report_defaults_to_all_courses(self):
         self.client.force_login(self.admin_user)
 
         response = self.client.get(reverse("reports:verification_report"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Apply filters to view records")
-        self.assertNotContains(response, 'name="verified_courses"')
+        self.assertContains(response, "Programming Basics")
+        self.assertContains(response, "Data Structures")
+        self.assertContains(response, "Verifier Not Assigned")
+        self.assertContains(response, "Allot")
 
     def test_admin_verification_filter_options_include_course_choices(self):
         self.client.force_login(self.admin_user)
@@ -203,6 +205,39 @@ class VerificationFlowTests(TestCase):
         self.assertIn("years", payload)
         self.assertIn("programs", payload)
         self.assertTrue(payload["years"])
+
+    def test_admin_can_fetch_verifier_assignment_details(self):
+        CourseVerification.objects.create(
+            course=self.course,
+            verifier=self.verifier_user,
+            is_verified=False,
+            status=CourseVerification.STATUS_DRAFT,
+        )
+
+        self.client.force_login(self.admin_user)
+
+        response = self.client.get(reverse("reports:verification_assignment_details", args=[self.verifier_user.id]))
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["verifier"]["id"], self.verifier_user.id)
+        self.assertEqual(len(payload["courses"]), 1)
+        self.assertEqual(payload["courses"][0]["code"], "CSC101")
+
+    def test_admin_can_sync_verifier_assignments(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse("reports:verification_sync_assignments"),
+            {
+                "verifier_id": self.verifier_user.id,
+                "course_ids": [str(self.course.id), str(self.other_course.id)],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(CourseVerification.objects.filter(course=self.course, verifier=self.verifier_user).exists())
+        self.assertTrue(CourseVerification.objects.filter(course=self.other_course, verifier=self.verifier_user).exists())
 
     def test_save_and_finish_publishes_to_admin_report(self):
         self.client.force_login(self.verifier_user)
@@ -226,6 +261,7 @@ class VerificationFlowTests(TestCase):
         self.assertEqual(report_response.status_code, 200)
         self.assertContains(report_response, "Programming Basics")
         self.assertContains(report_response, "verifier_verify")
+        self.assertContains(report_response, "Verified")
 
     def test_save_only_updates_current_page_courses(self):
         CourseVerification.objects.create(
@@ -250,9 +286,10 @@ class VerificationFlowTests(TestCase):
         self.assertTrue(CourseVerification.objects.filter(course=self.course, verifier=self.verifier_user).exists())
         self.assertFalse(CourseVerification.objects.filter(course=self.other_course, verifier=self.verifier_user).exists())
 
-    def test_hod_cannot_open_verification_center(self):
+    def test_hod_can_open_verification_center(self):
         self.client.force_login(self.hod_user)
 
         response = self.client.get(reverse("reports:verification_center"))
 
-        self.assertRedirects(response, "/dashboard/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Verification Centre")

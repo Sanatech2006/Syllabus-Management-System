@@ -5,17 +5,67 @@
 
 {% block extra_css %}
 <style>
+    .ts-wrapper {
+        width: 100% !important;
+    }
+    .ts-control {
+        position: relative;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 0.5rem !important;
+        padding: 0.5rem 2.25rem 0.5rem 0.75rem !important;
+        font-size: 0.875rem !important;
+        background-color: #ffffff !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .ts-wrapper.single .ts-control::after {
+        content: "";
+        position: absolute;
+        right: 0.8rem;
+        top: 50%;
+        width: 0.6rem;
+        height: 0.6rem;
+        border-right: 2px solid #94a3b8;
+        border-bottom: 2px solid #94a3b8;
+        transform: translateY(-70%) rotate(45deg);
+        pointer-events: none;
+    }
+    .ts-wrapper.single.focus .ts-control::after {
+        border-color: #3b82f6;
+    }
+    .ts-wrapper.focus .ts-control {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+    }
+    .ts-dropdown {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 0.5rem !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+        background: #ffffff !important;
+        z-index: 1000 !important;
+    }
+    .ts-dropdown .active {
+        background-color: #eff6ff !important;
+        color: #1d4ed8 !important;
+    }
+    .ts-dropdown .option {
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.875rem !important;
+        cursor: pointer;
+    }
     .sms-dropdown,
     .sms-panel {
         overflow: visible;
     }
-
     .sms-panel {
-        position: absolute;
+        position: fixed !important;
         z-index: 9999;
+        width: auto;
     }
-
-    .sms-trigger:disabled {
+    #filterForm .sms-trigger {
+        cursor: text !important;
+    }
+    #filterForm .sms-trigger:disabled {
         cursor: not-allowed !important;
     }
 
@@ -155,7 +205,7 @@
         </div>
         <div class="p-6 overflow-visible">
             <form method="get" id="filterForm" class="space-y-4">
-                <input type="hidden" id="yearValue" name="year" value="{{ request.GET.year|default:'' }}">
+                <input type="hidden" id="yearValue" name="year" value="{{ request.GET.year|default:'__all__' }}">
                 <input type="hidden" id="progTypeValue" name="prog_type" value="{{ request.GET.prog_type|default:'__all__' }}">
                 <input type="hidden" id="progCategoryValue" name="prog_category" value="{{ request.GET.prog_category|default:'__all__' }}">
                 <input type="hidden" id="degreeValue" name="degree" value="{{ request.GET.degree|default:'__all__' }}">
@@ -255,7 +305,7 @@
                         <button type="button" id="syllabusFilterAll"
                             onclick="setSyllabusFilter('__all__')"
                             class="syllabus-filter-btn px-4 py-2 rounded-lg text-sm font-medium border transition-all
-                                   {% if request.GET.syllabus_status == '__all__' or not request.GET.syllabus_status %}bg-blue-600 text-white border-blue-600{% else %}bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600{% endif %}">
+                                   {% if request.GET.syllabus_status == '__all__' %}bg-blue-600 text-white border-blue-600{% else %}bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600{% endif %}">
                             All
                         </button>
                         <button type="button" id="syllabusFilterUploaded"
@@ -294,7 +344,7 @@
                 <div class="flex items-center gap-2.5">
                     <h2 class="text-base font-semibold text-slate-900">{% if page_mode == "report" %}Verification Report{% else %}Verification Queue{% endif %}</h2>
                     <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600">
-                        {% if page_mode == "report" %}{{ records|length }} shown{% else %}{{ courses|length }} shown{% endif %}
+                        {{ courses|length }} shown
                     </span>
                 </div>
                 <div class="relative w-full sm:w-72">
@@ -310,6 +360,12 @@
                     <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
                         <tr>
                             <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">#</th>
+                            {% if page_mode == "report" %}
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Course</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Verifiers</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Status</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Action</th>
+                            {% else %}
                             <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Program</th>
                             <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Course Code</th>
                             <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Course Title</th>
@@ -322,11 +378,7 @@
                             <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">CIA</th>
                             <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">ESE</th>
                             <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Total</th>
-                            {% if page_mode == "center" %}
                             <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Checkbox</th>
-                            {% else %}
-                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Verified By</th>
-                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Verified On</th>
                             {% endif %}
                         </tr>
                     </thead>
@@ -356,26 +408,29 @@
                         </tr>
                         {% endfor %}
                         {% else %}
-                        {% for record in records %}
-                        <tr class="verification-row hover:bg-slate-50 transition" data-course-code="{{ record.course.course_code|lower }}" data-course-title="{{ record.course.course_title|default:''|lower }}" data-program="{{ record.course.program.prog_code|lower }}" data-verifier="{{ record.verifier.username|lower }}">
+                        {% for course in courses %}
+                        <tr class="verification-row hover:bg-slate-50 transition" data-course-code="{{ course.course_code|lower }}" data-course-title="{{ course.course_title|default:''|lower }}" data-program="{{ course.program.prog_code|lower }}" data-verifier="{{ course.verifiers_display|lower }}" data-status="{{ course.verification_status_label|lower }}">
                             <td class="px-6 py-4 text-center text-sm text-slate-500">{{ forloop.counter }}</td>
                             <td class="px-6 py-4 text-center">
-                                <div class="text-sm font-medium text-slate-900">{{ record.course.program.prog_code }}</div>
-                                <div class="text-xs text-slate-500">{{ record.course.program.degree }} - {{ record.course.program.branch }}</div>
+                                <div class="text-sm font-medium text-slate-900">{{ course.course_code }}{% if course.course_title %} - {{ course.course_title|truncatechars:36 }}{% endif %}</div>
+                                <div class="text-xs text-slate-500">{{ course.program.prog_code }} - {{ course.program.degree }} - {{ course.program.branch }}</div>
                             </td>
-                            <td class="px-6 py-4 text-center font-mono font-bold text-blue-600">{{ record.course.course_code }}</td>
-                            <td class="px-6 py-4 text-center text-slate-700">{{ record.course.course_title|truncatechars:40 }}</td>
-                            <td class="px-6 py-4 text-center"><span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">{{ record.course.year }}</span></td>
-                            <td class="px-6 py-4 text-center"><span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">{{ record.course.sem }}</span></td>
-                            <td class="px-6 py-4 text-center text-slate-700">{{ record.course.course_category|default:"-" }}</td>
-                            <td class="px-6 py-4 text-center text-slate-700">{{ record.course.part|floatformat:0|default:"-" }}</td>
-                            <td class="px-6 py-4 text-center text-slate-700">{{ record.course.hrs_per_week|floatformat:-2|default:"-" }}</td>
-                            <td class="px-6 py-4 text-center font-semibold">{{ record.course.credit|floatformat:-2|default:"-" }}</td>
-                            <td class="px-6 py-4 text-center text-slate-700">{{ record.course.marks_cia|floatformat:0|default:"-" }}</td>
-                            <td class="px-6 py-4 text-center text-slate-700">{{ record.course.marks_ese|floatformat:0|default:"-" }}</td>
-                            <td class="px-6 py-4 text-center font-semibold text-slate-900">{{ record.course.total_marks|floatformat:0|default:"-" }}</td>
-                            <td class="px-6 py-4 text-center text-slate-700">{{ record.verifier.get_full_name|default:record.verifier.username }}</td>
-                            <td class="px-6 py-4 text-center text-slate-700">{{ record.finished_at|default:record.updated_at|date:"d M Y, h:i A" }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">
+                                {{ course.verifiers_display }}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ course.verification_status_class }}">
+                                    {{ course.verification_status_label }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <button
+                                    type="button"
+                                    onclick="openVerificationAssignmentDrawer({{ course.id }}, {{ course.assigned_verifier_id|default:'null' }}, '{{ course.assigned_verifier_name|default_if_none:''|escapejs }}', '{{ course.verification_action_label|default:"Allot"|escapejs }}', '{{ course.course_code|escapejs }}', '{{ course.course_title|default_if_none:''|escapejs }}', '{{ course.program.id }}', '{{ course.program.prog_code|escapejs }}')"
+                                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ course.verification_action_class }}">
+                                    {{ course.verification_action_label }}
+                                </button>
+                            </td>
                         </tr>
                         {% endfor %}
                         {% endif %}
@@ -449,16 +504,104 @@
     </div>
 </div>
 
+<div id="verifierAssignmentDrawer" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onclick="closeVerificationAssignmentDrawer()"></div>
+    <div class="absolute inset-y-0 right-0 w-full max-w-3xl bg-slate-50 shadow-2xl flex flex-col overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+            <div>
+                <h2 id="assignmentDrawerTitle" class="text-xl font-bold text-blue-900">Allot Verifier</h2>
+                <p id="assignmentDrawerSubtitle" class="text-sm text-slate-500 mt-0.5">Choose a verifier and assign one or more courses.</p>
+            </div>
+            <button type="button" onclick="closeVerificationAssignmentDrawer()" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form id="verificationAssignmentForm" class="flex-1 overflow-y-auto p-6 space-y-6">
+            {% csrf_token %}
+            <input type="hidden" id="assignmentMode" name="mode" value="allot">
+            <input type="hidden" id="assignmentAnchorCourseId" name="anchor_course_id" value="">
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-5 py-3 border-b border-slate-100 bg-slate-50">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700">Verifier</h3>
+                </div>
+                <div class="p-5">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2.5">Role</label>
+                    <select id="assignmentVerifier" name="verifier_id" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
+                        <option value="">Select Verifier</option>
+                        {% for verifier in verifier_users %}
+                        <option value="{{ verifier.id }}">{{ verifier.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs text-slate-400 mt-2">The verifier role is fixed to verifier assignments.</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700">Courses</h3>
+                    <button type="button" onclick="resetAssignmentCoursePickers()" class="text-xs font-semibold text-blue-600 hover:text-blue-700">Add More Courses</button>
+                </div>
+                <div class="p-5 space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program code</label>
+                            <select id="assignmentProgram" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
+                                <option value="">All Programs</option>
+                                {% for program in programs %}
+                                <option value="{{ program.id }}">{{ program.code }} - {{ program.degree }} ({{ program.branch }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Course code</label>
+                            <select id="assignmentCourseCode" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Course title</label>
+                            <select id="assignmentCourseTitle" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"></select>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="button" onclick="addAssignmentCourse()" class="inline-flex items-center px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition">Add Course</button>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="text-sm font-semibold text-slate-700">Selected courses</p>
+                            <span id="selectedCourseCount" class="text-xs text-slate-500">0 selected</span>
+                        </div>
+                        <div id="selectedCourseList" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <div class="px-6 pb-6 flex gap-4 bg-slate-50 shrink-0 pt-6 border-t border-slate-200">
+            <button type="button" onclick="closeVerificationAssignmentDrawer()" class="flex-1 w-1/2 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 font-bold text-sm rounded-xl transition-colors border border-slate-200 shadow-sm">Cancel</button>
+            <button type="button" onclick="saveVerificationAssignments()" class="flex-1 w-1/2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-[0.99]">
+                Save Assignments
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const endpoint = "{% url 'reports:verification_filter_options' %}";
+    const assignmentDetailsEndpoint = "{% url 'reports:verification_assignment_details' 0 %}".replace('/0/', '/');
+    const assignmentSyncEndpoint = "{% url 'reports:verification_sync_assignments' %}";
     const dropdownSequence = [
         { id: 'yearDropdown', valueId: 'yearValue', placeholder: 'Select', allText: 'All' },
         { id: 'progTypeDropdown', valueId: 'progTypeValue', placeholder: 'Select Type', allText: 'All Types' },
         { id: 'progCategoryDropdown', valueId: 'progCategoryValue', placeholder: 'Select Category', allText: 'All Categories' },
         { id: 'degreeDropdown', valueId: 'degreeValue', placeholder: 'Select Degree', allText: 'All Degrees' },
         { id: 'branchDropdown', valueId: 'branchValue', placeholder: 'Select Branch', allText: 'All Branches' },
-        { id: 'programDropdown', valueId: 'programValue', placeholder: 'Select Program', allText: 'All Programs' },
+        { id: 'programDropdown', valueId: 'programValue', placeholder: 'Select Program code', allText: 'All Programs' },
         { id: 'semDropdown', valueId: 'semValue', placeholder: 'Select', allText: 'All' },
         { id: 'partDropdown', valueId: 'partValue', placeholder: 'Select Part', allText: 'All Parts' },
         { id: 'courseCategoryDropdown', valueId: 'courseCategoryValue', placeholder: 'Select Category', allText: 'All Categories' },
@@ -467,6 +610,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const hiddenInputIds = dropdownSequence.map(item => item.valueId).concat(['syllabusStatusValue']);
     const applyFiltersBtn = document.getElementById('courseApplyFiltersBtn');
+    const assignmentState = {
+        mode: 'allot',
+        anchorCourse: null,
+        selectedCourses: [],
+        availableCourses: [],
+    };
 
     function updateApplyButtonState() {
         const form = document.getElementById('filterForm');
@@ -475,11 +624,258 @@ document.addEventListener('DOMContentLoaded', function () {
         const hiddenInputs = hiddenInputIds
             .map(id => document.getElementById(id))
             .filter(Boolean);
-        const selects = Array.from(form.querySelectorAll('select'));
-        const controls = hiddenInputs.length > 0 ? hiddenInputs : selects;
+        const controls = hiddenInputs.length > 0 ? hiddenInputs : [];
         const allSelected = controls.length > 0 && controls.every(control => control.value && control.value !== '');
         applyFiltersBtn.disabled = !allSelected;
     }
+
+    function showAssignmentMessage(message) {
+        window.alert(message);
+    }
+
+    function renderSelectedAssignmentCourses() {
+        const container = document.getElementById('selectedCourseList');
+        const count = document.getElementById('selectedCourseCount');
+        if (!container || !count) return;
+
+        container.innerHTML = '';
+
+        assignmentState.selectedCourses.forEach(course => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2';
+            const details = document.createElement('div');
+            details.className = 'min-w-0';
+            const title = document.createElement('div');
+            title.className = 'text-sm font-semibold text-slate-900 truncate';
+            title.textContent = `${course.code || ''}${course.title ? ' - ' + course.title : ''}`;
+            const meta = document.createElement('div');
+            meta.className = 'text-xs text-slate-500 truncate';
+            meta.textContent = course.program_code || '';
+            details.appendChild(title);
+            details.appendChild(meta);
+
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'shrink-0 rounded-md px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50';
+            removeButton.textContent = 'Delete';
+            removeButton.addEventListener('click', () => {
+                assignmentState.selectedCourses = assignmentState.selectedCourses.filter(item => String(item.id) !== String(course.id));
+                renderSelectedAssignmentCourses();
+            });
+            row.appendChild(details);
+            row.appendChild(removeButton);
+            container.appendChild(row);
+        });
+
+        count.textContent = `${assignmentState.selectedCourses.length} selected`;
+    }
+
+    function fillAssignmentCourseSelects(courseOptions, selectedCourseId) {
+        assignmentState.availableCourses = courseOptions || [];
+        const codeSelect = document.getElementById('assignmentCourseCode');
+        const titleSelect = document.getElementById('assignmentCourseTitle');
+        if (!codeSelect || !titleSelect) return;
+
+        codeSelect.innerHTML = '<option value="">Select course code</option>';
+        titleSelect.innerHTML = '<option value="">Select course title</option>';
+
+        assignmentState.availableCourses.forEach(course => {
+            const codeOption = document.createElement('option');
+            codeOption.value = String(course.id);
+            codeOption.textContent = course.code;
+            codeOption.dataset.title = course.title || '';
+            codeOption.dataset.program = course.program_id || '';
+            codeSelect.appendChild(codeOption);
+
+            const titleOption = document.createElement('option');
+            titleOption.value = String(course.id);
+            titleOption.textContent = course.title ? `${course.code} - ${course.title}` : course.code;
+            titleOption.dataset.code = course.code || '';
+            titleOption.dataset.program = course.program_id || '';
+            titleSelect.appendChild(titleOption);
+        });
+
+        if (selectedCourseId) {
+            codeSelect.value = String(selectedCourseId);
+            titleSelect.value = String(selectedCourseId);
+        }
+    }
+
+    function loadAssignmentCourseOptions(programId, selectedCourseId = '') {
+        const params = new URLSearchParams();
+        if (programId) params.set('program', programId);
+        fetch(`${endpoint}?${params.toString()}`)
+            .then(response => response.json())
+            .then(data => {
+                fillAssignmentCourseSelects(data.course_options || [], selectedCourseId);
+            })
+            .catch(() => showAssignmentMessage('Could not load course options.'));
+    }
+
+    function resetAssignmentCoursePickers() {
+        const programSelect = document.getElementById('assignmentProgram');
+        const codeSelect = document.getElementById('assignmentCourseCode');
+        const titleSelect = document.getElementById('assignmentCourseTitle');
+        if (programSelect) programSelect.value = '';
+        if (codeSelect) codeSelect.value = '';
+        if (titleSelect) titleSelect.value = '';
+        loadAssignmentCourseOptions(programSelect ? programSelect.value : '');
+    }
+
+    function addAssignmentCourse() {
+        const codeSelect = document.getElementById('assignmentCourseCode');
+        const titleSelect = document.getElementById('assignmentCourseTitle');
+        if (!codeSelect || !titleSelect) return;
+
+        const selectedId = codeSelect.value || titleSelect.value;
+        if (!selectedId) {
+            showAssignmentMessage('Please choose a course first.');
+            return;
+        }
+
+        const existing = assignmentState.selectedCourses.find(course => String(course.id) === String(selectedId));
+        if (existing) {
+            showAssignmentMessage('That course is already selected.');
+            return;
+        }
+
+        const course = assignmentState.availableCourses.find(item => String(item.id) === String(selectedId));
+        if (!course) {
+            showAssignmentMessage('Selected course could not be found.');
+            return;
+        }
+
+        assignmentState.selectedCourses.push({
+            id: course.id,
+            code: course.code,
+            title: course.title,
+            program_id: course.program_id || '',
+            program_code: course.program_code || '',
+        });
+        renderSelectedAssignmentCourses();
+        resetAssignmentCoursePickers();
+    }
+
+    window.openVerificationAssignmentDrawer = function(courseId, verifierId, verifierName, actionLabel, courseCode, courseTitle, programId, programCode) {
+        const drawer = document.getElementById('verifierAssignmentDrawer');
+        const title = document.getElementById('assignmentDrawerTitle');
+        const subtitle = document.getElementById('assignmentDrawerSubtitle');
+        const modeInput = document.getElementById('assignmentMode');
+        const anchorInput = document.getElementById('assignmentAnchorCourseId');
+        const verifierSelect = document.getElementById('assignmentVerifier');
+
+        assignmentState.mode = actionLabel && actionLabel.toLowerCase() === 'manage' ? 'manage' : 'allot';
+        assignmentState.anchorCourse = courseId ? {
+            id: courseId,
+            code: courseCode || '',
+            title: courseTitle || '',
+            program_id: programId || '',
+            program_code: programCode || '',
+        } : null;
+        assignmentState.selectedCourses = assignmentState.anchorCourse ? [assignmentState.anchorCourse] : [];
+
+        if (drawer) drawer.classList.remove('hidden');
+        if (modeInput) modeInput.value = assignmentState.mode;
+        if (anchorInput) anchorInput.value = courseId || '';
+        if (title) title.textContent = assignmentState.mode === 'manage' ? 'Manage Verifier Courses' : 'Allot Verifier';
+        if (subtitle) subtitle.textContent = assignmentState.mode === 'manage'
+            ? 'Add more courses or remove existing ones from this verifier.'
+            : 'Choose a verifier and assign one or more courses.';
+        if (verifierSelect && verifierId) {
+            verifierSelect.value = String(verifierId);
+        } else if (verifierSelect) {
+            verifierSelect.value = '';
+        }
+
+        const programSelect = document.getElementById('assignmentProgram');
+        if (programSelect) {
+            programSelect.value = assignmentState.anchorCourse?.program_id || '';
+        }
+        loadAssignmentCourseOptions(programSelect ? programSelect.value : '');
+
+        if (assignmentState.mode === 'manage' && verifierId) {
+            fetch(`${assignmentDetailsEndpoint}${verifierId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    assignmentState.selectedCourses = (data.courses || []).map(course => ({
+                        id: course.id,
+                        code: course.code,
+                        title: course.title,
+                        program_id: course.program_id || '',
+                        program_code: course.program_code || '',
+                    }));
+                    if (verifierSelect && data.verifier) {
+                        verifierSelect.value = String(data.verifier.id);
+                    }
+                    const firstProgramId = assignmentState.selectedCourses[0]?.program_id || '';
+                    if (programSelect) {
+                        programSelect.value = firstProgramId;
+                    }
+                    loadAssignmentCourseOptions(firstProgramId);
+                    renderSelectedAssignmentCourses();
+                })
+                .catch(() => showAssignmentMessage('Could not load assigned courses.'));
+        } else {
+            renderSelectedAssignmentCourses();
+        }
+    };
+
+    window.closeVerificationAssignmentDrawer = function() {
+        const drawer = document.getElementById('verifierAssignmentDrawer');
+        if (drawer) drawer.classList.add('hidden');
+    };
+
+    window.addAssignmentCourse = addAssignmentCourse;
+    window.resetAssignmentCoursePickers = resetAssignmentCoursePickers;
+
+    window.saveVerificationAssignments = function() {
+        const verifierSelect = document.getElementById('assignmentVerifier');
+        const verifierId = verifierSelect ? verifierSelect.value : '';
+        if (!verifierId) {
+            showAssignmentMessage('Please choose a verifier.');
+            return;
+        }
+        if (!assignmentState.selectedCourses.length) {
+            showAssignmentMessage('Please add at least one course.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('verifier_id', verifierId);
+        assignmentState.selectedCourses.forEach(course => formData.append('course_ids', course.id));
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        fetch(assignmentSyncEndpoint, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+            },
+            body: formData,
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    showAssignmentMessage(data.error || 'Unable to save assignments.');
+                    return;
+                }
+                window.location.reload();
+            })
+            .catch(() => showAssignmentMessage('Unable to save assignments.'));
+    };
+
+    document.getElementById('assignmentProgram')?.addEventListener('change', function() {
+        loadAssignmentCourseOptions(this.value || '');
+    });
+
+    document.getElementById('assignmentCourseCode')?.addEventListener('change', function() {
+        const titleSelect = document.getElementById('assignmentCourseTitle');
+        if (titleSelect) titleSelect.value = this.value;
+    });
+
+    document.getElementById('assignmentCourseTitle')?.addEventListener('change', function() {
+        const codeSelect = document.getElementById('assignmentCourseCode');
+        if (codeSelect) codeSelect.value = this.value;
+    });
 
     function getDropdownConfig(id, data) {
         const map = {
@@ -488,7 +884,7 @@ document.addEventListener('DOMContentLoaded', function () {
             progCategoryDropdown: { list: data.prog_categories || [], placeholder: 'Select Category', all: 'All Categories' },
             degreeDropdown: { list: data.degrees || [], placeholder: 'Select Degree', all: 'All Degrees' },
             branchDropdown: { list: data.branches || [], placeholder: 'Select Branch', all: 'All Branches' },
-            programDropdown: { list: data.programs || [], placeholder: 'Select Program', all: 'All Programs' },
+            programDropdown: { list: data.programs || [], placeholder: 'Select Program code', all: 'All Programs' },
             semDropdown: { list: data.sems || [], placeholder: 'Select', all: 'All' },
             partDropdown: { list: data.parts || [], placeholder: 'Select Part', all: 'All Parts' },
             courseCategoryDropdown: { list: data.course_categories || [], placeholder: 'Select Category', all: 'All Categories' },
@@ -539,7 +935,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const courseTitle = row.dataset.courseTitle || '';
             const program = row.dataset.program || '';
             const verifier = row.dataset.verifier || '';
-            const matches = !term || courseCode.includes(term) || courseTitle.includes(term) || program.includes(term) || verifier.includes(term);
+            const status = row.dataset.status || '';
+            const matches = !term || courseCode.includes(term) || courseTitle.includes(term) || program.includes(term) || verifier.includes(term) || status.includes(term);
             row.style.display = matches ? '' : 'none';
             if (matches) visibleCount++;
         });
@@ -564,13 +961,21 @@ document.addEventListener('DOMContentLoaded', function () {
             return Array.from(dropdown.querySelectorAll('.sms-option'));
         }
 
-        function markSelected(option) {
-            getOptions().forEach(item => {
-                item.classList.remove('bg-blue-50', 'text-blue-700', 'font-medium');
-                item.classList.add('text-slate-700');
+        function markSelected(selectedOption) {
+            getOptions().forEach(option => {
+                option.classList.remove('bg-blue-50', 'text-blue-700', 'font-medium');
+                option.classList.add('text-slate-700');
             });
-            option.classList.add('bg-blue-50', 'text-blue-700', 'font-medium');
-            option.classList.remove('text-slate-700');
+            selectedOption.classList.add('bg-blue-50', 'text-blue-700', 'font-medium');
+            selectedOption.classList.remove('text-slate-700');
+        }
+
+        function getVisibleOptions() {
+            return getOptions().filter(option => option.style.display !== 'none');
+        }
+
+        function getHighlightedOption() {
+            return getOptions().find(option => option.classList.contains('bg-slate-100'));
         }
 
         function highlightOption(option) {
@@ -579,10 +984,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 option.classList.add('bg-slate-100');
                 option.scrollIntoView({ block: 'nearest' });
             }
-        }
-
-        function getVisibleOptions() {
-            return getOptions().filter(item => item.style.display !== 'none');
         }
 
         function filterOptions(term) {
@@ -605,35 +1006,65 @@ document.addEventListener('DOMContentLoaded', function () {
             highlightOption(getVisibleOptions()[0]);
         }
 
-        function selectOption(option) {
-            const value = option.dataset.value;
-            hidden.value = value;
-            trigger.value = value ? option.textContent.trim() : '';
-            markSelected(option);
+        function positionPanel() {
+            const rect = trigger.getBoundingClientRect();
+            const panelHeight = panel.offsetHeight || 220;
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const showAbove = spaceBelow < panelHeight && rect.top > panelHeight;
+            panel.style.width = rect.width + 'px';
+            panel.style.left = rect.left + 'px';
+            if (showAbove) {
+                panel.style.top = '';
+                panel.style.bottom = (window.innerHeight - rect.top) + 'px';
+            } else {
+                panel.style.bottom = '';
+                panel.style.top = (rect.bottom + 4) + 'px';
+            }
+        }
+
+        let _panelScrollHandler = null;
+
+        function closePanel() {
             panel.classList.add('hidden');
             chevron.classList.remove('rotate-180');
-            updateDropdownState();
-            updateApplyButtonState();
-            refreshOptions();
+            if (_panelScrollHandler) {
+                window.removeEventListener('scroll', _panelScrollHandler, true);
+                _panelScrollHandler = null;
+            }
         }
 
         function openPanel() {
             panel.classList.remove('hidden');
             chevron.classList.add('rotate-180');
+            positionPanel();
             filterOptions('');
-            const current = getOptions().find(item => item.dataset.value === hidden.value);
-            highlightOption(current || getVisibleOptions()[0]);
+            const currentSelected = getOptions().find(option => option.dataset.value === hidden.value);
+            highlightOption(currentSelected || getVisibleOptions()[0]);
             trigger.select();
-        }
-
-        function closePanel() {
-            panel.classList.add('hidden');
-            chevron.classList.remove('rotate-180');
+            if (!_panelScrollHandler) {
+                _panelScrollHandler = () => positionPanel();
+                window.addEventListener('scroll', _panelScrollHandler, true);
+            }
         }
 
         function revertInvalidInput() {
-            const current = getOptions().find(item => item.dataset.value === hidden.value);
-            trigger.value = current && hidden.value ? current.textContent.trim() : '';
+            let match = getOptions().find(option => option.dataset.value === hidden.value);
+            if (!match && hidden.value !== '') {
+                hidden.value = '__all__';
+                match = getOptions().find(option => option.dataset.value === '__all__');
+            }
+            trigger.value = match && hidden.value ? match.textContent.trim() : '';
+        }
+
+        function selectOption(option) {
+            hidden.value = option.dataset.value;
+            hidden.dispatchEvent(new Event('change', { bubbles: true }));
+            trigger.value = option.dataset.value ? option.textContent.trim() : '';
+            markSelected(option);
+            closePanel();
+            updateDropdownState();
+            updateApplyButtonState();
+            refreshOptions();
         }
 
         const currentValue = hidden.value;
@@ -683,8 +1114,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const visible = getVisibleOptions();
-            if (!visible.length) return;
-            const currentIndex = visible.indexOf(getOptions().find(item => item.classList.contains('bg-slate-100')));
+            if (visible.length === 0) return;
+            const currentIndex = visible.indexOf(getHighlightedOption());
 
             if (event.key === 'ArrowDown') {
                 event.preventDefault();
@@ -694,7 +1125,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 highlightOption(visible[(currentIndex - 1 + visible.length) % visible.length]);
             } else if (event.key === 'Enter') {
                 event.preventDefault();
-                const highlighted = getOptions().find(item => item.classList.contains('bg-slate-100'));
+                const highlighted = getHighlightedOption();
                 if (highlighted) selectOption(highlighted);
             }
         });
@@ -719,27 +1150,24 @@ document.addEventListener('DOMContentLoaded', function () {
         dropdown.updateOptions = function(optionList, placeholderText, allText) {
             list.innerHTML = '';
 
-            if (allText) {
-                const allLi = document.createElement('li');
-                allLi.className = 'sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer';
-                allLi.dataset.value = '__all__';
-                allLi.textContent = allText;
-                list.appendChild(allLi);
-            }
+            const allOption = document.createElement('li');
+            allOption.className = 'sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer';
+            allOption.dataset.value = '__all__';
+            allOption.textContent = allText;
+            list.appendChild(allOption);
 
-            const currentValue = hidden.value;
             optionList.forEach(item => {
-                const li = document.createElement('li');
-                li.className = 'sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer';
+                const option = document.createElement('li');
+                option.className = 'sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer';
 
-                let value = '';
-                let text = '';
+                let value;
+                let text;
                 if (typeof item === 'object') {
                     if (item.id) {
                         value = String(item.id);
                         text = `${item.code} - ${item.degree} (${item.branch})`;
                     } else if (item.code) {
-                        value = String(item.code);
+                        value = item.code;
                         text = `${item.code} - ${item.title}`;
                     }
                 } else {
@@ -747,18 +1175,40 @@ document.addEventListener('DOMContentLoaded', function () {
                     text = String(item);
                 }
 
-                li.dataset.value = value;
-                li.textContent = text;
-                if (currentValue && value === currentValue) {
-                    li.classList.add('bg-blue-50', 'text-blue-700', 'font-medium');
-                    li.classList.remove('text-slate-700');
-                }
-                list.appendChild(li);
+                option.dataset.value = value;
+                option.textContent = text;
+                if (hidden.value && value === hidden.value) markSelected(option);
+                list.appendChild(option);
             });
-
             revertInvalidInput();
         };
+
+        dropdown.setEnabled = function(enabled) {
+            trigger.disabled = !enabled;
+            if (!enabled) {
+                trigger.classList.add('bg-slate-100', 'cursor-not-allowed');
+                trigger.classList.remove('bg-white', 'cursor-text');
+                hidden.value = '';
+                trigger.value = '';
+            } else {
+                trigger.classList.remove('bg-slate-100', 'cursor-not-allowed');
+                trigger.classList.add('bg-white', 'cursor-text');
+            }
+        };
     });
+
+    function updateAllDropdownsState() {
+        dropdownSequence.forEach(item => {
+            const dropdown = document.getElementById(item.id);
+            if (dropdown && dropdown.setEnabled) {
+                dropdown.setEnabled(true);
+            }
+        });
+    }
+
+    function updateDropdownState() {
+        updateAllDropdownsState();
+    }
 
     function refreshOptions() {
         const params = new URLSearchParams();
@@ -779,43 +1229,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 dropdownSequence.forEach(item => {
                     const dropdown = document.getElementById(item.id);
                     const trigger = dropdown ? dropdown.querySelector('.sms-trigger') : null;
-                    if (!dropdown || !dropdown.updateOptions || !trigger || trigger.disabled) return;
                     const config = getDropdownConfig(item.id, data);
-                    if (config) dropdown.updateOptions(config.list, config.placeholder, config.all);
+                    if (dropdown && dropdown.updateOptions && trigger && !trigger.disabled && config) {
+                        dropdown.updateOptions(config.list || [], config.placeholder, config.all);
+                    }
                 });
             })
             .catch(error => console.error('Error fetching verification filters:', error));
     }
 
-    function updateDropdownState() {
-        for (let index = 1; index < dropdownSequence.length; index++) {
-            const previousHidden = document.getElementById(dropdownSequence[index - 1].valueId);
-            const currentDropdown = document.getElementById(dropdownSequence[index].id);
-            if (currentDropdown && currentDropdown.setEnabled) {
-                currentDropdown.setEnabled = currentDropdown.setEnabled || function(enabled) {
-                    const trigger = currentDropdown.querySelector('.sms-trigger');
-                    trigger.disabled = !enabled;
-                };
-            }
-            if (currentDropdown) {
-                const trigger = currentDropdown.querySelector('.sms-trigger');
-                const enabled = previousHidden && previousHidden.value !== '';
-                trigger.disabled = !enabled;
-                if (!enabled) {
-                    trigger.classList.add('bg-slate-100', 'cursor-not-allowed');
-                    trigger.classList.remove('bg-white', 'cursor-text');
-                    const hidden = document.getElementById(dropdownSequence[index].valueId);
-                    hidden.value = '';
-                    trigger.value = '';
-                } else {
-                    trigger.classList.remove('bg-slate-100', 'cursor-not-allowed');
-                    trigger.classList.add('bg-white', 'cursor-text');
-                }
-            }
-        }
-    }
-
-    updateDropdownState();
+    updateAllDropdownsState();
     refreshOptions();
     updateApplyButtonState();
     setRowVisibility();
@@ -824,16 +1247,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const filterForm = document.getElementById('filterForm');
         if (!filterForm) return;
 
-        filterForm.querySelectorAll('select').forEach(select => {
-            if (select.tomselect) {
-                select.tomselect.setValue('');
-            } else {
-                select.value = '';
-            }
-        });
         filterForm.querySelectorAll('input').forEach(input => {
-            if (input.type !== 'hidden' || input.name !== 'csrfmiddlewaretoken') {
-                input.value = '';
+            if (input.type === 'hidden') {
+                input.value = '__all__';
             }
         });
         const searchInput = document.getElementById('verificationSearchInput');

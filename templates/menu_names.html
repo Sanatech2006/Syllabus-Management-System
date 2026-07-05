@@ -19,6 +19,8 @@
 
     <nav class="flex-1 overflow-y-auto px-4 space-y-6 custom-scrollbar">
         {% if user.is_authenticated %}
+        {% user_is_verifier user as is_verifier %}
+        {% user_is_hod user as is_hod %}
         <!-- General Section -->
         <div>
             <p class="px-3 text-[11px] font-bold text-slate-600 uppercase tracking-[0.2em] mb-3">
@@ -46,30 +48,16 @@
                     <i data-lucide="eye" class="w-[20px] h-[20px] {% if request.resolver_match.namespace == 'view_syllabus' %}text-blue-400{% else %}text-slate-500 group-hover:text-blue-400{% endif %}"></i>
                     <span class="text-[14px]">View Syllabus</span>
                 </a>
-                
+
                 <!-- Course Management -->
+                {% if not is_verifier %}
                 <a href="{% url 'course_management:course_management' %}"
                     class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'course_management' %}bg-white/10 text-white{% endif %}">
                     <i data-lucide="book-copy" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
                     <span class="text-[14px]">Course Management</span>
                 </a>
+                {% endif %}
 
-                {% user_is_verifier user as is_verifier %}
-                {% if not user.is_superuser %}
-                <a href="{% url 'reports:work_progress_report' %}"
-                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'work_progress_report' %}bg-white/10 text-white{% endif %}">
-                    <i data-lucide="pie-chart" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
-                    <span class="text-[14px]">Report Center</span>
-                </a>
-                {% if is_verifier %}
-                <a href="{% url 'reports:verification_center' %}"
-                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'verification_center' %}bg-white/10 text-white{% endif %}">
-                    <i data-lucide="check-square" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
-                    <span class="text-[14px]">Verification Centre</span>
-                </a>
-                {% endif %}
-                {% endif %}
-                
                 <!-- Program Management - Admin only -->
                 {% if user.is_superuser %}
                 <a href="{% url 'program_manage:program_management' %}"
@@ -81,6 +69,21 @@
                 {% endif %}
             </div>
         </div>
+
+        {% if is_verifier or is_hod %}
+        <div>
+            <p class="px-3 text-[11px] font-bold text-slate-600 uppercase tracking-[0.2em] mb-3">
+                Verification
+            </p>
+            <div class="space-y-2">
+                <a href="{% url 'reports:verification_center' %}"
+                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'verification_center' %}bg-white/10 text-white{% endif %}">
+                    <i data-lucide="check-square" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
+                    <span class="text-[14px]">Verification Report</span>
+                </a>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Administration Section - Admin only -->
         {% if user.is_superuser %}
@@ -100,16 +103,29 @@
                     <i data-lucide="link-2" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
                     <span class="text-[14px]">HOD Management</span>
                 </a>
-                <a href="{% url 'reports:work_progress_report' %}"
-                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'work_progress_report' %}bg-white/10 text-white{% endif %}">
-                    <i data-lucide="pie-chart" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
-                    <span class="text-[14px]">Report Center</span>
-                </a>
-                <a href="{% url 'reports:verification_report' %}"
-                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'verification_report' %}bg-white/10 text-white{% endif %}">
-                    <i data-lucide="check-square" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
-                    <span class="text-[14px]">Verification Report</span>
-                </a>
+                <div class="space-y-2">
+                    <button type="button"
+                        onclick="toggleReportMenu(event)"
+                        class="group w-full flex items-center justify-between gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'work_progress_report' or request.resolver_match.url_name == 'verification_report' or request.resolver_match.url_name == 'verification_center' %}bg-white/10 text-white{% endif %}">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="pie-chart" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
+                            <span class="text-[14px]">Report Centre</span>
+                        </span>
+                        <i data-lucide="chevron-down" class="w-[16px] h-[16px] text-slate-500 group-hover:text-blue-400"></i>
+                    </button>
+                    <div id="reportMenu" class="hidden ml-6 space-y-1 border-l border-white/5 pl-3">
+                        <a href="{% url 'reports:work_progress_report' %}"
+                            class="group flex items-center gap-3 px-3 py-2 text-[13px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'work_progress_report' %}bg-white/10 text-white{% endif %}">
+                            <i data-lucide="file-text" class="w-[18px] h-[18px] text-slate-500 group-hover:text-blue-400"></i>
+                            <span>Work Progress Report</span>
+                        </a>
+                        <a href="{% url 'reports:verification_report' %}"
+                            class="group flex items-center gap-3 px-3 py-2 text-[13px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'verification_report' %}bg-white/10 text-white{% endif %}">
+                            <i data-lucide="check-square" class="w-[18px] h-[18px] text-slate-500 group-hover:text-blue-400"></i>
+                            <span>Verification Report</span>
+                        </a>
+                    </div>
+                </div>
                 <a href="#"
                     class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white">
                     <i data-lucide="settings"
@@ -219,7 +235,7 @@
                     <a href="{% url 'core:login' %}?role=verifier"
                         class="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] hover:bg-white/5 transition-colors">
                         <i data-lucide="badge-check" class="w-3.5 h-3.5 text-blue-400"></i>
-                        Verifier Login
+                        VERIFIER Login
                     </a>
                 </li>
                 {% endif %}
@@ -237,18 +253,43 @@
         }
     });
 
-    function toggleLoginMenu() {
+    function toggleLoginMenu(event) {
+        if (event) {
+            event.stopPropagation();
+        }
         const menu = document.getElementById("login-submenu");
         if (menu) {
             menu.classList.toggle("hidden");
         }
     }
 
+    function toggleReportMenu(event) {
+        if (event) {
+            event.stopPropagation();
+        }
+        const menu = document.getElementById("reportMenu");
+        if (menu) {
+            menu.classList.toggle("hidden");
+        }
+    }
+
     window.onclick = function (event) {
-        if (!event.target.closest(".relative")) {
+        const loginMenu = document.getElementById("login-submenu");
+        const reportMenu = document.getElementById("reportMenu");
+        const clickedLoginToggle = event.target.closest('button[onclick^="toggleLoginMenu"]');
+        const clickedReportToggle = event.target.closest('button[onclick^="toggleReportMenu"]');
+        const clickedInsideLoginMenu = loginMenu && loginMenu.contains(event.target);
+        const clickedInsideReportMenu = reportMenu && reportMenu.contains(event.target);
+
+        if (!clickedLoginToggle && !clickedInsideLoginMenu) {
             const menu = document.getElementById("login-submenu");
             if (menu) {
                 menu.classList.add("hidden");
+            }
+        }
+        if (!clickedReportToggle && !clickedInsideReportMenu) {
+            if (reportMenu) {
+                reportMenu.classList.add("hidden");
             }
         }
     };

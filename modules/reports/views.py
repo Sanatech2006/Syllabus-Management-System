@@ -54,6 +54,11 @@ def _base_hod_queryset(user):
     ).values_list('user_id', flat=True)).distinct().order_by('username')
 
 
+def _base_verifier_queryset():
+    User = get_user_model()
+    return User.objects.filter(groups__name="Verifier").distinct().order_by("username")
+
+
 def _display_user_name(user):
     return user.get_full_name() or user.username
 
@@ -279,7 +284,7 @@ def _part_lookup_values(value):
 
 def _verification_base_courses(user):
     courses = CourseStructure.objects.select_related("program")
-    if user.is_superuser or is_verifier_user(user):
+    if user.is_superuser or is_verifier_user(user) or is_hod_user(user):
         return courses
     accessible_ids = get_accessible_programs(user).values_list("id", flat=True)
     return courses.filter(program_id__in=accessible_ids)
@@ -353,67 +358,103 @@ def _distinct_non_empty_related(queryset, field_name):
 
 
 def _build_verification_filter_options(base_queryset, filters):
-    option_querysets = {
-        field: _apply_verification_filters(base_queryset, filters, prefix="", exclude_field=field)
-        for field in (
-            "year",
-            "program",
-            "prog_type",
-            "prog_category",
-            "degree",
-            "branch",
-            "sem",
-            "part",
-            "course_category",
-            "course_title",
-        )
-    }
+    qs = base_queryset
 
-    programs = (
-        Program.objects.filter(
-            id__in=option_querysets["program"].values_list("program_id", flat=True)
-        )
-        .distinct()
-        .order_by("prog_code")
-    )
+    year = filters.get("year")
+    if year and year != "__all__":
+        qs = qs.filter(year=year)
+    prog_types = _distinct_non_empty_related(qs, "program__prog_type")
 
-    courses = option_querysets["course_title"].order_by("course_code")
+    prog_type = filters.get("prog_type")
+    if prog_type and prog_type != "__all__":
+        qs = qs.filter(program__prog_type=prog_type)
+    prog_categories = _distinct_non_empty_related(qs, "program__prog_category")
+
+    prog_category = filters.get("prog_category")
+    if prog_category and prog_category != "__all__":
+        qs = qs.filter(program__prog_category=prog_category)
+    degrees = _distinct_non_empty_related(qs, "program__degree")
+
+    degree = filters.get("degree")
+    if degree and degree != "__all__":
+        qs = qs.filter(program__degree=degree)
+    branches = _distinct_non_empty_related(qs, "program__branch")
+
+    branch = filters.get("branch")
+    if branch and branch != "__all__":
+        qs = qs.filter(program__branch__icontains=branch)
+
+    programs = []
+    seen_programs = set()
+    for course in qs.select_related("program").order_by("program__prog_code"):
+        program = course.program
+        if not program or program.id in seen_programs:
+            continue
+        seen_programs.add(program.id)
+        programs.append({
+            "id": program.id,
+            "code": program.prog_code,
+            "degree": program.degree,
+            "branch": program.branch,
+        })
+
+    program = filters.get("program")
+    if program and program != "__all__":
+        qs = qs.filter(program_id=program)
+    sems = _distinct_non_empty_related(qs, "sem")
+
+    sem = filters.get("sem")
+    if sem and sem != "__all__":
+        qs = qs.filter(sem=sem)
+    parts = sorted({
+        normalized_part
+        for normalized_part in (
+            _normalize_part_value(part_value)
+            for part_value in _distinct_non_empty_related(qs, "part")
+        )
+        if normalized_part
+    }, key=lambda item: int(item) if str(item).isdigit() else str(item))
+
+    part = filters.get("part")
+    if part and part != "__all__":
+        qs = qs.filter(part__in=_part_lookup_values(part))
+    course_categories = _distinct_non_empty_related(qs, "course_category")
+
+    course_category = filters.get("course_category")
+    if course_category and course_category != "__all__":
+        qs = qs.filter(course_category=course_category)
+
+    course_title = filters.get("course_title")
+    if course_title and course_title != "__all__":
+        qs = qs.filter(
+            Q(course_code__icontains=course_title)
+            | Q(course_title__icontains=course_title)
+        )
+
     courses_list = []
     seen_courses = set()
-    for course in courses:
+    for course in qs.order_by("course_code"):
         if course.course_code in seen_courses:
             continue
         seen_courses.add(course.course_code)
         courses_list.append({
+            "id": course.id,
             "code": course.course_code,
             "title": course.course_title or "",
+            "program_id": course.program_id,
+            "program_code": course.program.prog_code if course.program else "",
         })
 
     return {
-        "years": _distinct_non_empty_related(option_querysets["year"], "year"),
-        "prog_types": _distinct_non_empty_related(option_querysets["prog_type"], "program__prog_type"),
-        "prog_categories": _distinct_non_empty_related(option_querysets["prog_category"], "program__prog_category"),
-        "degrees": _distinct_non_empty_related(option_querysets["degree"], "program__degree"),
-        "branches": _distinct_non_empty_related(option_querysets["branch"], "program__branch"),
-        "programs": [
-            {
-                "id": program.id,
-                "code": program.prog_code,
-                "degree": program.degree,
-                "branch": program.branch,
-            }
-            for program in programs
-        ],
-        "sems": _distinct_non_empty_related(option_querysets["sem"], "sem"),
-        "parts": sorted({
-            normalized_part
-            for normalized_part in (
-                _normalize_part_value(part_value)
-                for part_value in _distinct_non_empty_related(option_querysets["part"], "part")
-            )
-            if normalized_part
-        }, key=lambda item: int(item) if str(item).isdigit() else str(item)),
-        "course_categories": _distinct_non_empty_related(option_querysets["course_category"], "course_category"),
+        "years": _distinct_non_empty_related(base_queryset, "year"),
+        "prog_types": prog_types,
+        "prog_categories": prog_categories,
+        "degrees": degrees,
+        "branches": branches,
+        "programs": programs,
+        "sems": sems,
+        "parts": parts,
+        "course_categories": course_categories,
         "course_options": courses_list,
     }
 
@@ -427,12 +468,123 @@ def _verification_stats(queryset):
     }
 
 
+def _verification_course_stats(courses):
+    verified_courses = [course for course in courses if getattr(course, "verification_status_key", "") == "verified"]
+    return {
+        "ug_verified": sum(1 for course in verified_courses if course.program and course.program.prog_type == "UG"),
+        "pg_verified": sum(1 for course in verified_courses if course.program and course.program.prog_type == "PG"),
+        "arts_verified": sum(1 for course in verified_courses if course.program and course.program.prog_category == "Arts"),
+        "science_verified": sum(1 for course in verified_courses if course.program and course.program.prog_category == "Science"),
+    }
+
+
 def _verification_record_map(user, course_ids):
     records = CourseVerification.objects.select_related("course", "verifier").filter(
         verifier=user,
         course_id__in=course_ids,
     )
     return {record.course_id: record for record in records}
+
+
+def _verification_latest_record_map(course_ids):
+    records = CourseVerification.objects.select_related("verifier", "course").filter(course_id__in=course_ids)
+    latest_map = {}
+    for record in records:
+        current = latest_map.get(record.course_id)
+        if current is None:
+            latest_map[record.course_id] = record
+            continue
+        current_stamp = current.updated_at or current.created_at
+        record_stamp = record.updated_at or record.created_at
+        if record_stamp >= current_stamp:
+            latest_map[record.course_id] = record
+    return latest_map
+
+
+def _verification_assignment_payload(verifier):
+    records = CourseVerification.objects.select_related("course", "course__program").filter(verifier=verifier)
+    return [
+        {
+            "id": record.course_id,
+            "code": record.course.course_code,
+            "title": record.course.course_title or "",
+            "program_id": record.course.program_id if record.course else None,
+            "program_code": record.course.program.prog_code if record.course and record.course.program else "",
+        }
+        for record in records
+    ]
+
+
+def _verification_display_name(user):
+    return user.get_full_name() or user.username
+
+
+def _verification_status_meta(status_key):
+    return {
+        "verified": ("Verified", "bg-green-100 text-green-800"),
+        "needs changes": ("Needs Changes", "bg-rose-100 text-rose-800"),
+        "pending": ("Pending", "bg-amber-100 text-amber-800"),
+        "not verified": ("Not Verified", "bg-slate-100 text-slate-700"),
+        "verifier not assigned": ("Verifier Not Assigned", "bg-red-100 text-red-800"),
+    }.get(status_key, (status_key.title(), "bg-slate-100 text-slate-700"))
+
+
+def _summarize_verification_course(records):
+    if not records:
+        return "verifier not assigned"
+
+    latest_record = max(records, key=lambda record: record.updated_at or record.created_at)
+
+    if latest_record.status == CourseVerification.STATUS_SUBMITTED and latest_record.is_verified:
+        return "verified"
+
+    if latest_record.status == CourseVerification.STATUS_SUBMITTED and not latest_record.is_verified:
+        return "needs changes"
+
+    if latest_record.status == CourseVerification.STATUS_DRAFT and latest_record.is_verified:
+        return "not verified"
+
+    if latest_record.status == CourseVerification.STATUS_DRAFT and not latest_record.is_verified:
+        return "pending"
+
+    return "not verified"
+
+
+def _decorate_verification_report_courses(courses):
+    course_ids = [course.id for course in courses]
+    records_by_course = {}
+
+    verification_records = CourseVerification.objects.select_related("verifier").filter(course_id__in=course_ids)
+    for record in verification_records:
+        records_by_course.setdefault(record.course_id, []).append(record)
+
+    for course in courses:
+        course.verification_records_list = records_by_course.get(course.id, [])
+        course.verifiers_display = ", ".join(
+            dict.fromkeys(
+                _verification_display_name(record.verifier)
+                for record in course.verification_records_list
+                if record.verifier
+            )
+        ) or "-"
+        latest_record = max(
+            course.verification_records_list,
+            key=lambda record: record.updated_at or record.created_at,
+            default=None,
+        )
+        course.assigned_verifier_id = latest_record.verifier_id if latest_record else None
+        course.assigned_verifier_name = _verification_display_name(latest_record.verifier) if latest_record and latest_record.verifier else ""
+        course.verification_status_key = _summarize_verification_course(course.verification_records_list)
+        course.verification_status_label, course.verification_status_class = _verification_status_meta(
+            course.verification_status_key
+        )
+        course.verification_action_label = "Allot" if course.verification_status_key == "verifier not assigned" else "Manage"
+        course.verification_action_class = (
+            "bg-amber-600 hover:bg-amber-700 text-white"
+            if course.verification_action_label == "Allot"
+            else "bg-blue-600 hover:bg-blue-700 text-white"
+        )
+        yield course
 
 
 @login_required
@@ -442,7 +594,7 @@ def verification_center(request):
         messages.info(request, "Use Verification Report for admin review.")
         return redirect("reports:verification_report")
 
-    if not is_verifier_user(request.user):
+    if not (is_verifier_user(request.user) or is_hod_user(request.user)):
         messages.error(request, "You do not have permission to access that section.")
         return redirect("/dashboard/")
 
@@ -554,19 +706,20 @@ def verification_report(request):
         "course_title": request.GET.get("course_title", "__all__"),
         "syllabus_status": request.GET.get("syllabus_status", "__all__"),
     }
-    has_applied_filters = bool(request.GET.get("year"))
 
-    base_queryset = CourseVerification.objects.select_related("course", "course__program", "verifier").filter(
-        status=CourseVerification.STATUS_SUBMITTED,
-        is_verified=True,
+    base_queryset = _verification_base_courses(request.user)
+    filtered_queryset = _apply_verification_filters(base_queryset, filters).order_by(
+        "program__prog_code",
+        "year",
+        "sem",
+        "course_code",
     )
-    filtered_queryset = _apply_verification_filters(base_queryset, filters, prefix="course__") if has_applied_filters else base_queryset.none()
-    filtered_queryset = filtered_queryset.order_by("course__program__prog_code", "course__year", "course__sem", "course__course_code", "updated_at")
+    course_list = list(_decorate_verification_report_courses(filtered_queryset))
 
-    paginator = Paginator(filtered_queryset, per_page)
+    paginator = Paginator(course_list, per_page)
     page_obj = paginator.get_page(page)
     filter_options = _build_verification_filter_options(
-        _verification_base_courses(request.user),
+        base_queryset,
         filters,
     )
 
@@ -575,11 +728,12 @@ def verification_report(request):
     query_params.pop("per_page", None)
 
     context = {
+        "courses": page_obj,
         "records": page_obj,
         "page_obj": page_obj,
         "per_page": per_page,
         "pagination_query": query_params.urlencode(),
-        "has_applied_filters": has_applied_filters,
+        "has_applied_filters": True,
         "selected_year": filters["year"],
         "selected_program": filters["program"],
         "selected_prog_type": filters["prog_type"],
@@ -593,10 +747,17 @@ def verification_report(request):
         "selected_syllabus_status": filters["syllabus_status"],
         "all_courses_for_search": filter_options["course_options"],
         "all_courses_list": filter_options["course_options"],
+        "verifier_users": [
+            {
+                "id": verifier.id,
+                "name": _verification_display_name(verifier),
+            }
+            for verifier in _base_verifier_queryset()
+        ],
         "page_mode": "report",
         "post_action_url": request.path,
         **filter_options,
-        **_verification_stats(base_queryset),
+        **_verification_course_stats(course_list),
     }
     return render(request, "verification_page.html", context)
 
@@ -608,7 +769,7 @@ def _verification_query_options(user, filters):
 
 @login_required
 def verification_filter_options(request):
-    if not (request.user.is_superuser or is_verifier_user(request.user)):
+    if not (request.user.is_superuser or is_verifier_user(request.user) or is_hod_user(request.user)):
         return JsonResponse({"error": "Permission denied"}, status=403)
 
     filters = {
@@ -624,3 +785,58 @@ def verification_filter_options(request):
         "course_title": request.GET.get("course_title", "__all__"),
     }
     return JsonResponse(_verification_query_options(request.user, filters))
+
+
+@admin_required
+@require_http_methods(["GET"])
+def verification_assignment_details(request, verifier_id):
+    verifier = get_user_model().objects.filter(id=verifier_id).first()
+    if not verifier or not is_verifier_user(verifier):
+        return JsonResponse({"error": "Verifier not found"}, status=404)
+
+    return JsonResponse({
+        "verifier": {
+            "id": verifier.id,
+            "name": _verification_display_name(verifier),
+        },
+        "courses": _verification_assignment_payload(verifier),
+    })
+
+
+@admin_required
+@require_http_methods(["POST"])
+def verification_sync_assignments(request):
+    verifier_id = request.POST.get("verifier_id")
+    course_ids = [int(value) for value in request.POST.getlist("course_ids") if str(value).isdigit()]
+
+    if not str(verifier_id).isdigit():
+        return JsonResponse({"success": False, "error": "Please choose a verifier."}, status=400)
+
+    verifier = get_user_model().objects.filter(id=int(verifier_id)).first()
+    if not verifier or not is_verifier_user(verifier):
+        return JsonResponse({"success": False, "error": "Verifier not found."}, status=404)
+
+    with transaction.atomic():
+        CourseVerification.objects.filter(course_id__in=course_ids).exclude(verifier=verifier).delete()
+        if course_ids:
+            CourseVerification.objects.filter(verifier=verifier).exclude(course_id__in=course_ids).delete()
+        else:
+            CourseVerification.objects.filter(verifier=verifier).delete()
+
+        for course_id in course_ids:
+            course = CourseStructure.objects.filter(id=course_id).select_related("program").first()
+            if not course:
+                continue
+            CourseVerification.objects.get_or_create(
+                course=course,
+                verifier=verifier,
+                defaults={
+                    "status": CourseVerification.STATUS_DRAFT,
+                    "is_verified": False,
+                },
+            )
+
+    return JsonResponse({
+        "success": True,
+        "message": "Verifier assignments updated successfully.",
+    })
