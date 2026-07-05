@@ -45,6 +45,13 @@ def get_user_role_label(user):
     }.get(role, "User")
 
 
+def get_user_role_labels(user):
+    labels = [get_user_role_label(user)]
+    if get_user_role(user) == ROLE_HOD and is_verifier_user(user):
+        labels.append("Verifier")
+    return labels
+
+
 def set_user_role(user, role, additional_roles=None):
     from django.contrib.auth.models import Group
 

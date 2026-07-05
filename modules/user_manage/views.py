@@ -16,6 +16,7 @@ from modules.core.roles import (
     VERIFIER_GROUP_NAME,
     get_user_role,
     get_user_role_label,
+    get_user_role_labels,
     set_user_role,
 )
 
@@ -31,6 +32,7 @@ def user_management(request):
     for user in users:
         user.display_role = get_user_role(user)
         user.display_role_label = get_user_role_label(user)
+        user.display_role_labels = get_user_role_labels(user)
     context = {
         "users": users,
         "total_users": users.count(),
@@ -56,6 +58,7 @@ def get_user(request, user_id):
                 'last_name': user.last_name,
                 'is_active': user.is_active,
                 'role': get_user_role(user),
+                'role_labels': get_user_role_labels(user),
                 'additional_role': 'verifier' if user.groups.filter(name=VERIFIER_GROUP_NAME).exists() and get_user_role(user) != 'verifier' else '',
                 'date_joined': user.date_joined.strftime('%Y-%m-%d') if user.date_joined else '',
                 'last_login': user.last_login.strftime('%Y-%m-%d %H:%M:%S') if user.last_login else '',
