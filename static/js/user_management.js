@@ -187,8 +187,30 @@ function resetUserForm() {
     const drawerRole = document.getElementById('drawerRole');
     if (drawerRole) drawerRole.value = 'user';
 
-    const drawerAdditionalRole = document.getElementById('drawerAdditionalRole');
-    if (drawerAdditionalRole) drawerAdditionalRole.value = '';
+    syncVerifierAssignmentField();
+}
+
+function syncVerifierAssignmentField() {
+    const drawerRole = document.getElementById('drawerRole');
+    const wrapper = document.getElementById('drawerVerifierAssignmentWrapper');
+    const checkbox = document.getElementById('drawerVerifierAssignment');
+
+    if (!drawerRole || !wrapper || !checkbox) return;
+
+    const shouldShow = drawerRole.value !== 'verifier';
+    wrapper.classList.toggle('hidden', !shouldShow);
+
+    if (!shouldShow) {
+        checkbox.checked = false;
+    }
+}
+
+function initializeRoleAssignmentField() {
+    const drawerRole = document.getElementById('drawerRole');
+    if (!drawerRole) return;
+
+    drawerRole.addEventListener('change', syncVerifierAssignmentField);
+    syncVerifierAssignmentField();
 }
 
 // Edit user function
@@ -203,13 +225,17 @@ function editUser(userId) {
                 document.getElementById('drawerUsername').value = data.user.username;
                 document.getElementById('drawerEmail').value = data.user.email;
                 document.getElementById('drawerRole').value = data.user.role || 'user';
-                document.getElementById('drawerAdditionalRole').value = data.user.additional_role || '';
+                const verifierCheckbox = document.getElementById('drawerVerifierAssignment');
+                if (verifierCheckbox) {
+                    verifierCheckbox.checked = data.user.additional_role === 'verifier';
+                }
                 document.getElementById('drawerPassword').value = '';
                 document.getElementById('drawerPassword').required = false;
                 document.getElementById('passwordRequired').innerHTML = '(Optional)';
                 document.getElementById('passwordHint').classList.remove('hidden');
                 document.getElementById('drawer-title').innerText = 'Edit User Record';
                 document.getElementById('drawer-subtitle').innerHTML = 'Update user information below.';
+                syncVerifierAssignmentField();
                 openDrawer('userDrawer');
             } else {
                 showToast('Error loading user data', 'error');
@@ -496,6 +522,7 @@ document.addEventListener('DOMContentLoaded', function() {
     try { initializeSearch(); } catch (e) { console.error('Error initializing search:', e); }
     try { initializeDeleteButton(); } catch (e) { console.error('Error initializing delete button:', e); }
     try { initializeUserForm(); } catch (e) { console.error('Error initializing user form:', e); }
+    try { initializeRoleAssignmentField(); } catch (e) { console.error('Error initializing role assignment field:', e); }
     try { initializeUploadForm(); } catch (e) { console.error('Error initializing upload form:', e); }
     try { initializeEscapeKey(); } catch (e) { console.error('Error initializing escape key:', e); }
     try { fixDropdownPosition(); } catch (e) { console.error('Error fixing dropdown position:', e); }

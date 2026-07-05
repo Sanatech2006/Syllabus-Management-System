@@ -840,3 +840,15 @@ def verification_sync_assignments(request):
         "success": True,
         "message": "Verifier assignments updated successfully.",
     })
+
+
+@admin_required
+@require_http_methods(["POST"])
+def verification_delete_assignment(request, course_id):
+    course = get_object_or_404(CourseStructure, id=course_id)
+    deleted_count, _ = CourseVerification.objects.filter(course=course).delete()
+    return JsonResponse({
+        "success": True,
+        "message": "Assignment removed successfully.",
+        "deleted_count": deleted_count,
+    })

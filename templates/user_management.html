@@ -287,13 +287,14 @@
                         </select>
                         <p class="text-xs text-slate-400 mt-2">Choose Verifier for the new user named "verifier".</p>
                     </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-sm font-semibold text-slate-700 mb-2.5">Add Another Role :</label>
-                        <select name="additional_role" id="drawerAdditionalRole" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
-                            <option value="">None</option>
-                            <option value="verifier">Verifier</option>
-                        </select>
-                        <p class="text-xs text-slate-400 mt-2">Use this when the same HOD should also act as a verifier.</p>
+                    <div id="drawerVerifierAssignmentWrapper" class="sm:col-span-2">
+                        <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                            <label class="flex items-center gap-3 text-sm font-semibold text-slate-700 cursor-pointer">
+                                <input type="checkbox" name="additional_role" id="drawerVerifierAssignment" value="verifier" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                <span>Assign as Verifier</span>
+                            </label>
+                            <p class="text-xs text-slate-400 mt-2">Available when this user should also receive verifier access.</p>
+                        </div>
                     </div>
                 </div>
             </div>

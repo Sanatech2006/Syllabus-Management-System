@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'modules.core',
     'modules.view_syllabus', 
     'modules.reports',
+    'modules.verification_management',
 ]
 
 MIDDLEWARE = [

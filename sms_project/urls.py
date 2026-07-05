@@ -12,6 +12,7 @@ urlpatterns = [
     path('programs/', include('modules.program_manage.urls', namespace='program_manage')),
     path('users/', include('modules.user_manage.urls', namespace='user_manage')),
     path('hod-management/', include('modules.hod_management.urls')),
+    path('verification-management/', include('modules.verification_management.urls', namespace='verification_management')),
     path('course-management/', include('modules.course_management.urls', namespace='course_management')),
     path('view-syllabus/', include('modules.view_syllabus.urls', namespace='view_syllabus')), 
     path('reports/', include('modules.reports.urls', namespace='reports')),

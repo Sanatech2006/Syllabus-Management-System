@@ -75,26 +75,25 @@ function resetFileInput(fileInput, emptyState, selectedState, nameDisplay) {
 // Search functionality
 function initializeSearch() {
     const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('keyup', function() {
-            const searchTerm = this.value.toLowerCase();
-            const rows = document.querySelectorAll('tbody tr');
-            
-            rows.forEach(row => {
-                if (row.querySelector('td[colspan]')) return;
-                
-                const hodName = row.querySelector('.text-md.font-bold.text-slate-900')?.innerText.toLowerCase() || '';
-                const hodEmail = row.querySelector('.text-sm.text-purple-600')?.innerText.toLowerCase() || '';
-                const programCode = row.querySelector('.font-bold.text-slate-900')?.innerText.toLowerCase() || '';
-                
-                if (hodName.includes(searchTerm) || hodEmail.includes(searchTerm) || programCode.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
-    }
+    if (!searchInput) return;
+
+    let searchDebounceTimer = null;
+    searchInput.addEventListener('input', function() {
+        window.clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = window.setTimeout(() => {
+            const url = new URL(window.location.href);
+            const value = searchInput.value.trim();
+
+            if (value) {
+                url.searchParams.set('search', value);
+            } else {
+                url.searchParams.delete('search');
+            }
+            url.searchParams.delete('page');
+
+            window.location.href = url.toString();
+        }, 300);
+    });
 }
 
 // Drawer functions
@@ -155,10 +154,10 @@ function resetMappingForm() {
     if (editMappingId) editMappingId.value = '';
     
     const drawerTitle = document.getElementById('drawer-title');
-    if (drawerTitle) drawerTitle.innerText = 'New HOD-Program Mapping';
+    if (drawerTitle) drawerTitle.innerText = 'New Verification Mapping';
     
     const drawerSubtitle = document.getElementById('drawer-subtitle');
-    if (drawerSubtitle) drawerSubtitle.innerText = 'Assign a HOD to oversee a specific program';
+    if (drawerSubtitle) drawerSubtitle.innerText = 'Assign a verifier to oversee one or more programs';
 
     closeProgramMenu();
     clearProgramSelections();
@@ -233,7 +232,7 @@ function setProgramSelections(programIds) {
 function editMapping(mappingId) {
     console.log('Editing mapping ID:', mappingId);
     
-    fetch(`/hod-management/get-mapping/${mappingId}/`)
+    fetch(`/verification-management/get-mapping/${mappingId}/`)
         .then(response => response.json())
         .then(data => {
             console.log('Edit response:', data);
@@ -242,8 +241,8 @@ function editMapping(mappingId) {
                 document.getElementById('userId').value = data.mapping.user_id;
                 setProgramSelections(data.mapping.program_ids || []);
                 
-                document.getElementById('drawer-title').innerText = 'Edit HOD-Program Mapping';
-                document.getElementById('drawer-subtitle').innerHTML = 'Update the HOD and selected programs below.';
+                document.getElementById('drawer-title').innerText = 'Edit Verification Mapping';
+                document.getElementById('drawer-subtitle').innerHTML = 'Update the verifier and selected programs below.';
                 openDrawer('mappingDrawer');
             } else {
                 showToast('Error loading mapping data: ' + data.error, 'error');
@@ -258,10 +257,10 @@ function editMapping(mappingId) {
 // Delete confirmation
 let currentDeleteMappingId = null;
 
-function confirmDelete(mappingId, hodName, programCode) {
+function confirmDelete(mappingId, verifierName, programCode) {
     currentDeleteMappingId = mappingId;
     const mappingInfoSpan = document.getElementById('deleteDrawerMappingInfo');
-    if (mappingInfoSpan) mappingInfoSpan.innerText = `${hodName} → ${programCode}`;
+    if (mappingInfoSpan) mappingInfoSpan.innerText = `${verifierName} → ${programCode}`;
     openDrawer('deleteDrawer');
 }
 
@@ -272,7 +271,7 @@ function initializeDeleteButton() {
             if (currentDeleteMappingId) {
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
                 
-                fetch(`/hod-management/delete-mapping/${currentDeleteMappingId}/`, {
+                fetch(`/verification-management/delete-mapping/${currentDeleteMappingId}/`, {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': csrfToken,
@@ -313,15 +312,15 @@ function initializeMappingForm() {
             const selectedProgramIds = Array.from(document.querySelectorAll('input[name="program_ids"]:checked')).map(checkbox => checkbox.value);
             
             if (!userId || selectedProgramIds.length === 0) {
-                showToast('Please select both a HOD and at least one program', 'error');
+                showToast('Please select both a Verifier and at least one program', 'error');
                 return;
             }
             
             let url;
             if (mappingId) {
-                url = `/hod-management/edit-mapping/${mappingId}/`;
+                url = `/verification-management/edit-mapping/${mappingId}/`;
             } else {
-                url = `/hod-management/add-mapping/`;
+                url = `/verification-management/add-mapping/`;
             }
             
             const formData = new FormData(this);
@@ -447,7 +446,7 @@ function initializeUploadForm() {
             updateUploadProgress(0);
 
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/hod-management/upload-mappings/', true);
+            xhr.open('POST', '/verification-management/upload-mappings/', true);
             if (csrfToken) xhr.setRequestHeader('X-CSRFToken', csrfToken);
 
             xhr.upload.onprogress = function(event) {
@@ -540,7 +539,7 @@ function initializeEscapeKey() {
 
 // Initialize all functionality
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded - initializing HOD Management');
+    console.log('DOM loaded - initializing Verifier Management');
     initializeFileInput();
     initializeSearch();
     initializeDeleteButton();
@@ -617,3 +616,4 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     document.head.appendChild(style);
 });
+

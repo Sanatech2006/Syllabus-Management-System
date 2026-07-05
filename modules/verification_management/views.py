@@ -8,53 +8,132 @@ from django.db.models import Q
 import pandas as pd
 import io
 from openpyxl.styles import Font, PatternFill, Alignment
-from .models import HodProgramMap
+from .models import VerifierProgramMap
 from modules.program_manage.models import Program
+from modules.core.decorators import admin_required
 from django.contrib.auth import get_user_model
-from modules.core.roles import ROLE_HOD, get_user_role
+from modules.core.roles import VERIFIER_GROUP_NAME, is_verifier_user
+from modules.reports.views import (
+    _verification_base_courses,
+    _apply_verification_filters,
+    _build_verification_filter_options,
+    _decorate_verification_report_courses,
+    _verification_course_stats,
+    _base_verifier_queryset,
+)
 
 User = get_user_model()
 
 # ---------------------------------------------------------------------------------------------------
-# HOD Program Map Management - Main Page
+# Verification Program Map Management - Main Page
 # ---------------------------------------------------------------------------------------------------
 
-@login_required
-def hod_program_map_management(request):
-    
-    mappings = HodProgramMap.objects.select_related('user', 'program').all().order_by('-created_at')
+@admin_required
+def verification_program_map_management(request):
+    search_term = request.GET.get("search", "").strip()
+    filters = {
+        "year": request.GET.get("year", ""),
+        "program": request.GET.get("program", "__all__"),
+        "prog_type": request.GET.get("prog_type", "__all__"),
+        "prog_category": request.GET.get("prog_category", "__all__"),
+        "degree": request.GET.get("degree", "__all__"),
+        "branch": request.GET.get("branch", "__all__"),
+        "syllabus_status": request.GET.get("syllabus_status", "__all__"),
+    }
 
-    hods = _get_hod_users()
+    base_queryset = _verification_base_courses(request.user)
+    filtered_queryset = _apply_verification_filters(
+        base_queryset,
+        {
+            **filters,
+            "sem": "__all__",
+            "part": "__all__",
+            "course_category": "__all__",
+        "course_title": "__all__",
+    },
+    ).order_by("program__prog_code", "year", "sem", "course_code")
+    if search_term:
+        filtered_queryset = filtered_queryset.filter(
+            Q(course_code__icontains=search_term)
+            | Q(course_title__icontains=search_term)
+            | Q(program__prog_code__icontains=search_term)
+            | Q(program__degree__icontains=search_term)
+            | Q(program__branch__icontains=search_term)
+        ).distinct()
 
-    # Get all active programs
-    programs = Program.objects.filter(is_active=True).order_by('prog_code')
+    course_list = list(_decorate_verification_report_courses(filtered_queryset))
+
+    from django.core.paginator import Paginator
+    paginator = Paginator(course_list, int(request.GET.get("per_page", 100)))
+    page_obj = paginator.get_page(request.GET.get("page", 1))
+
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
+    query_params.pop("per_page", None)
+
+    filter_options = _build_verification_filter_options(
+        base_queryset,
+        {
+            **filters,
+            "sem": "__all__",
+            "part": "__all__",
+            "course_category": "__all__",
+            "course_title": "__all__",
+        },
+    )
 
     context = {
-        "mappings": mappings,
-        "total_mappings": mappings.count(),
-        "hods": hods,
-        "programs": programs,
+        "courses": page_obj,
+        "records": page_obj,
+        "page_obj": page_obj,
+        "per_page": int(request.GET.get("per_page", 100)),
+        "pagination_query": query_params.urlencode(),
+        "has_applied_filters": True,
+        "selected_year": filters["year"],
+        "selected_program": filters["program"],
+        "selected_prog_type": filters["prog_type"],
+        "selected_prog_category": filters["prog_category"],
+        "selected_degree": filters["degree"],
+        "selected_branch": filters["branch"],
+        "selected_syllabus_status": filters["syllabus_status"],
+        "selected_search": request.GET.get("search", ""),
+        "all_courses_for_search": filter_options["course_options"],
+        "all_courses_list": filter_options["course_options"],
+        "page_mode": "report",
+        "page_title": "Verification Management",
+        "page_subtitle": "Review verifier assignments and report status by program.",
+        "compact_verification_filters": True,
+        "verification_management_mode": True,
+        "verifier_users": [
+            {
+                "id": verifier.id,
+                "name": verifier.get_full_name() or verifier.username,
+            }
+            for verifier in _base_verifier_queryset()
+        ],
+        **filter_options,
+        **_verification_course_stats(course_list),
     }
-    return render(request, "hod_management.html", context)
+    return render(request, "verification_page.html", context)
 
 # ---------------------------------------------------------------------------------------------------
-# AJAX endpoints for HOD Program Map CRUD operations
+# AJAX endpoints for Verification Program Map CRUD operations
 # ---------------------------------------------------------------------------------------------------
 
 @login_required
 def get_mapping(request, mapping_id):
     try:
-        mapping = get_object_or_404(HodProgramMap, id=mapping_id)
-        hod = mapping.user
+        mapping = get_object_or_404(VerifierProgramMap, id=mapping_id)
+        verifier = mapping.user
         
         data = {
             'success': True,
             'mapping': {
                 'id': mapping.id,
-                'user_id': hod.id,
-                'user_name': hod.username,
-                'user_display': f"{hod.username} ({hod.email})",
-                'program_ids': list(HodProgramMap.objects.filter(user=hod).values_list('program_id', flat=True).distinct()),
+                'user_id': verifier.id,
+                'user_name': verifier.username,
+                'user_display': f"{verifier.username} ({verifier.email})",
+                'program_ids': list(VerifierProgramMap.objects.filter(user=verifier).values_list('program_id', flat=True).distinct()),
                 'program_name': str(mapping.program),
                 'created_at': mapping.created_at.strftime('%Y-%m-%d %H:%M:%S') if mapping.created_at else '',
             }
@@ -75,16 +154,16 @@ def add_mapping(request):
         
         # Validate required fields
         if not user_id or not program_ids:
-            return JsonResponse({'success': False, 'error': 'HOD and at least one program are required fields.'})
+            return JsonResponse({'success': False, 'error': 'Verifier and at least one program are required fields.'})
 
         # Check if user exists
         try:
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
-            return JsonResponse({'success': False, 'error': f'Selected HOD with ID {user_id} does not exist.'})
+            return JsonResponse({'success': False, 'error': f'Selected verifier with ID {user_id} does not exist.'})
 
-        if get_user_role(user) != ROLE_HOD:
-            return JsonResponse({'success': False, 'error': 'Selected user is not a HOD.'})
+        if not is_verifier_user(user):
+            return JsonResponse({'success': False, 'error': 'Selected user is not a verifier.'})
         
         # Check if program exists
         programs = list(Program.objects.filter(id__in=program_ids, is_active=True))
@@ -94,15 +173,15 @@ def add_mapping(request):
         created_count = 0
         with transaction.atomic():
             for program in programs:
-                _, created = HodProgramMap.objects.get_or_create(user=user, program=program)
+                _, created = VerifierProgramMap.objects.get_or_create(user=user, program=program)
                 created_count += int(created)
 
         if created_count == 0:
-            return JsonResponse({'success': False, 'error': 'Selected HOD already has mappings for all chosen programs.'})
+            return JsonResponse({'success': False, 'error': 'Selected verifier already has mappings for all chosen programs.'})
 
         return JsonResponse({
             'success': True,
-            'message': f'HOD-Program mapping created successfully for {created_count} program(s).',
+            'message': f'Verifier-program mapping created successfully for {created_count} program(s).',
             'mapping_id': None,
             'created_count': created_count,
         })
@@ -116,23 +195,23 @@ def add_mapping(request):
 @require_http_methods(["POST"])
 def edit_mapping(request, mapping_id):
     try:
-        mapping = get_object_or_404(HodProgramMap, id=mapping_id)
+        mapping = get_object_or_404(VerifierProgramMap, id=mapping_id)
         
         user_id = request.POST.get("user_id")
         program_ids = [program_id for program_id in request.POST.getlist("program_ids") if str(program_id).isdigit()]
         
         # Validate required fields
         if not user_id or not program_ids:
-            return JsonResponse({'success': False, 'error': 'HOD and at least one program are required fields.'})
+            return JsonResponse({'success': False, 'error': 'Verifier and at least one program are required fields.'})
         
         # Check if user exists
         try:
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Selected HOD does not exist.'})
+            return JsonResponse({'success': False, 'error': 'Selected verifier does not exist.'})
 
-        if get_user_role(user) != ROLE_HOD:
-            return JsonResponse({'success': False, 'error': 'Selected user is not a HOD.'})
+        if not is_verifier_user(user):
+            return JsonResponse({'success': False, 'error': 'Selected user is not a verifier.'})
         
         # Check if program exists
         programs = list(Program.objects.filter(id__in=program_ids, is_active=True))
@@ -144,13 +223,13 @@ def edit_mapping(request, mapping_id):
             mapping.delete()
 
             existing_program_ids = set(
-                HodProgramMap.objects.filter(user=user).values_list('program_id', flat=True)
+                VerifierProgramMap.objects.filter(user=user).values_list('program_id', flat=True)
             )
             created_count = 0
             for program in programs:
                 if program.id in existing_program_ids:
                     continue
-                HodProgramMap.objects.create(user=user, program=program)
+                VerifierProgramMap.objects.create(user=user, program=program)
                 created_count += 1
 
         return JsonResponse({
@@ -169,42 +248,36 @@ def edit_mapping(request, mapping_id):
 def delete_mapping(request, mapping_id):
     
     try:
-        mapping = get_object_or_404(HodProgramMap, id=mapping_id)
+        mapping = get_object_or_404(VerifierProgramMap, id=mapping_id)
         mapping.delete()
         return JsonResponse({'success': True, 'message': 'Mapping deleted successfully.'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
 # ---------------------------------------------------------------------------------------------------
-# Helper endpoint to get HODs (users with staff role)
+# Helper endpoint to get verifiers (users with verifier role)
 # ---------------------------------------------------------------------------------------------------
 
 @login_required
-def get_hods_list(request):
+def get_verifiers_list(request):
    
     try:
-        hods = _get_hod_users().values('id', 'username', 'first_name', 'last_name', 'email')
-        hod_list = []
-        for hod in hods:
-            hod_list.append({
-                'id': hod['id'],
-                'username': hod['username'],
-                'name': f"{hod['first_name']} {hod['last_name']}".strip() or hod['username'],
-                'email': hod['email']
+        verifiers = _get_verifier_users().values('id', 'username', 'first_name', 'last_name', 'email')
+        verifier_list = []
+        for verifier in verifiers:
+            verifier_list.append({
+                'id': verifier['id'],
+                'username': verifier['username'],
+                'name': f"{verifier['first_name']} {verifier['last_name']}".strip() or verifier['username'],
+                'email': verifier['email']
             })
-        return JsonResponse({'success': True, 'hods': hod_list})
+        return JsonResponse({'success': True, 'verifiers': verifier_list})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
 
-def _get_hod_users():
-    mapped_hod_ids = HodProgramMap.objects.values_list('user_id', flat=True).distinct()
-    return (
-        User.objects.exclude(is_superuser=True)
-        .filter(Q(is_staff=True) | Q(id__in=mapped_hod_ids))
-        .distinct()
-        .order_by('username')
-    )
+def _get_verifier_users():
+    return User.objects.filter(groups__name=VERIFIER_GROUP_NAME).distinct().order_by('username')
 
 # ---------------------------------------------------------------------------------------------------
 
@@ -228,14 +301,14 @@ def get_programs_list(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 # ---------------------------------------------------------------------------------------------------
-# Excel Operations for HOD Program Map - Simplified
+# Excel Operations for Verification Program Map - Simplified
 # ---------------------------------------------------------------------------------------------------
 
 @login_required
 def download_sample_mapping_excel(request):
 
     sample_data = {
-        'hod_username': ['john_doe', 'jane_smith'],
+        'verifier_username': ['john_doe', 'jane_smith'],
         'program_code': ['CS101', 'IT201']
     }
     
@@ -244,7 +317,7 @@ def download_sample_mapping_excel(request):
     # Create Excel file in memory
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, sheet_name='Hod Program Sample', index=False)
+        df.to_excel(writer, sheet_name='Verifier Program Sample', index=False)
     
     output.seek(0)
     
@@ -252,7 +325,7 @@ def download_sample_mapping_excel(request):
         output,
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    response['Content-Disposition'] = 'attachment; filename="Hod Program Sample.xlsx"'
+    response['Content-Disposition'] = 'attachment; filename="Verifier Program Sample.xlsx"'
     return response
 
 # ---------------------------------------------------------------------------------------------------
@@ -260,13 +333,13 @@ def download_sample_mapping_excel(request):
 @login_required
 def download_mappings_excel(request):
 
-    mappings = HodProgramMap.objects.select_related('user', 'program').all().order_by('user__username')
+    mappings = VerifierProgramMap.objects.select_related('user', 'program').all().order_by('user__username')
     
     # Prepare data for Excel - only username and program code
     mapping_data = []
     for mapping in mappings:
         mapping_data.append({
-            'hod_username': mapping.user.username,
+            'verifier_username': mapping.user.username,
             'program_code': mapping.program.prog_code,
         })
     
@@ -274,7 +347,7 @@ def download_mappings_excel(request):
     
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, sheet_name='Hod Program Mappings', index=False)
+        df.to_excel(writer, sheet_name='Verifier Program Mappings', index=False)
     
     output.seek(0)
     
@@ -282,7 +355,7 @@ def download_mappings_excel(request):
         output,
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    response['Content-Disposition'] = 'attachment; filename="Hod Program Mappings.xlsx"'
+    response['Content-Disposition'] = 'attachment; filename="Verifier Program Mappings.xlsx"'
     return response
 
 # ---------------------------------------------------------------------------------------------------
@@ -305,7 +378,7 @@ def upload_mappings_excel(request):
         df = pd.read_excel(excel_file)
         
         # Validate required columns
-        required_columns = ['hod_username', 'program_code']
+        required_columns = ['verifier_username', 'program_code']
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
             return JsonResponse({
@@ -318,19 +391,23 @@ def upload_mappings_excel(request):
         errors = []
         
         for index, row in df.iterrows():
-            username = str(row.get('hod_username', '')).strip()
+            username = str(row.get('verifier_username', '')).strip()
             program_code = str(row.get('program_code', '')).strip()
             
             # Skip if required fields are missing
             if not username or not program_code:
-                errors.append(f'Row {index + 2}: Missing HOD username or program code')
+                errors.append(f'Row {index + 2}: Missing verifier username or program code')
                 continue
             
             # Find user by username
             try:
                 user = User.objects.get(username=username)
             except User.DoesNotExist:
-                errors.append(f'Row {index + 2}: HOD with username "{username}" not found')
+                errors.append(f'Row {index + 2}: Verifier with username "{username}" not found')
+                continue
+
+            if not is_verifier_user(user):
+                errors.append(f'Row {index + 2}: User "{username}" is not a verifier')
                 continue
             
             # Find program by program code
@@ -341,12 +418,12 @@ def upload_mappings_excel(request):
                 continue
             
             # Check if mapping already exists
-            if HodProgramMap.objects.filter(user=user, program=program).exists():
+            if VerifierProgramMap.objects.filter(user=user, program=program).exists():
                 errors.append(f'Row {index + 2}: Mapping already exists for {username} - {program_code}')
                 continue
             
             try:
-                mapping = HodProgramMap.objects.create(
+                mapping = VerifierProgramMap.objects.create(
                     user=user,
                     program=program
                 )
