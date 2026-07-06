@@ -694,34 +694,22 @@ def verification_report(request):
     per_page = int(request.GET.get("per_page", 100))
     page = request.GET.get("page", 1)
     filters = {
-        "year": request.GET.get("year", ""),
+        "year": request.GET.get("year", "__all__"),
         "program": request.GET.get("program", "__all__"),
-        "prog_type": request.GET.get("prog_type", "__all__"),
-        "prog_category": request.GET.get("prog_category", "__all__"),
-        "degree": request.GET.get("degree", "__all__"),
-        "branch": request.GET.get("branch", "__all__"),
-        "sem": request.GET.get("sem", "__all__"),
-        "part": request.GET.get("part", "__all__"),
-        "course_category": request.GET.get("course_category", "__all__"),
-        "course_title": request.GET.get("course_title", "__all__"),
-        "syllabus_status": request.GET.get("syllabus_status", "__all__"),
+        "verifier": request.GET.get("verifier", "__all__"),
+        "verification_status": request.GET.get("verification_status", "__all__"),
+        "search": request.GET.get("search", ""),
     }
 
     base_queryset = _verification_base_courses(request.user)
-    filtered_queryset = _apply_verification_filters(base_queryset, filters).order_by(
-        "program__prog_code",
-        "year",
-        "sem",
-        "course_code",
+    filtered_queryset = _apply_verification_report_filters(base_queryset, filters).order_by(
+        "program__prog_code", "year", "sem", "course_code"
     )
     course_list = list(_decorate_verification_report_courses(filtered_queryset))
 
     paginator = Paginator(course_list, per_page)
     page_obj = paginator.get_page(page)
-    filter_options = _build_verification_filter_options(
-        base_queryset,
-        filters,
-    )
+    filter_options = _build_verification_report_filter_options(base_queryset, filters)
 
     query_params = request.GET.copy()
     query_params.pop("page", None)
@@ -729,37 +717,19 @@ def verification_report(request):
 
     context = {
         "courses": page_obj,
-        "records": page_obj,
         "page_obj": page_obj,
         "per_page": per_page,
         "pagination_query": query_params.urlencode(),
-        "has_applied_filters": True,
-        "selected_year": filters["year"],
-        "selected_program": filters["program"],
-        "selected_prog_type": filters["prog_type"],
-        "selected_prog_category": filters["prog_category"],
-        "selected_degree": filters["degree"],
-        "selected_branch": filters["branch"],
-        "selected_sem": filters["sem"],
-        "selected_part": filters["part"],
-        "selected_course_category": filters["course_category"],
-        "selected_course_title": filters["course_title"],
-        "selected_syllabus_status": filters["syllabus_status"],
-        "all_courses_for_search": filter_options["course_options"],
-        "all_courses_list": filter_options["course_options"],
+        "selected_search": filters["search"],
+        "years": filter_options["years"],
+        "programs": filter_options["programs"],
         "verifier_users": [
-            {
-                "id": verifier.id,
-                "name": _verification_display_name(verifier),
-            }
-            for verifier in _base_verifier_queryset()
+            {"id": v.id, "name": _verification_display_name(v)}
+            for v in _base_verifier_queryset()
         ],
-        "page_mode": "report",
-        "post_action_url": request.path,
-        **filter_options,
         **_verification_course_stats(course_list),
     }
-    return render(request, "verification_page.html", context)
+    return render(request, "verification_report.html", context)
 
 
 def _verification_query_options(user, filters):
@@ -852,3 +822,120 @@ def verification_delete_assignment(request, course_id):
         "message": "Assignment removed successfully.",
         "deleted_count": deleted_count,
     })
+
+
+def _apply_verification_report_filters(queryset, filters):
+    """Report-only filtering. Isolated from verification_center's filter logic."""
+    year = filters.get("year")
+    if year and year != "__all__":
+        queryset = queryset.filter(year=year)
+
+    program = filters.get("program")
+    if program and program != "__all__":
+        queryset = queryset.filter(program_id=program)
+
+    verifier = filters.get("verifier")
+    if verifier and verifier != "__all__":
+        verifier_course_ids = CourseVerification.objects.filter(
+            verifier_id=verifier
+        ).values_list("course_id", flat=True)
+        queryset = queryset.filter(id__in=verifier_course_ids)
+
+    verification_status = filters.get("verification_status")
+    if verification_status and verification_status != "__all__":
+        verified_course_ids = CourseVerification.objects.filter(
+            status=CourseVerification.STATUS_SUBMITTED,
+            is_verified=True,
+        ).values_list("course_id", flat=True)
+        if verification_status == "verified":
+            queryset = queryset.filter(id__in=verified_course_ids)
+        elif verification_status == "not_verified":
+            queryset = queryset.exclude(id__in=verified_course_ids)
+
+    search = (filters.get("search") or "").strip()
+    if search:
+        queryset = queryset.filter(
+            Q(course_code__icontains=search)
+            | Q(course_title__icontains=search)
+            | Q(program__prog_code__icontains=search)
+        )
+
+    return queryset.distinct()
+
+
+def _build_verification_report_filter_options(base_queryset, filters):
+    """Only Year + Programs, both DB-driven. Isolated from the shared filter-options builder."""
+    qs = base_queryset
+    year = filters.get("year")
+    if year and year != "__all__":
+        qs = qs.filter(year=year)
+
+    programs = []
+    seen_programs = set()
+    for course in qs.select_related("program").order_by("program__prog_code"):
+        program = course.program
+        if not program or program.id in seen_programs:
+            continue
+        seen_programs.add(program.id)
+        programs.append({
+            "id": program.id,
+            "degree": program.degree,
+            "branch": program.branch,
+        })
+
+    return {
+        "years": _distinct_non_empty_related(base_queryset, "year"),
+        "programs": programs,
+    }
+
+
+@login_required
+def verification_report_filter_options(request):
+    if not request.user.is_superuser:
+        return JsonResponse({"error": "Permission denied"}, status=403)
+
+    filters = {"year": request.GET.get("year", "__all__")}
+    base_queryset = _verification_base_courses(request.user)
+    return JsonResponse(_build_verification_report_filter_options(base_queryset, filters))
+
+@admin_required
+def download_verification_report_excel(request):
+    filters = {
+        "year": request.GET.get("year", "__all__"),
+        "program": request.GET.get("program", "__all__"),
+        "verifier": request.GET.get("verifier", "__all__"),
+        "verification_status": request.GET.get("verification_status", "__all__"),
+        "search": request.GET.get("search", ""),
+    }
+
+    base_queryset = _verification_base_courses(request.user)
+    filtered_queryset = _apply_verification_report_filters(base_queryset, filters).order_by(
+        "program__prog_code", "year", "sem", "course_code"
+    )
+    course_list = list(_decorate_verification_report_courses(filtered_queryset))
+
+    rows = []
+    for index, course in enumerate(course_list, start=1):
+        course_label = course.course_code or ""
+        if course.course_title:
+            course_label += f" - {course.course_title}"
+        rows.append({
+            "S.No": index,
+            "Course": course_label,
+            "Verifiers": course.verifiers_display,
+            "Status": course.verification_status_label,
+        })
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        pd.DataFrame(rows, columns=["S.No", "Course", "Verifiers", "Status"]).to_excel(
+            writer, sheet_name="Verification Report", index=False
+        )
+    output.seek(0)
+
+    response = HttpResponse(
+        output,
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = 'attachment; filename="Verification_Report.xlsx"'
+    return response

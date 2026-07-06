@@ -1,0 +1,825 @@
+{% extends "base_layout.html" %}
+{% load static %}
+
+{% block title %}Verification Report{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ts-wrapper { width: 100% !important; }
+    .ts-control {
+        position: relative;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 0.5rem !important;
+        padding: 0.5rem 2.25rem 0.5rem 0.75rem !important;
+        font-size: 0.875rem !important;
+        background-color: #ffffff !important;
+        box-shadow: 0 1px 2px 0 rgba(0,0,0,.05) !important;
+        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    }
+    .ts-wrapper.single .ts-control::after {
+        content: "";
+        position: absolute;
+        right: 0.8rem;
+        top: 50%;
+        width: 0.6rem;
+        height: 0.6rem;
+        border-right: 2px solid #94a3b8;
+        border-bottom: 2px solid #94a3b8;
+        transform: translateY(-70%) rotate(45deg);
+        pointer-events: none;
+    }
+    .ts-wrapper.single.focus .ts-control::after { border-color: #3b82f6; }
+    .ts-wrapper.focus .ts-control {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59,130,246,.15) !important;
+    }
+    .ts-dropdown {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 0.5rem !important;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -2px rgba(0,0,0,.05) !important;
+        background: #ffffff !important;
+        z-index: 1000 !important;
+    }
+    .ts-dropdown .active { background-color: #eff6ff !important; color: #1d4ed8 !important; }
+    .ts-dropdown .option { padding: 0.5rem 0.75rem !important; font-size: 0.875rem !important; cursor: pointer; }
+    .sms-dropdown, .sms-panel { overflow: visible; }
+    .sms-panel { position: fixed !important; z-index: 9999; width: auto; }
+    #reportFilterForm .sms-trigger { cursor: text !important; }
+    #reportFilterForm .sms-trigger:disabled { cursor: not-allowed !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen">
+    <!-- Page Header -->
+    <div class="mx-auto mb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-blue-700 flex items-center gap-3">
+                    <span class="bg-blue-600 text-white p-3 rounded-xl shadow-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2z" />
+                        </svg>
+                    </span>
+                    Verification Report
+                </h1>
+                <p class="text-sm text-slate-500 mt-1">Review which verifier confirmed each course structure.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">UG Verified</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ ug_verified|default:"0" }}</p>
+                </div>
+                <div class="bg-blue-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">PG Verified</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ pg_verified|default:"0" }}</p>
+                </div>
+                <div class="bg-indigo-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m6-6H6" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Arts Verified</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ arts_verified|default:"0" }}</p>
+                </div>
+                <div class="bg-amber-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16M12 4v16" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Science Verified</p>
+                    <p class="text-3xl font-bold text-slate-900">{{ science_verified|default:"0" }}</p>
+                </div>
+                <div class="bg-green-100 p-3 rounded-xl">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v8m-4-4h8" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="mx-auto bg-white rounded-xl border border-slate-200 shadow-sm mb-8 relative z-30 overflow-visible">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <h2 class="text-base font-semibold text-slate-900 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filter Courses
+            </h2>
+        </div>
+        <div class="p-6 overflow-visible">
+            <form method="get" id="reportFilterForm" class="space-y-4">
+                <!-- Hidden inputs for form submission -->
+                <input type="hidden" id="yearValue"               name="year"                value="{{ request.GET.year|default:'__all__' }}">
+                <input type="hidden" id="programValue"            name="program"             value="{{ request.GET.program|default:'__all__' }}">
+                <input type="hidden" id="verifierValue"           name="verifier"            value="{{ request.GET.verifier|default:'__all__' }}">
+                <input type="hidden" id="verificationStatusValue" name="verification_status" value="{{ request.GET.verification_status|default:'__all__' }}">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6 overflow-visible">
+
+                    <!-- Year -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Year</label>
+                        <div class="sms-dropdown relative" id="yearDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Year" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All</li>
+                                    {% for year in years %}<li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ year }}">{{ year }}</li>{% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Programs -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Programs</label>
+                        <div class="sms-dropdown relative" id="programDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Program" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Programs</li>
+                                    {% for program in programs %}<li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ program.id }}">{{ program.degree }} &ndash; {{ program.branch }}</li>{% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Verifier -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Verifier</label>
+                        <div class="sms-dropdown relative" id="verifierDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Verifier" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Verifiers</li>
+                                    {% for v in verifier_users %}<li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ v.id }}">{{ v.name }}</li>{% endfor %}
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Status</label>
+                        <div class="sms-dropdown relative" id="verificationStatusDropdown">
+                            <div class="relative w-full">
+                                <input type="text" class="sms-trigger w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2 bg-white text-slate-700 placeholder-slate-400 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer" placeholder="Select Status" autocomplete="off">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"><svg class="sms-chevron w-4 h-4 text-slate-400 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div>
+                            </div>
+                            <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                <ul class="sms-list max-h-52 overflow-y-auto py-1">
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="verified">Verified</li>
+                                    <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="not_verified">Not Verified</li>
+                                </ul>
+                                <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="flex justify-end gap-5 w-full">
+                    <button type="button" id="clearFilters" class="px-4 py-2 w-[150px] border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition">Clear All</button>
+                    <button type="submit" id="applyFiltersBtn" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="mx-auto">
+        {% if courses %}
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-5">
+            <div class="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <h2 class="text-base font-semibold text-slate-900">Verification Report</h2>
+                    <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600">
+                        {{ courses|length }} shown
+                    </span>
+                </div>
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <div class="relative w-full sm:w-72">
+                        <input type="text" id="verificationSearchInput" value="{{ selected_search|default:'' }}" placeholder="Search courses..." class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg">
+                        <svg class="absolute left-3 top-2.5 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                        </svg>
+                    </div>
+                    <a id="downloadExcelBtn" href="{% url 'reports:download_verification_report_excel' %}?{{ request.GET.urlencode }}" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition whitespace-nowrap">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download Excel
+                    </a>
+                </div>
+            </div>
+
+            <div class="overflow-auto relative h-[600px]">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
+                        <tr>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">S.No</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Course</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Verifiers</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Status</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 bg-white">
+                        {% for course in courses %}
+                        <tr class="verification-row hover:bg-slate-50 transition"
+                            data-course-code="{{ course.course_code|lower }}"
+                            data-course-title="{{ course.course_title|default:''|lower }}"
+                            data-program="{{ course.program.prog_code|lower }}"
+                            data-verifier="{{ course.verifiers_display|lower }}"
+                            data-status="{{ course.verification_status_label|lower }}">
+                            <td class="px-6 py-4 text-center text-sm text-slate-500">{{ forloop.counter }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="text-sm font-medium text-slate-900">{{ course.course_code }}{% if course.course_title %} - {{ course.course_title|truncatechars:36 }}{% endif %}</div>
+                                <div class="text-xs text-slate-500">{{ course.program.prog_code }} - {{ course.program.degree }} - {{ course.program.branch }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ course.verifiers_display }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ course.verification_status_class }}">
+                                    {{ course.verification_status_label }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <button
+                                    type="button"
+                                    onclick="openAssignmentDrawer({{ course.id }}, {{ course.assigned_verifier_id|default:'null' }}, '{{ course.assigned_verifier_name|default_if_none:''|escapejs }}', '{{ course.verification_action_label|default:"Allot"|escapejs }}', '{{ course.course_code|escapejs }}', '{{ course.course_title|default_if_none:''|escapejs }}', '{{ course.program.id }}', '{{ course.program.prog_code|escapejs }}')"
+                                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ course.verification_action_class }}">
+                                    {{ course.verification_action_label }}
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p class="text-sm text-slate-600">
+                        Showing <span class="font-medium">{{ page_obj.start_index }}</span> to
+                        <span class="font-medium">{{ page_obj.end_index }}</span> of
+                        <span class="font-medium">{{ page_obj.paginator.count }}</span> results
+                    </p>
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-slate-600">Items per page:</label>
+                            <select id="perPageSelect" class="p-1.5 border border-slate-200 rounded-lg text-sm">
+                                <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                                <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                                <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                                <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                            </select>
+                        </div>
+                        {% if page_obj.has_other_pages %}
+                        <nav class="flex gap-1">
+                            {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}{% if pagination_query %}&{{ pagination_query }}{% endif %}" class="px-3 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition">Previous</a>
+                            {% endif %}
+                            <span class="px-3 py-1 bg-blue-600 text-white rounded-lg">{{ page_obj.number }}</span>
+                            {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}{% if pagination_query %}&{{ pagination_query }}{% endif %}" class="px-3 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition">Next</a>
+                            {% endif %}
+                        </nav>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="verificationSearchEmpty" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center mt-5">
+            <h3 class="text-lg font-bold text-slate-900">No matching courses</h3>
+            <p class="mt-2 text-sm text-slate-500">Your search checks all verification records, not just this page.</p>
+        </div>
+
+        {% else %}
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
+            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            </div>
+            <h3 class="mt-4 text-lg font-bold text-slate-900">No records found</h3>
+            <p class="mt-2 text-sm text-slate-500">No verification records match your filters. Try adjusting your selection.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed bottom-4 right-4 z-50 hidden transform transition-all duration-300">
+    <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
+        <span id="toastMessage">Success!</span>
+    </div>
+</div>
+
+<!-- Verifier Assignment Drawer -->
+<div id="verifierAssignmentDrawer" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onclick="closeAssignmentDrawer()"></div>
+    <div class="absolute inset-y-0 right-0 w-full max-w-3xl bg-slate-50 shadow-2xl flex flex-col overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+            <div>
+                <h2 id="assignmentDrawerTitle" class="text-xl font-bold text-blue-900">Allot Verifier</h2>
+                <p id="assignmentDrawerSubtitle" class="text-sm text-slate-500 mt-0.5">Choose a verifier and assign one or more courses.</p>
+            </div>
+            <button type="button" onclick="closeAssignmentDrawer()" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form id="verificationAssignmentForm" class="flex-1 overflow-y-auto p-6 space-y-6">
+            {% csrf_token %}
+            <input type="hidden" id="assignmentAnchorCourseId" name="anchor_course_id" value="">
+
+            <!-- Verifier Selector -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-5 py-3 border-b border-slate-100 bg-slate-50">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700">Verifier</h3>
+                </div>
+                <div class="p-5">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2.5">Verifier</label>
+                    <select id="assignmentVerifier" name="verifier_id" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
+                        <option value="">Select Verifier</option>
+                        {% for verifier in verifier_users %}
+                        <option value="{{ verifier.id }}">{{ verifier.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs text-slate-400 mt-2">Choose a verifier from user management.</p>
+                </div>
+            </div>
+
+            <!-- Course Picker -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700">Courses</h3>
+                    <button type="button" onclick="resetCoursePickers()" class="text-xs font-semibold text-blue-600 hover:text-blue-700">Add More Courses</button>
+                </div>
+                <div class="p-5 space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program code</label>
+                            <select id="assignmentProgram" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
+                                <option value="">All Programs</option>
+                                {% for program in programs %}
+                                <option value="{{ program.id }}">{{ program.code }} - {{ program.degree }} ({{ program.branch }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Course code</label>
+                            <select id="assignmentCourseCode" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Course title</label>
+                            <select id="assignmentCourseTitle" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"></select>
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="button" onclick="addCourseToList()" class="inline-flex items-center px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition">Add Course</button>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="text-sm font-semibold text-slate-700">Selected courses</p>
+                            <span id="selectedCourseCount" class="text-xs text-slate-500">0 selected</span>
+                        </div>
+                        <div id="selectedCourseList" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <div class="px-6 pb-6 flex gap-4 bg-slate-50 shrink-0 pt-6 border-t border-slate-200">
+            <button type="button" onclick="closeAssignmentDrawer()" class="flex-1 w-1/2 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 font-bold text-sm rounded-xl transition-colors border border-slate-200 shadow-sm">Cancel</button>
+            <button type="button" onclick="saveAssignments()" class="flex-1 w-1/2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-[0.99]">
+                Save Assignments
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // ── Endpoints ──────────────────────────────────────────────────────────
+    const filterEndpoint = "{% url 'reports:verification_report_filter_options' %}";
+    const assignmentSyncUrl     = "{% url 'reports:verification_sync_assignments' %}";
+    const assignmentDetailsBase = "{% url 'reports:verification_assignment_details' 0 %}".replace('/0/', '/');
+    const deleteAssignmentBase  = "{% url 'reports:verification_delete_assignment' 0 %}".replace('/0/', '/');
+
+    // ── Filter dropdowns configuration ────────────────────────────────────
+    const filterDropdowns = [
+        { id: 'yearDropdown',              valueId: 'yearValue',               placeholder: 'Select Year',     allText: 'All' },
+        { id: 'programDropdown',           valueId: 'programValue',            placeholder: 'Select Program',  allText: 'All Programs' },
+        { id: 'verifierDropdown',          valueId: 'verifierValue',           placeholder: 'Select Verifier', allText: 'All Verifiers' },
+        { id: 'verificationStatusDropdown',valueId: 'verificationStatusValue', placeholder: 'Select Status',   allText: 'All' },
+    ];
+
+    // ── Assignment drawer state ────────────────────────────────────────────
+    const assignmentState = {
+        anchorCourseId: null,
+        selectedCourses: [],
+        availableCourses: [],
+    };
+
+    // ── Toast ──────────────────────────────────────────────────────────────
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastDiv = toast ? toast.querySelector('div') : null;
+        if (!toast) { alert(message); return; }
+        if (toastMessage) toastMessage.textContent = message;
+        if (toastDiv) {
+            toastDiv.classList.remove('bg-green-500', 'bg-red-500');
+            toastDiv.classList.add(type === 'error' ? 'bg-red-500' : 'bg-green-500');
+        }
+        toast.classList.remove('hidden');
+        window.setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    // ── sms-dropdown system ────────────────────────────────────────────────
+    filterDropdowns.forEach(({ id, valueId }) => {
+        const dropdown = document.getElementById(id);
+        if (!dropdown) return;
+
+        const hidden   = document.getElementById(valueId);
+        const trigger  = dropdown.querySelector('.sms-trigger');
+        const chevron  = dropdown.querySelector('.sms-chevron');
+        const panel    = dropdown.querySelector('.sms-panel');
+        const list     = dropdown.querySelector('.sms-list');
+        const emptyMsg = dropdown.querySelector('.sms-empty');
+
+        function getOptions() { return Array.from(dropdown.querySelectorAll('.sms-option')); }
+        function markSelected(opt) {
+            getOptions().forEach(o => { o.classList.remove('bg-blue-50','text-blue-700','font-medium'); o.classList.add('text-slate-700'); });
+            opt.classList.add('bg-blue-50','text-blue-700','font-medium');
+            opt.classList.remove('text-slate-700');
+        }
+        function getVisible() { return getOptions().filter(o => o.style.display !== 'none'); }
+        function highlight(opt) {
+            getOptions().forEach(o => o.classList.remove('bg-slate-100'));
+            if (opt) { opt.classList.add('bg-slate-100'); opt.scrollIntoView({ block:'nearest' }); }
+        }
+        function filterOpts(term) {
+            const lower = term.toLowerCase().trim();
+            let count = 0;
+            getOptions().forEach(o => {
+                const isPlaceholder = o.dataset.value === '';
+                const matches = o.textContent.toLowerCase().includes(lower);
+                if (lower === '') { o.style.display = ''; count++; }
+                else if (isPlaceholder) { o.style.display = 'none'; }
+                else { o.style.display = matches ? '' : 'none'; if (matches) count++; }
+            });
+            if (emptyMsg) emptyMsg.classList.toggle('hidden', count > 0);
+            highlight(getVisible()[0]);
+        }
+
+        let _scrollHandler = null;
+        function positionPanel() {
+            const rect = trigger.getBoundingClientRect();
+            const ph = panel.offsetHeight || 220;
+            const below = window.innerHeight - rect.bottom;
+            const above = rect.top > ph;
+            panel.style.width = rect.width + 'px';
+            panel.style.left  = rect.left + 'px';
+            if (below < ph && above) {
+                panel.style.top = ''; panel.style.bottom = (window.innerHeight - rect.top) + 'px';
+            } else {
+                panel.style.bottom = ''; panel.style.top = (rect.bottom + 4) + 'px';
+            }
+        }
+        function closePanel() {
+            panel.classList.add('hidden');
+            chevron.classList.remove('rotate-180');
+            if (_scrollHandler) { window.removeEventListener('scroll', _scrollHandler, true); _scrollHandler = null; }
+        }
+        function openPanel() {
+            panel.classList.remove('hidden');
+            chevron.classList.add('rotate-180');
+            positionPanel();
+            _scrollHandler = () => positionPanel();
+            window.addEventListener('scroll', _scrollHandler, true);
+        }
+        function revertInvalidInput() {
+            let match = getOptions().find(o => o.dataset.value === hidden.value);
+            if (!match && hidden.value !== '') { hidden.value = '__all__'; match = getOptions().find(o => o.dataset.value === '__all__'); }
+            trigger.value = match && hidden.value ? match.textContent.trim() : '';
+        }
+        function selectOption(opt) {
+            hidden.value = opt.dataset.value;
+            hidden.dispatchEvent(new Event('change', { bubbles: true }));
+            trigger.value = opt.dataset.value ? opt.textContent.trim() : '';
+            markSelected(opt);
+            closePanel();
+            refreshYearProgramOptions();
+        }
+
+        // Restore pre-selected value on load
+        const currentVal = hidden.value;
+        if (currentVal) {
+            const match = getOptions().find(o => o.dataset.value === currentVal);
+            if (match) { trigger.value = match.textContent.trim(); markSelected(match); }
+        }
+
+        trigger.addEventListener('focus', () => {
+            document.querySelectorAll('.sms-dropdown').forEach(dd => {
+                if (dd !== dropdown) {
+                    dd.querySelector('.sms-panel')?.classList.add('hidden');
+                    dd.querySelector('.sms-chevron')?.classList.remove('rotate-180');
+                }
+            });
+        });
+        trigger.addEventListener('click', () => { panel.classList.contains('hidden') ? openPanel() : closePanel(); });
+        trigger.addEventListener('input', () => filterOpts(trigger.value));
+        trigger.addEventListener('keydown', e => {
+            const visible = getVisible();
+            const hi = getOptions().find(o => o.classList.contains('bg-slate-100'));
+            if (e.key === 'ArrowDown') { e.preventDefault(); highlight(visible[visible.indexOf(hi) + 1] || visible[0]); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); highlight(visible[visible.indexOf(hi) - 1] || visible[visible.length-1]); }
+            else if (e.key === 'Enter' && hi) { e.preventDefault(); selectOption(hi); }
+            else if (e.key === 'Escape') { closePanel(); revertInvalidInput(); }
+        });
+        panel.addEventListener('click', e => {
+            const opt = e.target.closest('.sms-option');
+            if (opt) selectOption(opt);
+        });
+        document.addEventListener('click', e => {
+            if (!dropdown.contains(e.target)) { closePanel(); revertInvalidInput(); }
+        });
+
+        // updateOptions for dynamic refresh (year/program only)
+        dropdown.updateOptions = function(optionList, placeholderText, allText) {
+            list.innerHTML = '';
+            const allOpt = document.createElement('li');
+            allOpt.className = 'sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer';
+            allOpt.dataset.value = '__all__';
+            allOpt.textContent = allText;
+            list.appendChild(allOpt);
+            optionList.forEach(item => {
+                const opt = document.createElement('li');
+                opt.className = 'sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer';
+                let value, text;
+                if (typeof item === 'object' && item.id) {
+                    value = String(item.id);
+                    text  = `${item.degree} – ${item.branch}`;
+                } else {
+                    value = String(item); text = String(item);
+                }
+                opt.dataset.value = value;
+                opt.textContent   = text;
+                if (hidden.value && value === hidden.value) markSelected(opt);
+                list.appendChild(opt);
+            });
+            revertInvalidInput();
+        };
+    });
+
+    // Refresh Year and Program dropdowns dynamically from backend
+    function refreshYearProgramOptions() {
+        const params = new URLSearchParams();
+        const yearHidden    = document.getElementById('yearValue');
+        const programHidden = document.getElementById('programValue');
+        if (yearHidden    && yearHidden.value    !== '') params.append(yearHidden.name,    yearHidden.value);
+        if (programHidden && programHidden.value !== '') params.append(programHidden.name, programHidden.value);
+
+        fetch(`${filterEndpoint}?${params.toString()}`)
+            .then(r => r.json())
+            .then(data => {
+                const yearDD    = document.getElementById('yearDropdown');
+                const programDD = document.getElementById('programDropdown');
+                if (yearDD    && yearDD.updateOptions)    yearDD.updateOptions(data.years    || [], 'Select Year',    'All');
+                if (programDD && programDD.updateOptions) programDD.updateOptions(data.programs || [], 'Select Program', 'All Programs');
+            })
+            .catch(err => console.error('Error refreshing filter options:', err));
+    }
+
+    // Initial load
+    refreshYearProgramOptions();
+
+    // Clear All
+    document.getElementById('clearFilters')?.addEventListener('click', function() {
+        window.location.href = window.location.pathname;
+    });
+
+    // Per-page selector
+    document.getElementById('perPageSelect')?.addEventListener('change', function() {
+        const url = new URL(window.location.href);
+        url.searchParams.set('per_page', this.value);
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+    });
+
+    // Search input (live row filter)
+    let searchTimer = null;
+    const searchInput = document.getElementById('verificationSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            window.clearTimeout(searchTimer);
+            searchTimer = window.setTimeout(() => {
+                const url = new URL(window.location.href);
+                const val = searchInput.value.trim();
+                if (val) url.searchParams.set('search', val);
+                else     url.searchParams.delete('search');
+                url.searchParams.delete('page');
+                window.location.href = url.toString();
+            }, 300);
+        });
+    }
+
+    // ── Assignment Drawer ─────────────────────────────────────────────────
+    window.openAssignmentDrawer = function(courseId, verifierId, verifierName, actionLabel, courseCode, courseTitle, programId, programCode) {
+        assignmentState.anchorCourseId = courseId;
+        assignmentState.selectedCourses = [];
+        assignmentState.availableCourses = [];
+
+        const drawer = document.getElementById('verifierAssignmentDrawer');
+        const title    = document.getElementById('assignmentDrawerTitle');
+        const subtitle = document.getElementById('assignmentDrawerSubtitle');
+        const verifierSelect = document.getElementById('assignmentVerifier');
+
+        if (title)    title.textContent    = `${actionLabel} Verifier`;
+        if (subtitle) subtitle.textContent = `${courseCode}${courseTitle ? ' – ' + courseTitle : ''} (${programCode})`;
+        document.getElementById('assignmentAnchorCourseId').value = courseId;
+        if (verifierId && verifierSelect) verifierSelect.value = verifierId;
+
+        updateSelectedCourseList();
+        loadCourseOptions(document.getElementById('assignmentProgram')?.value || '');
+
+        if (drawer) { drawer.classList.remove('hidden'); drawer.setAttribute('aria-hidden', 'false'); }
+    };
+
+    window.closeAssignmentDrawer = function() {
+        const drawer = document.getElementById('verifierAssignmentDrawer');
+        if (drawer) { drawer.classList.add('hidden'); drawer.setAttribute('aria-hidden', 'true'); }
+        assignmentState.selectedCourses = [];
+        updateSelectedCourseList();
+    };
+
+    function loadCourseOptions(programId) {
+        const codeSelect  = document.getElementById('assignmentCourseCode');
+        const titleSelect = document.getElementById('assignmentCourseTitle');
+        if (!codeSelect || !titleSelect) return;
+
+        const params = new URLSearchParams();
+        if (programId) params.set('program', programId);
+
+        fetch(`${filterEndpoint}?${params.toString()}`)
+            .then(r => r.json())
+            .then(data => {
+                const courses = data.course_options || [];
+                assignmentState.availableCourses = courses;
+                [codeSelect, titleSelect].forEach(sel => {
+                    sel.innerHTML = '';
+                    courses.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.code;
+                        opt.textContent = sel === codeSelect ? c.code : c.title;
+                        sel.appendChild(opt);
+                    });
+                });
+            })
+            .catch(err => console.error('Error loading course options:', err));
+    }
+
+    window.resetCoursePickers = function() {
+        const progSel = document.getElementById('assignmentProgram');
+        if (progSel) { progSel.value = ''; loadCourseOptions(''); }
+    };
+
+    window.addCourseToList = function() {
+        const codeSelect = document.getElementById('assignmentCourseCode');
+        if (!codeSelect || !codeSelect.value) return;
+        const code = codeSelect.value;
+        const course = assignmentState.availableCourses.find(c => c.code === code);
+        if (!course) return;
+        if (assignmentState.selectedCourses.find(c => c.code === code)) return;
+        assignmentState.selectedCourses.push(course);
+        updateSelectedCourseList();
+    };
+
+    function updateSelectedCourseList() {
+        const container = document.getElementById('selectedCourseList');
+        const counter   = document.getElementById('selectedCourseCount');
+        if (!container) return;
+        container.innerHTML = '';
+        assignmentState.selectedCourses.forEach((c, i) => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm';
+            row.innerHTML = `<span class="font-mono font-semibold text-blue-600">${c.code}</span><span class="text-slate-600 truncate ml-2">${c.title}</span><button type="button" onclick="removeCourse(${i})" class="ml-3 text-slate-400 hover:text-red-500 transition">&times;</button>`;
+            container.appendChild(row);
+        });
+        if (counter) counter.textContent = `${assignmentState.selectedCourses.length} selected`;
+    }
+
+    window.removeCourse = function(index) {
+        assignmentState.selectedCourses.splice(index, 1);
+        updateSelectedCourseList();
+    };
+
+    document.getElementById('assignmentProgram')?.addEventListener('change', function() {
+        loadCourseOptions(this.value || '');
+    });
+    document.getElementById('assignmentCourseCode')?.addEventListener('change', function() {
+        const title = document.getElementById('assignmentCourseTitle');
+        if (title) title.value = this.value;
+    });
+    document.getElementById('assignmentCourseTitle')?.addEventListener('change', function() {
+        const code = document.getElementById('assignmentCourseCode');
+        if (code) code.value = this.value;
+    });
+
+    window.saveAssignments = function() {
+        const verifierId = document.getElementById('assignmentVerifier')?.value;
+        if (!verifierId) { showToast('Please select a verifier.', 'error'); return; }
+
+        const anchorId = assignmentState.anchorCourseId;
+        const courseIds = assignmentState.selectedCourses.map(c => {
+            const found = assignmentState.availableCourses.find(ac => ac.code === c.code);
+            return found ? found.id : null;
+        }).filter(Boolean);
+
+        // If no courses selected, include the anchor course
+        const finalIds = courseIds.length > 0 ? courseIds : (anchorId ? [anchorId] : []);
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        const body = new URLSearchParams();
+        body.append('verifier_id', verifierId);
+        finalIds.forEach(id => body.append('course_ids', id));
+
+        fetch(assignmentSyncUrl, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) { showToast(data.error || 'Error saving assignments.', 'error'); return; }
+            showToast('Assignments saved successfully.');
+            window.setTimeout(() => window.location.reload(), 1000);
+        })
+        .catch(() => showToast('Unable to save assignments.', 'error'));
+    };
+
+    window.deleteVerificationAssignment = function(courseId, programCode) {
+        if (!courseId) return;
+        if (!window.confirm(`Delete assignment for ${programCode}?`)) return;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        fetch(`${deleteAssignmentBase}${courseId}/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) { showToast(data.error || 'Unable to delete assignment.', 'error'); return; }
+            window.location.reload();
+        })
+        .catch(() => showToast('Unable to delete assignment.', 'error'));
+    };
+});
+</script>
+{% endblock %}
