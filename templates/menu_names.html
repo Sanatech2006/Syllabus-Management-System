@@ -50,7 +50,7 @@
                 </a>
 
                 <!-- Course Management -->
-                {% if not is_verifier %}
+                {% if user.is_superuser or is_hod %}
                 <a href="{% url 'course_management:course_management' %}"
                     class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'course_management' %}bg-white/10 text-white{% endif %}">
                     <i data-lucide="book-copy" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
@@ -76,8 +76,8 @@
                 Verification
             </p>
             <div class="space-y-2">
-                <a href="{% url 'reports:verification_center' %}"
-                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'verification_center' %}bg-white/10 text-white{% endif %}">
+                <a href="{% url 'reports:verification_report' %}"
+                    class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'verification_report' %}bg-white/10 text-white{% endif %}">
                     <i data-lucide="check-square" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
                     <span class="text-[14px]">Verification Report</span>
                 </a>
@@ -111,7 +111,7 @@
                 <div class="space-y-2">
                     <button type="button"
                         onclick="toggleReportMenu(event)"
-                        class="group w-full flex items-center justify-between gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'work_progress_report' or request.resolver_match.url_name == 'verification_report' or request.resolver_match.url_name == 'verification_center' %}bg-white/10 text-white{% endif %}">
+                        class="group w-full flex items-center justify-between gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'work_progress_report' or request.resolver_match.url_name == 'verification_report' %}bg-white/10 text-white{% endif %}">
                         <span class="flex items-center gap-3">
                             <i data-lucide="pie-chart" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
                             <span class="text-[14px]">Report Centre</span>

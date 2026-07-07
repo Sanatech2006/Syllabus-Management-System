@@ -187,7 +187,7 @@ class VerificationFlowTests(TestCase):
     def test_verifier_verification_page_renders_checkbox(self):
         self.client.force_login(self.verifier_user)
 
-        response = self.client.get(reverse("reports:verification_center"), {"year": "I"})
+        response = self.client.get(reverse("reports:verification_report"), {"year": "I"})
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'name="verified_courses"')
@@ -195,7 +195,7 @@ class VerificationFlowTests(TestCase):
     def test_verifier_verification_page_shows_rows_without_filters(self):
         self.client.force_login(self.verifier_user)
 
-        response = self.client.get(reverse("reports:verification_center"))
+        response = self.client.get(reverse("reports:verification_report"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Programming Basics")
@@ -205,11 +205,30 @@ class VerificationFlowTests(TestCase):
     def test_verifier_only_sees_mapped_program_courses(self):
         self.client.force_login(self.verifier_user)
 
-        response = self.client.get(reverse("reports:verification_center"), {"year": "I"})
+        response = self.client.get(reverse("reports:verification_report"), {"year": "I"})
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Programming Basics")
         self.assertNotContains(response, "MCA Foundations")
+
+    def test_hod_verifier_verification_report_uses_verifier_scope(self):
+        combined_user = User.objects.create_user(
+            username="hod_verifier",
+            password="secret123",
+            is_superuser=False,
+            is_staff=True,
+        )
+        combined_user.groups.add(Group.objects.get(name=VERIFIER_GROUP_NAME))
+        HodProgramMap.objects.create(user=combined_user, program=self.program)
+        VerifierProgramMap.objects.create(user=combined_user, program=self.other_program)
+
+        self.client.force_login(combined_user)
+
+        response = self.client.get(reverse("reports:verification_report"), {"year": "I"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "MCA Foundations")
+        self.assertNotContains(response, "Programming Basics")
 
     def test_admin_verification_report_defaults_to_all_courses(self):
         self.client.force_login(self.admin_user)
@@ -270,7 +289,7 @@ class VerificationFlowTests(TestCase):
         self.client.force_login(self.verifier_user)
 
         response = self.client.post(
-            reverse("reports:verification_center") + "?year=I",
+            reverse("reports:verification_report") + "?year=I",
             {
                 "action": "finish",
                 "verified_courses": [str(self.course.id)],
@@ -301,7 +320,7 @@ class VerificationFlowTests(TestCase):
         self.client.force_login(self.verifier_user)
 
         response = self.client.post(
-            reverse("reports:verification_center") + "?year=I&per_page=1",
+            reverse("reports:verification_report") + "?year=I&per_page=1",
             {
                 "action": "finish",
                 "verified_courses": [str(self.course.id)],
@@ -312,10 +331,10 @@ class VerificationFlowTests(TestCase):
         self.assertTrue(CourseVerification.objects.filter(course=self.course, verifier=self.verifier_user).exists())
         self.assertFalse(CourseVerification.objects.filter(course=self.other_course, verifier=self.verifier_user).exists())
 
-    def test_hod_can_open_verification_center(self):
+    def test_hod_can_open_verification_report(self):
         self.client.force_login(self.hod_user)
 
-        response = self.client.get(reverse("reports:verification_center"))
+        response = self.client.get(reverse("reports:verification_report"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Verification Report")

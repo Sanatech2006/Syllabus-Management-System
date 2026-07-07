@@ -294,13 +294,12 @@ def _verification_base_courses(user):
 
     accessible_program_ids = set()
 
-    if is_hod_user(user):
-        accessible_program_ids.update(get_accessible_programs(user).values_list("id", flat=True))
-
     if is_verifier_user(user):
         accessible_program_ids.update(
             VerifierProgramMap.objects.filter(user=user).values_list("program_id", flat=True)
         )
+    elif is_hod_user(user):
+        accessible_program_ids.update(get_accessible_programs(user).values_list("id", flat=True))
 
     if accessible_program_ids:
         return courses.filter(program_id__in=accessible_program_ids)
@@ -605,9 +604,7 @@ def _decorate_verification_report_courses(courses):
         yield course
 
 
-@login_required
-@require_http_methods(["GET", "POST"])
-def verification_center(request):
+def _verifier_verification_report(request):
     if request.user.is_superuser:
         messages.info(request, "Use Verification Report for admin review.")
         return redirect("reports:verification_report")
@@ -706,11 +703,15 @@ def verification_center(request):
             )
         ),
     }
-    return render(request, "verification_page.html", context)
+    return render(request, "verifier_verification_report.html", context)
 
 
-@admin_required
+@login_required
+@require_http_methods(["GET", "POST"])
 def verification_report(request):
+    if not request.user.is_superuser:
+        return _verifier_verification_report(request)
+
     per_page = int(request.GET.get("per_page", 100))
     page = request.GET.get("page", 1)
     filters = {
@@ -847,7 +848,7 @@ def verification_delete_assignment(request, course_id):
 
 
 def _apply_verification_report_filters(queryset, filters):
-    """Report-only filtering. Isolated from verification_center's filter logic."""
+    """Report-only filtering. Isolated from verifier report filtering."""
     program = filters.get("program")
     if program and program != "__all__":
         queryset = queryset.filter(program_id=program)

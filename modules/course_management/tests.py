@@ -2,12 +2,14 @@ import io
 
 import pandas as pd
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 from modules.program_manage.models import Program
 from modules.course_management.models import CourseStructure, CourseSyllabus
 from modules.hod_management.models import HodProgramMap
+from modules.core.roles import VERIFIER_GROUP_NAME
 
 
 class CourseManagementSyllabusTests(TestCase):
@@ -435,6 +437,29 @@ class HodScopedCourseManagementTests(TestCase):
         returned_codes = [course.course_code for course in response.context["courses"].object_list]
         self.assertEqual(returned_codes, ["MATH101"])
         self.assertTrue(response.context["has_applied_filters"])
+
+    def test_hod_verifier_course_management_uses_hod_scope(self):
+        self.hod_user.groups.add(Group.objects.create(name=VERIFIER_GROUP_NAME))
+
+        response = self.client.get(
+            reverse("course_management:course_management"),
+            {
+                "year": "__all__",
+                "prog_type": "__all__",
+                "prog_category": "__all__",
+                "degree": "__all__",
+                "branch": "__all__",
+                "program": "__all__",
+                "sem": "__all__",
+                "part": "__all__",
+                "course_category": "__all__",
+                "course_title": "__all__",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        returned_codes = [course.course_code for course in response.context["courses"].object_list]
+        self.assertEqual(returned_codes, ["MATH101"])
 
     def test_hod_cannot_access_course_outside_assigned_program(self):
         response = self.client.get(reverse("course_management:get_course", args=[self.physics_course.id]))

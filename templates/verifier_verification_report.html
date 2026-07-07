@@ -1,0 +1,115 @@
+{% extends "base_layout.html" %}
+
+{% block title %}Verification Report{% endblock %}
+
+{% block content %}
+<div class="min-h-screen">
+    <div class="mx-auto mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-blue-700 flex items-center gap-3">
+                <span class="bg-blue-600 text-white p-3 rounded-xl shadow-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2z" />
+                    </svg>
+                </span>
+                Verification Report
+            </h1>
+            <p class="text-sm text-slate-500 mt-1">Review and submit verification for your assigned courses.</p>
+        </div>
+    </div>
+
+    <form method="get" class="mb-6 bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Year</label>
+                <select name="year" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                    <option value="">All Years</option>
+                    {% for year in years %}
+                    <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Program</label>
+                <select name="program" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                    <option value="__all__">All Programs</option>
+                    {% for program in programs %}
+                    <option value="{{ program.id }}" {% if selected_program|stringformat:"s" == program.id|stringformat:"s" %}selected{% endif %}>{{ program.code }} - {{ program.degree }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Semester</label>
+                <select name="sem" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                    <option value="__all__">All Semesters</option>
+                    {% for sem in sems %}
+                    <option value="{{ sem }}" {% if selected_sem == sem %}selected{% endif %}>{{ sem }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="flex-1 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">Apply</button>
+                <a href="{% url 'reports:verification_report' %}" class="px-4 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50">Clear</a>
+            </div>
+        </div>
+    </form>
+
+    <form method="post" action="{{ post_action_url|default:request.path }}">
+        {% csrf_token %}
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h2 class="text-base font-semibold text-slate-900">Assigned Courses</h2>
+                <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">
+                    {{ courses|length }} shown
+                </span>
+            </div>
+
+            <div class="overflow-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
+                        <tr>
+                            <th class="px-6 py-4 text-center">#</th>
+                            <th class="px-6 py-4 text-center">Program</th>
+                            <th class="px-6 py-4 text-center">Course Code</th>
+                            <th class="px-6 py-4 text-center">Course Title</th>
+                            <th class="px-6 py-4 text-center">Year</th>
+                            <th class="px-6 py-4 text-center">Sem</th>
+                            <th class="px-6 py-4 text-center">Category</th>
+                            <th class="px-6 py-4 text-center">Verified</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 bg-white">
+                        {% for course in courses %}
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-6 py-4 text-center text-sm text-slate-500">{{ forloop.counter }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="text-sm font-medium text-slate-900">{{ course.program.prog_code }}</div>
+                                <div class="text-xs text-slate-500">{{ course.program.degree }} - {{ course.program.branch }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-center font-mono font-bold text-blue-600">{{ course.course_code }}</td>
+                            <td class="px-6 py-4 text-center text-slate-700">{{ course.course_title|truncatechars:48 }}</td>
+                            <td class="px-6 py-4 text-center">{{ course.year }}</td>
+                            <td class="px-6 py-4 text-center">{{ course.sem }}</td>
+                            <td class="px-6 py-4 text-center">{{ course.course_category|default:"-" }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <input type="checkbox" name="verified_courses" value="{{ course.id }}" {% if course.is_verified_checked %}checked{% endif %}>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="px-6 py-10 text-center text-slate-500">No assigned courses found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-3">
+            <button type="submit" name="action" value="save" class="px-5 py-2.5 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50">Save</button>
+            <button type="submit" name="action" value="finish" class="px-5 py-2.5 rounded-lg bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">Submit Verification</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

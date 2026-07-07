@@ -33,6 +33,17 @@ class RoleAccessTests(TestCase):
         self.assertEqual(dashboard_response.status_code, 200)
         self.assertEqual(course_response.status_code, 200)
 
+    def test_hod_verifier_menu_shows_course_management_and_verification_report(self):
+        verifier_group = Group.objects.create(name=VERIFIER_GROUP_NAME)
+        self.hod_user.groups.add(verifier_group)
+        self.client.force_login(self.hod_user)
+
+        response = self.client.get("/dashboard/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Course Management")
+        self.assertContains(response, "Verification Report")
+
     def test_hod_cannot_access_admin_only_sections(self):
         self.client.force_login(self.hod_user)
 

@@ -207,7 +207,7 @@ def verification_program_map_management(request):
             "science_verified": sum(1 for program in program_rows if program["prog_category"] == "Science" and program["mapping_status_label"] == "Assigned"),
         },
     }
-    return render(request, "verification_page.html", context)
+    return render(request, "verification_management.html", context)
 
 # ---------------------------------------------------------------------------------------------------
 # AJAX endpoints for Verification Program Map CRUD operations
