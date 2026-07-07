@@ -221,7 +221,6 @@ function editUser(userId) {
             if (data.success) {
                 document.getElementById('editUserId').value = data.user.id;
                 document.getElementById('drawerFirstName').value = data.user.first_name || '';
-                document.getElementById('drawerLastName').value = data.user.last_name || '';
                 document.getElementById('drawerUsername').value = data.user.username;
                 document.getElementById('drawerEmail').value = data.user.email;
                 document.getElementById('drawerRole').value = data.user.role || 'user';

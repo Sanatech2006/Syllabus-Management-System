@@ -68,7 +68,7 @@ def _build_verification_program_rows(programs):
             ),
             "mapping_status_label": "Assigned" if has_mapping else "Not Assigned",
             "mapping_status_class": (
-                "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700"
+                "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-700 text-white border border-emerald-800"
                 if has_mapping
                 else "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700"
             ),

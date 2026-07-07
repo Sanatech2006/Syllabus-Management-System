@@ -282,8 +282,8 @@
             btn.classList.add('opacity-90');
         });
 
-        // Auto-uppercase username for HOD login
-        {% if role == 'hod' %}
+        // Auto-uppercase username for HOD and Verifier login
+        {% if role == 'hod' or role == 'verifier' %}
         (function () {
             const usernameInput = document.getElementById('username');
             if (usernameInput) {

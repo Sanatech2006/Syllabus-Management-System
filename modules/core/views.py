@@ -65,6 +65,7 @@ def login_view(request):
                         return render(request, 'login.html', {'next': post_next, 'role': post_role})
 
                     login(request, user)
+                    request.session['login_role'] = post_role
                     messages.success(request, f'Welcome, {user.get_full_name() or username}!')
 
                     if post_role in {'admin', 'hod'}:

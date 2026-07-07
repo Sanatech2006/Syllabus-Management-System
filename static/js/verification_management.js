@@ -147,7 +147,7 @@ function closeDrawer(drawerId) {
 }
 
 function resetMappingForm() {
-    const form = document.getElementById('mappingForm');
+    const form = document.getElementById('verificationMappingForm');
     if (form) form.reset();
     
     const editMappingId = document.getElementById('editMappingId');
@@ -161,56 +161,6 @@ function resetMappingForm() {
 
     closeProgramMenu();
     clearProgramSelections();
-}
-
-function getProgramSelectionElements() {
-    return {
-        wrapper: document.getElementById('programSelectionWrapper'),
-        trigger: document.getElementById('programSelectionTrigger'),
-        menu: document.getElementById('programSelectionMenu'),
-        label: document.getElementById('programSelectionLabel'),
-    };
-}
-
-function updateProgramSelectionLabel() {
-    const { label } = getProgramSelectionElements();
-    if (!label) return;
-
-    const checkedLabels = Array.from(document.querySelectorAll('input[name="program_ids"]:checked'))
-        .map(checkbox => {
-            const row = checkbox.closest('label');
-            const title = row?.querySelector('.text-sm.font-semibold.text-slate-900')?.textContent?.trim();
-            return title || '';
-        })
-        .filter(Boolean);
-
-    if (checkedLabels.length === 0) {
-        label.textContent = '-- Select Program --';
-        return;
-    }
-
-    if (checkedLabels.length === 1) {
-        label.textContent = checkedLabels[0];
-        return;
-    }
-
-    label.textContent = `${checkedLabels.length} programs selected`;
-}
-
-function openProgramMenu() {
-    const { menu } = getProgramSelectionElements();
-    if (menu) menu.classList.remove('hidden');
-}
-
-function closeProgramMenu() {
-    const { menu } = getProgramSelectionElements();
-    if (menu) menu.classList.add('hidden');
-}
-
-function toggleProgramMenu() {
-    const { menu } = getProgramSelectionElements();
-    if (!menu) return;
-    menu.classList.toggle('hidden');
 }
 
 function clearProgramSelections() {
@@ -228,6 +178,24 @@ function setProgramSelections(programIds) {
     updateProgramSelectionLabel();
 }
 
+function updateProgramSelectionLabel() {
+    const trigger = document.getElementById('programSelectionTrigger');
+    if (!trigger) return;
+
+    const checkedLabels = Array.from(document.querySelectorAll('input[name="program_ids"]:checked')).length;
+
+    if (checkedLabels === 0) {
+        trigger.value = '';
+    } else if (checkedLabels === 1) {
+        const checkbox = document.querySelector('input[name="program_ids"]:checked');
+        const row = checkbox.closest('label');
+        const title = row?.querySelector('.program-title')?.textContent?.trim();
+        trigger.value = title || '1 program selected';
+    } else {
+        trigger.value = `${checkedLabels} programs selected`;
+    }
+}
+
 // Edit mapping function
 function editMapping(mappingId) {
     console.log('Editing mapping ID:', mappingId);
@@ -238,7 +206,19 @@ function editMapping(mappingId) {
             console.log('Edit response:', data);
             if (data.success) {
                 document.getElementById('editMappingId').value = data.mapping.id;
-                document.getElementById('userId').value = data.mapping.user_id;
+                const verifierIdInput = document.getElementById('mappingVerifierId');
+                if (verifierIdInput) {
+                    verifierIdInput.value = data.mapping.user_id;
+                    const radio = document.querySelector(`input[name="verifier_radio"][value="${data.mapping.user_id}"]`);
+                    if (radio) {
+                        radio.checked = true;
+                        document.getElementById('mappingVerifierTrigger').value = radio.dataset.name;
+                        document.querySelectorAll('.verifier-option .radio-indicator span').forEach(el => el.classList.add('hidden'));
+                        if (radio.nextElementSibling && radio.nextElementSibling.querySelector('span')) {
+                            radio.nextElementSibling.querySelector('span').classList.remove('hidden');
+                        }
+                    }
+                }
                 setProgramSelections(data.mapping.program_ids || []);
                 
                 document.getElementById('drawer-title').innerText = 'Edit Verification Mapping';
@@ -302,30 +282,22 @@ function initializeDeleteButton() {
 
 // Handle mapping form submission (Add/Edit)
 function initializeMappingForm() {
-    const form = document.getElementById('mappingForm');
+    const form = document.getElementById('verificationMappingForm');
     if (form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             
             const mappingId = document.getElementById('editMappingId').value;
-            const userId = document.getElementById('userId').value;
-            const selectedProgramIds = Array.from(document.querySelectorAll('input[name="program_ids"]:checked')).map(checkbox => checkbox.value);
+            const formData = new FormData(this);
+            const userId = formData.get('user_id');
+            const selectedProgramIds = formData.getAll('program_ids');
             
             if (!userId || selectedProgramIds.length === 0) {
                 showToast('Please select both a Verifier and at least one program', 'error');
                 return;
             }
             
-            let url;
-            if (mappingId) {
-                url = `/verification-management/edit-mapping/${mappingId}/`;
-            } else {
-                url = `/verification-management/add-mapping/`;
-            }
-            
-            const formData = new FormData(this);
-            formData.delete('program_ids');
-            selectedProgramIds.forEach(programId => formData.append('program_ids', programId));
+            let url = mappingId ? `/verification-management/edit-mapping/${mappingId}/` : `/verification-management/add-mapping/`;
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
             
             fetch(url, {
@@ -554,25 +526,37 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Program dropdown selection tracking
     document.addEventListener('change', function(event) {
         if (event.target && event.target.matches('input[name="program_ids"]')) {
             updateProgramSelectionLabel();
         }
     });
 
+    // Close dropdowns on outside click
     document.addEventListener('click', function(event) {
-        const { wrapper, trigger, menu } = getProgramSelectionElements();
-        if (!wrapper || !menu) return;
+        // Verifier Dropdown
+        const verifierMenu = document.getElementById('mappingVerifierMenu');
+        const verifierTrigger = document.getElementById('mappingVerifierTrigger');
+        if (verifierMenu && !verifierMenu.classList.contains('hidden')) {
+            if (!verifierMenu.contains(event.target) && event.target !== verifierTrigger) {
+                verifierMenu.classList.add('hidden');
+            }
+        }
 
-        const clickedInside = wrapper.contains(event.target);
-        const clickedTrigger = trigger && trigger.contains(event.target);
-
-        if (!clickedInside && !clickedTrigger && !menu.classList.contains('hidden')) {
-            closeProgramMenu();
+        // Program Dropdown
+        const programMenu = document.getElementById('programSelectionMenu');
+        const programTrigger = document.getElementById('programSelectionTrigger');
+        if (programMenu && !programMenu.classList.contains('hidden')) {
+            if (!programMenu.contains(event.target) && event.target !== programTrigger) {
+                programMenu.classList.add('hidden');
+                updateProgramSelectionLabel();
+            }
         }
     });
 
     updateProgramSelectionLabel();
+    setupDropdownListeners();
     
     // Add styles for dropdown
     const style = document.createElement('style');
@@ -617,3 +601,205 @@ document.addEventListener('DOMContentLoaded', function() {
     document.head.appendChild(style);
 });
 
+// Setup Dropdown Listeners
+function setupDropdownListeners() {
+    // Verifier Dropdown
+    const verifierTrigger = document.getElementById('mappingVerifierTrigger');
+    if (verifierTrigger) {
+        verifierTrigger.addEventListener('focus', function() {
+            document.getElementById('mappingVerifierMenu').classList.remove('hidden');
+            this.value = '';
+            filterVerifiers();
+        });
+        verifierTrigger.addEventListener('click', function() {
+            document.getElementById('mappingVerifierMenu').classList.remove('hidden');
+            filterVerifiers();
+        });
+        verifierTrigger.addEventListener('input', filterVerifiers);
+        verifierTrigger.addEventListener('keydown', handleVerifierKeydown);
+    }
+
+    // Program Dropdown
+    const programTrigger = document.getElementById('programSelectionTrigger');
+    if (programTrigger) {
+        programTrigger.addEventListener('focus', function() {
+            document.getElementById('programSelectionMenu').classList.remove('hidden');
+            this.value = '';
+            filterPrograms();
+        });
+        programTrigger.addEventListener('click', function() {
+            document.getElementById('programSelectionMenu').classList.remove('hidden');
+            filterPrograms();
+        });
+        programTrigger.addEventListener('input', filterPrograms);
+        programTrigger.addEventListener('keydown', handleProgramKeydown);
+    }
+}
+
+// Custom Dropdown Logic
+function filterVerifiers() {
+    const input = document.getElementById('mappingVerifierTrigger');
+    const filterText = input.value.toLowerCase().trim();
+    const searchTerms = filterText.split(/\\s+/).filter(Boolean);
+    const options = document.querySelectorAll('.verifier-option');
+    options.forEach(option => {
+        const text = option.querySelector('.option-text').textContent.toLowerCase();
+        const matches = searchTerms.length === 0 || searchTerms.every(term => text.includes(term));
+        if (matches) {
+            option.style.display = '';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+    highlightVerifierOption(getVisibleVerifierOptions()[0] || null);
+}
+
+function filterPrograms() {
+    const input = document.getElementById('programSelectionTrigger');
+    const filterText = input.value.toLowerCase().trim();
+    const searchTerms = filterText.split(/\\s+/).filter(Boolean);
+    const options = document.querySelectorAll('.program-option');
+    options.forEach(option => {
+        const text = (option.dataset.search || option.textContent).toLowerCase();
+        const matches = searchTerms.length === 0 || searchTerms.every(term => text.includes(term));
+        if (matches) {
+            option.style.display = '';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+    highlightProgramOption(getVisibleProgramOptions()[0] || null);
+}
+
+function selectVerifier(radioElem) {
+    document.getElementById('mappingVerifierId').value = radioElem.value;
+    const trigger = document.getElementById('mappingVerifierTrigger');
+    trigger.value = radioElem.dataset.name;
+
+    document.querySelectorAll('.verifier-option .radio-indicator span').forEach(el => el.classList.add('hidden'));
+    if (radioElem.nextElementSibling && radioElem.nextElementSibling.querySelector('span')) {
+        radioElem.nextElementSibling.querySelector('span').classList.remove('hidden');
+    }
+
+    document.getElementById('mappingVerifierMenu').classList.add('hidden');
+}
+
+// --- Keyboard Navigation ---
+function getVisibleVerifierOptions() {
+    return Array.from(document.querySelectorAll('.verifier-option')).filter(option => option.style.display !== 'none');
+}
+function getHighlightedVerifierOption() {
+    return document.querySelector('.verifier-option.verifier-highlighted');
+}
+function highlightVerifierOption(option) {
+    document.querySelectorAll('.verifier-option.verifier-highlighted').forEach(el => {
+        el.classList.remove('verifier-highlighted', 'bg-blue-50');
+    });
+    if (option) {
+        option.classList.add('verifier-highlighted', 'bg-blue-50');
+        option.scrollIntoView({ block: 'nearest' });
+    }
+}
+function handleVerifierKeydown(event) {
+    const menu = document.getElementById('mappingVerifierMenu');
+    if (!menu) return;
+
+    if (event.key === 'Escape') {
+        menu.classList.add('hidden');
+        event.preventDefault();
+        return;
+    }
+
+    if (menu.classList.contains('hidden')) {
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            menu.classList.remove('hidden');
+            filterVerifiers();
+        }
+        return;
+    }
+
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp' && event.key !== 'Enter') return;
+
+    const visibleOptions = getVisibleVerifierOptions();
+    if (visibleOptions.length === 0) return;
+
+    const current = getHighlightedVerifierOption();
+    const currentIndex = current ? visibleOptions.indexOf(current) : -1;
+
+    if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        highlightVerifierOption(visibleOptions[(currentIndex + 1) % visibleOptions.length]);
+    } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        highlightVerifierOption(visibleOptions[(currentIndex - 1 + visibleOptions.length) % visibleOptions.length]);
+    } else if (event.key === 'Enter') {
+        event.preventDefault();
+        const target = current || visibleOptions[0];
+        const radio = target ? target.querySelector('input[type="radio"]') : null;
+        if (radio) {
+            radio.checked = true;
+            selectVerifier(radio);
+        }
+    }
+}
+
+function getVisibleProgramOptions() {
+    return Array.from(document.querySelectorAll('.program-option')).filter(option => option.style.display !== 'none');
+}
+function getHighlightedProgramOption() {
+    return document.querySelector('.program-option.program-highlighted');
+}
+function highlightProgramOption(option) {
+    document.querySelectorAll('.program-option.program-highlighted').forEach(el => {
+        el.classList.remove('program-highlighted', 'bg-indigo-50/40', 'border-indigo-300');
+    });
+    if (option) {
+        option.classList.add('program-highlighted', 'bg-indigo-50/40', 'border-indigo-300');
+        option.scrollIntoView({ block: 'nearest' });
+    }
+}
+function handleProgramKeydown(event) {
+    const menu = document.getElementById('programSelectionMenu');
+    if (!menu) return;
+
+    if (event.key === 'Escape') {
+        menu.classList.add('hidden');
+        updateProgramSelectionLabel();
+        event.preventDefault();
+        return;
+    }
+
+    if (menu.classList.contains('hidden')) {
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            menu.classList.remove('hidden');
+            filterPrograms();
+        }
+        return;
+    }
+
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp' && event.key !== 'Enter') return;
+
+    const visibleOptions = getVisibleProgramOptions();
+    if (visibleOptions.length === 0) return;
+
+    const current = getHighlightedProgramOption();
+    const currentIndex = current ? visibleOptions.indexOf(current) : -1;
+
+    if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        highlightProgramOption(visibleOptions[(currentIndex + 1) % visibleOptions.length]);
+    } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        highlightProgramOption(visibleOptions[(currentIndex - 1 + visibleOptions.length) % visibleOptions.length]);
+    } else if (event.key === 'Enter') {
+        event.preventDefault();
+        const target = current || visibleOptions[0];
+        const checkbox = target ? target.querySelector('input[type="checkbox"]') : null;
+        if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            updateProgramSelectionLabel();
+        }
+    }
+}

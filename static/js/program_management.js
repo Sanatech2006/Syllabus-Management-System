@@ -110,7 +110,7 @@ function programMatchesSearch(program, searchTerm) {
 
 function buildProgramRow(program, displayNumber) {
     const typeBadge = program.prog_type === 'UG'
-        ? '<span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-green-50 text-green-700 text-xs font-semibold">UG</span>'
+        ? '<span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-green-700 text-white text-xs font-semibold">UG</span>'
         : '<span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-yellow-50 text-yellow-700 text-xs font-semibold">PG</span>';
 
     const categoryBadge = program.prog_category === 'Arts'

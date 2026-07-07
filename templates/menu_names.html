@@ -50,7 +50,7 @@
                 </a>
 
                 <!-- Course Management -->
-                {% if user.is_superuser or is_hod %}
+                {% if user.is_superuser or request.session.login_role == 'hod' %}
                 <a href="{% url 'course_management:course_management' %}"
                     class="group flex items-center gap-3 px-3 py-2 text-[13.5px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.namespace == 'course_management' %}bg-white/10 text-white{% endif %}">
                     <i data-lucide="book-copy" class="w-[20px] h-[20px] text-slate-500 group-hover:text-blue-400"></i>
@@ -70,7 +70,7 @@
             </div>
         </div>
 
-        {% if is_verifier or is_hod %}
+        {% if request.session.login_role == 'verifier' %}
         <div>
             <p class="px-3 text-[11px] font-bold text-slate-600 uppercase tracking-[0.2em] mb-3">
                 Verification
@@ -124,11 +124,13 @@
                             <i data-lucide="file-text" class="w-[18px] h-[18px] text-slate-500 group-hover:text-blue-400"></i>
                             <span>Work Progress Report</span>
                         </a>
+                        {% if request.session.login_role != 'hod' %}
                         <a href="{% url 'reports:verification_report' %}"
                             class="group flex items-center gap-3 px-3 py-2 text-[13px] font-medium rounded-lg transition-all hover:bg-white/5 hover:text-white {% if request.resolver_match.url_name == 'verification_report' %}bg-white/10 text-white{% endif %}">
                             <i data-lucide="check-square" class="w-[18px] h-[18px] text-slate-500 group-hover:text-blue-400"></i>
                             <span>Verification Report</span>
                         </a>
+                        {% endif %}
                     </div>
                 </div>
                 <a href="#"

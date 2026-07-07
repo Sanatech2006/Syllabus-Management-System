@@ -538,7 +538,7 @@ def _verification_display_name(user):
 
 def _verification_status_meta(status_key):
     return {
-        "verified": ("Verified", "bg-green-100 text-green-800"),
+        "verified": ("Verified", "bg-green-700 text-white"),
         "needs changes": ("Needs Changes", "bg-rose-100 text-rose-800"),
         "pending": ("Pending", "bg-amber-100 text-amber-800"),
         "not verified": ("Not Verified", "bg-slate-100 text-slate-700"),
@@ -927,7 +927,7 @@ def _build_verification_program_report_rows(programs):
             ),
             "verification_status_label": "Assigned" if assigned else "Not Assigned",
             "verification_status_class": (
-                "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700"
+                "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-700 text-white"
                 if assigned
                 else "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700"
             ),
