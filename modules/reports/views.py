@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Count, F
 from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
@@ -747,10 +747,10 @@ def verification_report(request):
             {"id": v.id, "name": _verification_display_name(v)}
             for v in _base_verifier_queryset()
         ],
-        "ug_verified": sum(1 for program in program_list if program["prog_type"] == "UG" and program["verification_status_label"] == "Assigned"),
-        "pg_verified": sum(1 for program in program_list if program["prog_type"] == "PG" and program["verification_status_label"] == "Assigned"),
-        "arts_verified": sum(1 for program in program_list if program["prog_category"] == "Arts" and program["verification_status_label"] == "Assigned"),
-        "science_verified": sum(1 for program in program_list if program["prog_category"] == "Science" and program["verification_status_label"] == "Assigned"),
+        "ug_verified": sum(1 for program in program_list if program["prog_type"] == "UG" and program["verification_status_label"] == "Verified"),
+        "pg_verified": sum(1 for program in program_list if program["prog_type"] == "PG" and program["verification_status_label"] == "Verified"),
+        "arts_verified": sum(1 for program in program_list if program["prog_category"] == "Arts" and program["verification_status_label"] == "Verified"),
+        "science_verified": sum(1 for program in program_list if program["prog_category"] == "Science" and program["verification_status_label"] == "Verified"),
     }
     return render(request, "verification_report.html", context)
 
@@ -862,11 +862,21 @@ def _apply_verification_report_filters(queryset, filters):
 
     verification_status = filters.get("verification_status")
     if verification_status and verification_status != "__all__":
-        assigned_program_ids = VerifierProgramMap.objects.values_list("program_id", flat=True).distinct()
+        verified_programs = Program.objects.annotate(
+            total_courses=Count('coursestructure', distinct=True),
+            submitted_courses=Count(
+                'coursestructure__verification_records__course_id',
+                filter=Q(coursestructure__verification_records__status=CourseVerification.STATUS_SUBMITTED),
+                distinct=True
+            )
+        ).filter(total_courses__gt=0, total_courses=F('submitted_courses'))
+        
+        verified_program_ids = verified_programs.values_list('id', flat=True)
+        
         if verification_status == "verified":
-            queryset = queryset.filter(id__in=assigned_program_ids)
+            queryset = queryset.filter(id__in=verified_program_ids)
         elif verification_status == "not_verified":
-            queryset = queryset.exclude(id__in=assigned_program_ids)
+            queryset = queryset.exclude(id__in=verified_program_ids)
 
     search = (filters.get("search") or "").strip()
     if search:
@@ -885,6 +895,7 @@ def _apply_verification_report_filters(queryset, filters):
 def _build_verification_program_report_rows(programs):
     program_ids = [program.id for program in programs]
     mappings_by_program = defaultdict(list)
+    submitted_program_ids = set()
 
     if program_ids:
         mappings = VerifierProgramMap.objects.select_related("user", "program").filter(
@@ -892,6 +903,24 @@ def _build_verification_program_report_rows(programs):
         ).order_by("program__prog_code", "updated_at", "created_at")
         for mapping in mappings:
             mappings_by_program[mapping.program_id].append(mapping)
+            
+        total_courses_qs = CourseStructure.objects.filter(
+            program_id__in=program_ids
+        ).values('program_id').annotate(total=Count('id', distinct=True))
+        
+        submitted_courses_qs = CourseVerification.objects.filter(
+            course__program_id__in=program_ids,
+            status=CourseVerification.STATUS_SUBMITTED
+        ).values('course__program_id').annotate(total=Count('course_id', distinct=True))
+        
+        total_courses_map = {item['program_id']: item['total'] for item in total_courses_qs}
+        submitted_courses_map = {item['course__program_id']: item['total'] for item in submitted_courses_qs}
+        
+        for program_id in program_ids:
+            total = total_courses_map.get(program_id, 0)
+            submitted = submitted_courses_map.get(program_id, 0)
+            if total > 0 and total == submitted:
+                submitted_program_ids.add(program_id)
 
     rows = []
     for program in programs:
@@ -910,6 +939,17 @@ def _build_verification_program_report_rows(programs):
             default=None,
         )
         assigned = bool(program_mappings)
+        is_verified = program.id in submitted_program_ids
+        
+        total_courses = total_courses_map.get(program.id, 0)
+        submitted_courses = submitted_courses_map.get(program.id, 0)
+        pending_courses = total_courses - submitted_courses
+        
+        if is_verified:
+            tooltip_text = ""
+        else:
+            is_are = "is" if pending_courses == 1 else "are"
+            tooltip_text = f"{pending_courses} of {total_courses} courses {is_are} still pending verification" if total_courses > 0 else ""
 
         rows.append({
             "id": program.id,
@@ -925,10 +965,10 @@ def _build_verification_program_report_rows(programs):
                 if latest_mapping and latest_mapping.user
                 else ""
             ),
-            "verification_status_label": "Assigned" if assigned else "Not Assigned",
+            "verification_status_label": "Verified" if is_verified else "Not Verified",
             "verification_status_class": (
                 "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-700 text-white"
-                if assigned
+                if is_verified
                 else "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700"
             ),
             "verification_action_label": "Manage" if assigned else "Allot",
@@ -937,6 +977,7 @@ def _build_verification_program_report_rows(programs):
                 if assigned
                 else "bg-amber-600 hover:bg-amber-700 text-white"
             ),
+            "verification_tooltip": tooltip_text,
         })
 
     return rows

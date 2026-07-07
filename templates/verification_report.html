@@ -64,7 +64,7 @@
                     </span>
                     Verification Report
                 </h1>
-                <p class="text-sm text-slate-500 mt-1">Review which verifier is assigned to each program.</p>
+                <p class="text-sm text-slate-500 mt-1">Review the verification status of each program.</p>
             </div>
         </div>
     </div>
@@ -74,7 +74,7 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">UG Assigned</p>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">UG Verified</p>
                     <p class="text-3xl font-bold text-slate-900">{{ ug_verified|default:"0" }}</p>
                 </div>
                 <div class="bg-blue-100 p-3 rounded-xl">
@@ -87,7 +87,7 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">PG Assigned</p>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">PG Verified</p>
                     <p class="text-3xl font-bold text-slate-900">{{ pg_verified|default:"0" }}</p>
                 </div>
                 <div class="bg-indigo-100 p-3 rounded-xl">
@@ -100,7 +100,7 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Arts Assigned</p>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Arts Verified</p>
                     <p class="text-3xl font-bold text-slate-900">{{ arts_verified|default:"0" }}</p>
                 </div>
                 <div class="bg-amber-100 p-3 rounded-xl">
@@ -113,7 +113,7 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Science Assigned</p>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Science Verified</p>
                     <p class="text-3xl font-bold text-slate-900">{{ science_verified|default:"0" }}</p>
                 </div>
                 <div class="bg-green-100 p-3 rounded-xl">
@@ -277,9 +277,17 @@
                             </td>
                             <td class="px-6 py-4 text-center text-slate-700">{{ course.verifiers_display }}</td>
                             <td class="px-6 py-4 text-center">
-                                <span class="{{ course.verification_status_class }}">
-                                    {{ course.verification_status_label }}
-                                </span>
+                                <div class="relative inline-flex group">
+                                    <span class="{{ course.verification_status_class }}">
+                                        {{ course.verification_status_label }}
+                                    </span>
+                                    {% if course.verification_tooltip %}
+                                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs px-3 py-2 bg-slate-800 text-white text-xs font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                        {{ course.verification_tooltip }}
+                                        <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                                    </div>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
