@@ -435,7 +435,19 @@
                                 <div class="text-xs text-slate-500">{{ course.degree }} - {{ course.branch }}</div>
                             </td>
                             <td class="px-6 py-4 text-center text-slate-700">
-                                {{ course.verifiers_display }}
+                                <div class="flex flex-col items-center gap-2">
+                                    {% if course.assigned_verifier_id %}
+                                    <span>{{ course.verifiers_display }}</span>
+                                    {% else %}
+                                    <button
+                                        type="button"
+                                        onclick="openVerificationAssignmentDrawer({{ course.id }}, null, '', 'Allot', '', '', {{ course.id }}, '{{ course.prog_code|escapejs }}')"
+                                        class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-amber-600 hover:bg-amber-700 text-white"
+                                    >
+                                        Allot
+                                    </button>
+                                    {% endif %}
+                                </div>
                             </td>
                             <td class="px-6 py-4 text-center">
                                 <span class="{{ course.mapping_status_class }}">
