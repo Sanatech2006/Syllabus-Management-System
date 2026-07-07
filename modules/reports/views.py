@@ -1,4 +1,5 @@
 import io
+from collections import defaultdict
 
 import pandas as pd
 from django.contrib.auth import get_user_model
@@ -19,6 +20,7 @@ from modules.core.roles import is_verifier_user
 from modules.course_management.models import CourseStructure, CourseSyllabus
 from modules.hod_management.models import HodProgramMap
 from modules.program_manage.models import Program
+from modules.verification_management.models import VerifierProgramMap
 from .models import CourseVerification
 
 
@@ -284,10 +286,26 @@ def _part_lookup_values(value):
 
 def _verification_base_courses(user):
     courses = CourseStructure.objects.select_related("program")
-    if user.is_superuser or is_verifier_user(user) or is_hod_user(user):
+    if not user.is_authenticated:
+        return courses.none()
+
+    if user.is_superuser:
         return courses
-    accessible_ids = get_accessible_programs(user).values_list("id", flat=True)
-    return courses.filter(program_id__in=accessible_ids)
+
+    accessible_program_ids = set()
+
+    if is_hod_user(user):
+        accessible_program_ids.update(get_accessible_programs(user).values_list("id", flat=True))
+
+    if is_verifier_user(user):
+        accessible_program_ids.update(
+            VerifierProgramMap.objects.filter(user=user).values_list("program_id", flat=True)
+        )
+
+    if accessible_program_ids:
+        return courses.filter(program_id__in=accessible_program_ids)
+
+    return courses.none()
 
 
 def _apply_verification_filters(queryset, filters, prefix="", exclude_field=None):
@@ -624,6 +642,8 @@ def verification_center(request):
     if request.method == "POST":
         action = request.POST.get("action", "save")
         selected_ids = {int(value) for value in request.POST.getlist("verified_courses") if str(value).isdigit()}
+        allowed_course_ids = set(base_queryset.values_list("id", flat=True))
+        selected_ids &= allowed_course_ids
 
         with transaction.atomic():
             for course_id in selected_ids:
@@ -701,15 +721,14 @@ def verification_report(request):
         "search": request.GET.get("search", ""),
     }
 
-    base_queryset = _verification_base_courses(request.user)
-    filtered_queryset = _apply_verification_report_filters(base_queryset, filters).order_by(
-        "program__prog_code", "year", "sem", "course_code"
-    )
-    course_list = list(_decorate_verification_report_courses(filtered_queryset))
+    base_queryset = _base_program_queryset(request.user)
+    filtered_queryset = _apply_verification_report_filters(base_queryset, filters).order_by("prog_code")
+    program_list = list(_build_verification_program_report_rows(filtered_queryset))
+    course_base_queryset = _verification_base_courses(request.user)
 
-    paginator = Paginator(course_list, per_page)
+    paginator = Paginator(program_list, per_page)
     page_obj = paginator.get_page(page)
-    filter_options = _build_verification_report_filter_options(base_queryset, filters)
+    filter_options = _build_verification_report_filter_options(course_base_queryset, filters)
 
     query_params = request.GET.copy()
     query_params.pop("page", None)
@@ -727,7 +746,10 @@ def verification_report(request):
             {"id": v.id, "name": _verification_display_name(v)}
             for v in _base_verifier_queryset()
         ],
-        **_verification_course_stats(course_list),
+        "ug_verified": sum(1 for program in program_list if program["prog_type"] == "UG" and program["verification_status_label"] == "Assigned"),
+        "pg_verified": sum(1 for program in program_list if program["prog_type"] == "PG" and program["verification_status_label"] == "Assigned"),
+        "arts_verified": sum(1 for program in program_list if program["prog_category"] == "Arts" and program["verification_status_label"] == "Assigned"),
+        "science_verified": sum(1 for program in program_list if program["prog_category"] == "Science" and program["verification_status_label"] == "Assigned"),
     }
     return render(request, "verification_report.html", context)
 
@@ -826,10 +848,6 @@ def verification_delete_assignment(request, course_id):
 
 def _apply_verification_report_filters(queryset, filters):
     """Report-only filtering. Isolated from verification_center's filter logic."""
-    year = filters.get("year")
-    if year and year != "__all__":
-        queryset = queryset.filter(year=year)
-
     program = filters.get("program")
     if program and program != "__all__":
         queryset = queryset.filter(program_id=program)
@@ -843,49 +861,95 @@ def _apply_verification_report_filters(queryset, filters):
 
     verification_status = filters.get("verification_status")
     if verification_status and verification_status != "__all__":
-        verified_course_ids = CourseVerification.objects.filter(
-            status=CourseVerification.STATUS_SUBMITTED,
-            is_verified=True,
-        ).values_list("course_id", flat=True)
+        assigned_program_ids = VerifierProgramMap.objects.values_list("program_id", flat=True).distinct()
         if verification_status == "verified":
-            queryset = queryset.filter(id__in=verified_course_ids)
+            queryset = queryset.filter(id__in=assigned_program_ids)
         elif verification_status == "not_verified":
-            queryset = queryset.exclude(id__in=verified_course_ids)
+            queryset = queryset.exclude(id__in=assigned_program_ids)
 
     search = (filters.get("search") or "").strip()
     if search:
         queryset = queryset.filter(
-            Q(course_code__icontains=search)
-            | Q(course_title__icontains=search)
-            | Q(program__prog_code__icontains=search)
+            Q(prog_code__icontains=search)
+            | Q(degree__icontains=search)
+            | Q(branch__icontains=search)
+            | Q(verifierprogrammap__user__username__icontains=search)
+            | Q(verifierprogrammap__user__first_name__icontains=search)
+            | Q(verifierprogrammap__user__last_name__icontains=search)
         )
 
     return queryset.distinct()
 
 
-def _build_verification_report_filter_options(base_queryset, filters):
-    """Only Year + Programs, both DB-driven. Isolated from the shared filter-options builder."""
-    qs = base_queryset
-    year = filters.get("year")
-    if year and year != "__all__":
-        qs = qs.filter(year=year)
+def _build_verification_program_report_rows(programs):
+    program_ids = [program.id for program in programs]
+    mappings_by_program = defaultdict(list)
 
-    programs = []
-    seen_programs = set()
-    for course in qs.select_related("program").order_by("program__prog_code"):
-        program = course.program
-        if not program or program.id in seen_programs:
-            continue
-        seen_programs.add(program.id)
-        programs.append({
+    if program_ids:
+        mappings = VerifierProgramMap.objects.select_related("user", "program").filter(
+            program_id__in=program_ids
+        ).order_by("program__prog_code", "updated_at", "created_at")
+        for mapping in mappings:
+            mappings_by_program[mapping.program_id].append(mapping)
+
+    rows = []
+    for program in programs:
+        program_mappings = mappings_by_program.get(program.id, [])
+        unique_verifier_names = []
+        seen_user_ids = set()
+        for mapping in program_mappings:
+            if not mapping.user or mapping.user_id in seen_user_ids:
+                continue
+            seen_user_ids.add(mapping.user_id)
+            unique_verifier_names.append(mapping.user.get_full_name() or mapping.user.username)
+
+        latest_mapping = max(
+            program_mappings,
+            key=lambda mapping: mapping.updated_at or mapping.created_at,
+            default=None,
+        )
+        assigned = bool(program_mappings)
+
+        rows.append({
             "id": program.id,
+            "prog_code": program.prog_code,
             "degree": program.degree,
             "branch": program.branch,
+            "prog_type": program.prog_type,
+            "prog_category": program.prog_category,
+            "verifiers_display": ", ".join(unique_verifier_names) or "-",
+            "assigned_verifier_id": latest_mapping.user_id if latest_mapping else None,
+            "assigned_verifier_name": (
+                (latest_mapping.user.get_full_name() or latest_mapping.user.username)
+                if latest_mapping and latest_mapping.user
+                else ""
+            ),
+            "verification_status_label": "Assigned" if assigned else "Not Assigned",
+            "verification_status_class": (
+                "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700"
+                if assigned
+                else "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700"
+            ),
+            "verification_action_label": "Manage" if assigned else "Allot",
+            "verification_action_class": (
+                "bg-blue-600 hover:bg-blue-700 text-white"
+                if assigned
+                else "bg-amber-600 hover:bg-amber-700 text-white"
+            ),
         })
 
+    return rows
+
+
+def _build_verification_report_filter_options(base_queryset, filters):
+    """Only Year + Programs, both DB-driven. Isolated from the shared filter-options builder."""
     return {
         "years": _distinct_non_empty_related(base_queryset, "year"),
-        "programs": programs,
+        "programs": list(
+            Program.objects.filter(is_active=True)
+            .values("id", "prog_code", "degree", "branch", "prog_type")
+            .order_by("prog_code")
+        ),
     }
 
 
@@ -908,27 +972,23 @@ def download_verification_report_excel(request):
         "search": request.GET.get("search", ""),
     }
 
-    base_queryset = _verification_base_courses(request.user)
-    filtered_queryset = _apply_verification_report_filters(base_queryset, filters).order_by(
-        "program__prog_code", "year", "sem", "course_code"
-    )
-    course_list = list(_decorate_verification_report_courses(filtered_queryset))
+    base_queryset = _base_program_queryset(request.user)
+    filtered_queryset = _apply_verification_report_filters(base_queryset, filters).order_by("prog_code")
+    program_list = list(_build_verification_program_report_rows(filtered_queryset))
 
     rows = []
-    for index, course in enumerate(course_list, start=1):
-        course_label = course.course_code or ""
-        if course.course_title:
-            course_label += f" - {course.course_title}"
+    for index, program in enumerate(program_list, start=1):
         rows.append({
             "S.No": index,
-            "Course": course_label,
-            "Verifiers": course.verifiers_display,
-            "Status": course.verification_status_label,
+            "Program": program["prog_code"],
+            "Program Details": f'{program["degree"]} - {program["branch"]}',
+            "Verifiers": program["verifiers_display"],
+            "Status": program["verification_status_label"],
         })
 
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        pd.DataFrame(rows, columns=["S.No", "Course", "Verifiers", "Status"]).to_excel(
+        pd.DataFrame(rows, columns=["S.No", "Program", "Program Details", "Verifiers", "Status"]).to_excel(
             writer, sheet_name="Verification Report", index=False
         )
     output.seek(0)

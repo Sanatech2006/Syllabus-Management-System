@@ -64,7 +64,7 @@
                     </span>
                     Verification Report
                 </h1>
-                <p class="text-sm text-slate-500 mt-1">Review which verifier confirmed each course structure.</p>
+                <p class="text-sm text-slate-500 mt-1">Review which verifier is assigned to each program.</p>
             </div>
         </div>
     </div>
@@ -74,7 +74,7 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">UG Verified</p>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">UG Assigned</p>
                     <p class="text-3xl font-bold text-slate-900">{{ ug_verified|default:"0" }}</p>
                 </div>
                 <div class="bg-blue-100 p-3 rounded-xl">
@@ -87,7 +87,7 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">PG Verified</p>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">PG Assigned</p>
                     <p class="text-3xl font-bold text-slate-900">{{ pg_verified|default:"0" }}</p>
                 </div>
                 <div class="bg-indigo-100 p-3 rounded-xl">
@@ -100,7 +100,7 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Arts Verified</p>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Arts Assigned</p>
                     <p class="text-3xl font-bold text-slate-900">{{ arts_verified|default:"0" }}</p>
                 </div>
                 <div class="bg-amber-100 p-3 rounded-xl">
@@ -113,7 +113,7 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Science Verified</p>
+                    <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Science Assigned</p>
                     <p class="text-3xl font-bold text-slate-900">{{ science_verified|default:"0" }}</p>
                 </div>
                 <div class="bg-green-100 p-3 rounded-xl">
@@ -132,7 +132,7 @@
                 <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                 </svg>
-                Filter Courses
+                Filter Programs
             </h2>
         </div>
         <div class="p-6 overflow-visible">
@@ -174,7 +174,7 @@
                             <div class="sms-panel hidden absolute z-[9999] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
                                 <ul class="sms-list max-h-52 overflow-y-auto py-1">
                                     <li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="__all__">All Programs</li>
-                                    {% for program in programs %}<li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ program.id }}">{{ program.degree }} &ndash; {{ program.branch }}</li>{% endfor %}
+                                    {% for program in programs %}<li class="sms-option px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer" data-value="{{ program.id }}">{{ program.prog_code }} - {{ program.degree }} ({{ program.branch }})</li>{% endfor %}
                                 </ul>
                                 <p class="sms-empty hidden px-3 py-2 text-sm text-slate-400 italic">No results found</p>
                             </div>
@@ -240,7 +240,7 @@
                 </div>
                 <div class="flex items-center gap-3 w-full sm:w-auto">
                     <div class="relative w-full sm:w-72">
-                        <input type="text" id="verificationSearchInput" value="{{ selected_search|default:'' }}" placeholder="Search courses..." class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg">
+                        <input type="text" id="verificationSearchInput" value="{{ selected_search|default:'' }}" placeholder="Search programs..." class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg">
                         <svg class="absolute left-3 top-2.5 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                         </svg>
@@ -259,38 +259,27 @@
                     <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
                         <tr>
                             <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">S.No</th>
-                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Course</th>
+                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Program</th>
                             <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Verifiers</th>
                             <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Status</th>
-                            <th class="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         {% for course in courses %}
                         <tr class="verification-row hover:bg-slate-50 transition"
-                            data-course-code="{{ course.course_code|lower }}"
-                            data-course-title="{{ course.course_title|default:''|lower }}"
-                            data-program="{{ course.program.prog_code|lower }}"
+                            data-program="{{ course.prog_code|lower }} {{ course.degree|lower }} {{ course.branch|lower }}"
                             data-verifier="{{ course.verifiers_display|lower }}"
                             data-status="{{ course.verification_status_label|lower }}">
                             <td class="px-6 py-4 text-center text-sm text-slate-500">{{ forloop.counter }}</td>
                             <td class="px-6 py-4 text-center">
-                                <div class="text-sm font-medium text-slate-900">{{ course.course_code }}{% if course.course_title %} - {{ course.course_title|truncatechars:36 }}{% endif %}</div>
-                                <div class="text-xs text-slate-500">{{ course.program.prog_code }} - {{ course.program.degree }} - {{ course.program.branch }}</div>
+                                <div class="text-sm font-medium text-slate-900">{{ course.prog_code }}</div>
+                                <div class="text-xs text-slate-500">{{ course.degree }} - {{ course.branch }}</div>
                             </td>
                             <td class="px-6 py-4 text-center text-slate-700">{{ course.verifiers_display }}</td>
                             <td class="px-6 py-4 text-center">
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ course.verification_status_class }}">
+                                <span class="{{ course.verification_status_class }}">
                                     {{ course.verification_status_label }}
                                 </span>
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                <button
-                                    type="button"
-                                    onclick="openAssignmentDrawer({{ course.id }}, {{ course.assigned_verifier_id|default:'null' }}, '{{ course.assigned_verifier_name|default_if_none:''|escapejs }}', '{{ course.verification_action_label|default:"Allot"|escapejs }}', '{{ course.course_code|escapejs }}', '{{ course.course_title|default_if_none:''|escapejs }}', '{{ course.program.id }}', '{{ course.program.prog_code|escapejs }}')"
-                                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ course.verification_action_class }}">
-                                    {{ course.verification_action_label }}
-                                </button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -333,8 +322,8 @@
         </div>
 
         <div id="verificationSearchEmpty" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center mt-5">
-            <h3 class="text-lg font-bold text-slate-900">No matching courses</h3>
-            <p class="mt-2 text-sm text-slate-500">Your search checks all verification records, not just this page.</p>
+            <h3 class="text-lg font-bold text-slate-900">No matching programs</h3>
+            <p class="mt-2 text-sm text-slate-500">Your search checks all verification program mappings, not just this page.</p>
         </div>
 
         {% else %}
@@ -352,98 +341,11 @@
 </div>
 
 <!-- Toast Notification -->
-<div id="toast" class="fixed bottom-4 right-4 z-50 hidden transform transition-all duration-300">
+<div id="toast" class="fixed top-4 right-4 z-50 hidden transform transition-all duration-300">
     <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
         <span id="toastMessage">Success!</span>
     </div>
 </div>
-
-<!-- Verifier Assignment Drawer -->
-<div id="verifierAssignmentDrawer" class="fixed inset-0 z-50 hidden" aria-hidden="true">
-    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onclick="closeAssignmentDrawer()"></div>
-    <div class="absolute inset-y-0 right-0 w-full max-w-3xl bg-slate-50 shadow-2xl flex flex-col overflow-hidden">
-        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
-            <div>
-                <h2 id="assignmentDrawerTitle" class="text-xl font-bold text-blue-900">Allot Verifier</h2>
-                <p id="assignmentDrawerSubtitle" class="text-sm text-slate-500 mt-0.5">Choose a verifier and assign one or more courses.</p>
-            </div>
-            <button type="button" onclick="closeAssignmentDrawer()" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
-        </div>
-
-        <form id="verificationAssignmentForm" class="flex-1 overflow-y-auto p-6 space-y-6">
-            {% csrf_token %}
-            <input type="hidden" id="assignmentAnchorCourseId" name="anchor_course_id" value="">
-
-            <!-- Verifier Selector -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="px-5 py-3 border-b border-slate-100 bg-slate-50">
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700">Verifier</h3>
-                </div>
-                <div class="p-5">
-                    <label class="block text-sm font-semibold text-slate-700 mb-2.5">Verifier</label>
-                    <select id="assignmentVerifier" name="verifier_id" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
-                        <option value="">Select Verifier</option>
-                        {% for verifier in verifier_users %}
-                        <option value="{{ verifier.id }}">{{ verifier.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <p class="text-xs text-slate-400 mt-2">Choose a verifier from user management.</p>
-                </div>
-            </div>
-
-            <!-- Course Picker -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700">Courses</h3>
-                    <button type="button" onclick="resetCoursePickers()" class="text-xs font-semibold text-blue-600 hover:text-blue-700">Add More Courses</button>
-                </div>
-                <div class="p-5 space-y-5">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program code</label>
-                            <select id="assignmentProgram" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
-                                <option value="">All Programs</option>
-                                {% for program in programs %}
-                                <option value="{{ program.id }}">{{ program.code }} - {{ program.degree }} ({{ program.branch }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Course code</label>
-                            <select id="assignmentCourseCode" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"></select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Course title</label>
-                            <select id="assignmentCourseTitle" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"></select>
-                        </div>
-                    </div>
-                    <div class="flex justify-end">
-                        <button type="button" onclick="addCourseToList()" class="inline-flex items-center px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition">Add Course</button>
-                    </div>
-                    <div>
-                        <div class="flex items-center justify-between mb-3">
-                            <p class="text-sm font-semibold text-slate-700">Selected courses</p>
-                            <span id="selectedCourseCount" class="text-xs text-slate-500">0 selected</span>
-                        </div>
-                        <div id="selectedCourseList" class="space-y-2"></div>
-                    </div>
-                </div>
-            </div>
-        </form>
-
-        <div class="px-6 pb-6 flex gap-4 bg-slate-50 shrink-0 pt-6 border-t border-slate-200">
-            <button type="button" onclick="closeAssignmentDrawer()" class="flex-1 w-1/2 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 font-bold text-sm rounded-xl transition-colors border border-slate-200 shadow-sm">Cancel</button>
-            <button type="button" onclick="saveAssignments()" class="flex-1 w-1/2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-[0.99]">
-                Save Assignments
-            </button>
-        </div>
-    </div>
-</div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // ── Endpoints ──────────────────────────────────────────────────────────
@@ -606,7 +508,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 let value, text;
                 if (typeof item === 'object' && item.id) {
                     value = String(item.id);
-                    text  = `${item.degree} – ${item.branch}`;
+                    text  = item.prog_code ? `${item.prog_code} - ${item.degree} (${item.branch})` : `${item.degree} – ${item.branch}`;
                 } else {
                     value = String(item); text = String(item);
                 }

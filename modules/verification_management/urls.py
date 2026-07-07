@@ -14,6 +14,7 @@ urlpatterns = [
     path("add-mapping/", views.add_mapping, name="add_mapping"),
     path("edit-mapping/<int:mapping_id>/", views.edit_mapping, name="edit_mapping"),
     path("delete-mapping/<int:mapping_id>/", views.delete_mapping, name="delete_mapping"),
+    path("delete-program-mappings/<int:program_id>/", views.delete_program_mappings, name="delete_program_mappings"),
     
     # Excel operations
     path("download-sample/", views.download_sample_mapping_excel, name="download_sample"),

@@ -12,7 +12,10 @@ from datetime import datetime
 from modules.core.decorators import admin_required
 from modules.core.utils import set_upload_progress, delete_upload_progress
 from modules.core.roles import (
+    ROLE_ADMIN,
+    ROLE_HOD,
     ROLE_USER,
+    ROLE_VERIFIER,
     VERIFIER_GROUP_NAME,
     get_user_role,
     get_user_role_label,
@@ -28,14 +31,33 @@ User = get_user_model()
 
 @admin_required
 def user_management(request):
-    users = User.objects.all().order_by('-date_joined')
+    selected_role = request.GET.get("role", "__all__")
+    users = list(User.objects.all().order_by('-date_joined'))
     for user in users:
         user.display_role = get_user_role(user)
         user.display_role_label = get_user_role_label(user)
         user.display_role_labels = get_user_role_labels(user)
+
+    role_labels = {
+        ROLE_ADMIN: "Administrator",
+        ROLE_HOD: "Head of Department",
+        ROLE_VERIFIER: "Verifier",
+        ROLE_USER: "User",
+    }
+    if selected_role != "__all__":
+        selected_label = role_labels.get(selected_role, "")
+        users = [
+            user for user in users
+            if selected_label and (
+                user.display_role == selected_role
+                or selected_label in user.display_role_labels
+            )
+        ]
+
     context = {
         "users": users,
-        "total_users": users.count(),
+        "total_users": len(users),
+        "selected_role": selected_role,
     }
     return render(request, "user_management.html", context)
 

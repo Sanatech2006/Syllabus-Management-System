@@ -136,3 +136,37 @@ class UserRoleManagementTests(TestCase):
         HodProgramMap.objects.create(user=user, program=program)
 
         self.assertEqual(get_user_role(user), "hod")
+
+    def test_user_management_filters_users_by_role(self):
+        verifier_group = Group.objects.create(name=VERIFIER_GROUP_NAME)
+        program = Program.objects.create(
+            prog_code="MBA",
+            branch="Management",
+            degree="MBA",
+            prog_type="PG",
+            prog_category="Arts",
+        )
+
+        hod_user = User.objects.create_user(
+            username="hod_user",
+            password="secret123",
+            is_staff=True,
+        )
+        HodProgramMap.objects.create(user=hod_user, program=program)
+
+        verifier_user = User.objects.create_user(
+            username="verifier_user",
+            password="secret123",
+        )
+        verifier_user.groups.add(verifier_group)
+
+        standard_user = User.objects.create_user(
+            username="standard_user",
+            password="secret123",
+        )
+
+        response = self.client.get(reverse("user_manage:user_management"), {"role": "verifier"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_role"], "verifier")
+        self.assertEqual([user.username for user in response.context["users"]], ["verifier_user"])

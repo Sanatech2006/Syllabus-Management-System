@@ -47,7 +47,7 @@ def get_user_role_label(user):
 
 def get_user_role_labels(user):
     labels = [get_user_role_label(user)]
-    if get_user_role(user) == ROLE_HOD and is_verifier_user(user):
+    if get_user_role(user) != ROLE_VERIFIER and is_verifier_user(user):
         labels.append("Verifier")
     return labels
 

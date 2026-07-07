@@ -10,6 +10,7 @@ from modules.hod_management.models import HodProgramMap
 from modules.program_manage.models import Program
 from modules.core.roles import VERIFIER_GROUP_NAME
 from modules.reports.models import CourseVerification
+from modules.verification_management.models import VerifierProgramMap
 
 
 User = get_user_model()
@@ -149,7 +150,15 @@ class VerificationFlowTests(TestCase):
             prog_type="UG",
             prog_category="Science",
         )
+        self.other_program = Program.objects.create(
+            prog_code="MCA",
+            degree="MCA",
+            branch="Computer Applications",
+            prog_type="PG",
+            prog_category="Science",
+        )
         HodProgramMap.objects.create(user=self.hod_user, program=self.program)
+        VerifierProgramMap.objects.create(user=self.verifier_user, program=self.program)
         self.course = CourseStructure.objects.create(
             program=self.program,
             course_code="CSC101",
@@ -162,6 +171,14 @@ class VerificationFlowTests(TestCase):
             program=self.program,
             course_code="CSC102",
             course_title="Data Structures",
+            year="I",
+            sem="I",
+            course_category="Core",
+        )
+        self.other_program_course = CourseStructure.objects.create(
+            program=self.other_program,
+            course_code="MCA101",
+            course_title="MCA Foundations",
             year="I",
             sem="I",
             course_category="Core",
@@ -182,7 +199,17 @@ class VerificationFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Programming Basics")
+        self.assertNotContains(response, "MCA Foundations")
         self.assertContains(response, 'name="verified_courses"')
+
+    def test_verifier_only_sees_mapped_program_courses(self):
+        self.client.force_login(self.verifier_user)
+
+        response = self.client.get(reverse("reports:verification_center"), {"year": "I"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Programming Basics")
+        self.assertNotContains(response, "MCA Foundations")
 
     def test_admin_verification_report_defaults_to_all_courses(self):
         self.client.force_login(self.admin_user)
@@ -190,10 +217,10 @@ class VerificationFlowTests(TestCase):
         response = self.client.get(reverse("reports:verification_report"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Programming Basics")
-        self.assertContains(response, "Data Structures")
-        self.assertContains(response, "Verifier Not Assigned")
-        self.assertContains(response, "Allot")
+        self.assertContains(response, "BSC")
+        self.assertContains(response, "MCA")
+        self.assertContains(response, "Assigned")
+        self.assertContains(response, "Not Assigned")
 
     def test_admin_verification_filter_options_include_course_choices(self):
         self.client.force_login(self.admin_user)
@@ -259,9 +286,8 @@ class VerificationFlowTests(TestCase):
         report_response = self.client.get(reverse("reports:verification_report"), {"year": "I"})
 
         self.assertEqual(report_response.status_code, 200)
-        self.assertContains(report_response, "Programming Basics")
-        self.assertContains(report_response, "verifier_verify")
-        self.assertContains(report_response, "Verified")
+        self.assertContains(report_response, "BSC")
+        self.assertContains(report_response, "Assigned")
 
     def test_save_only_updates_current_page_courses(self):
         CourseVerification.objects.create(
@@ -292,4 +318,4 @@ class VerificationFlowTests(TestCase):
         response = self.client.get(reverse("reports:verification_center"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Verification Centre")
+        self.assertContains(response, "Verification Report")

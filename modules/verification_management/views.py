@@ -5,6 +5,7 @@ from django.views.decorators.http import require_http_methods
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Q
+from collections import defaultdict
 import pandas as pd
 import io
 from openpyxl.styles import Font, PatternFill, Alignment
@@ -12,17 +13,70 @@ from .models import VerifierProgramMap
 from modules.program_manage.models import Program
 from modules.core.decorators import admin_required
 from django.contrib.auth import get_user_model
-from modules.core.roles import VERIFIER_GROUP_NAME, is_verifier_user
+from modules.core.roles import ROLE_VERIFIER, VERIFIER_GROUP_NAME, get_user_role, is_verifier_user, set_user_role
 from modules.reports.views import (
     _verification_base_courses,
     _apply_verification_filters,
     _build_verification_filter_options,
-    _decorate_verification_report_courses,
-    _verification_course_stats,
     _base_verifier_queryset,
 )
 
 User = get_user_model()
+
+def _build_verification_program_rows(programs):
+    program_ids = [program.id for program in programs]
+    mappings_by_program = defaultdict(list)
+
+    if program_ids:
+        mappings = VerifierProgramMap.objects.select_related("user", "program").filter(
+            program_id__in=program_ids
+        ).order_by("program__prog_code", "updated_at", "created_at")
+        for mapping in mappings:
+            mappings_by_program[mapping.program_id].append(mapping)
+
+    rows = []
+    for program in programs:
+        program_mappings = mappings_by_program.get(program.id, [])
+        unique_verifier_names = []
+        seen_user_ids = set()
+        for mapping in program_mappings:
+            if not mapping.user or mapping.user_id in seen_user_ids:
+                continue
+            seen_user_ids.add(mapping.user_id)
+            unique_verifier_names.append(mapping.user.get_full_name() or mapping.user.username)
+
+        latest_mapping = max(
+            program_mappings,
+            key=lambda mapping: mapping.updated_at or mapping.created_at,
+            default=None,
+        )
+        has_mapping = bool(program_mappings)
+
+        rows.append({
+            "id": program.id,
+            "prog_code": program.prog_code,
+            "degree": program.degree,
+            "branch": program.branch,
+            "prog_type": program.prog_type,
+            "prog_category": program.prog_category,
+            "verifiers_display": ", ".join(unique_verifier_names) or "-",
+            "assigned_verifier_id": latest_mapping.user_id if latest_mapping else None,
+            "assigned_verifier_name": (
+                (latest_mapping.user.get_full_name() or latest_mapping.user.username)
+                if latest_mapping and latest_mapping.user
+                else ""
+            ),
+            "mapping_status_label": "Assigned" if has_mapping else "Not Assigned",
+            "mapping_status_class": (
+                "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700"
+                if has_mapping
+                else "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700"
+            ),
+            "action_label": "Manage" if has_mapping else "Allot",
+        })
+
+    return rows
+
 
 # ---------------------------------------------------------------------------------------------------
 # Verification Program Map Management - Main Page
@@ -49,8 +103,8 @@ def verification_program_map_management(request):
             "sem": "__all__",
             "part": "__all__",
             "course_category": "__all__",
-        "course_title": "__all__",
-    },
+            "course_title": "__all__",
+        },
     ).order_by("program__prog_code", "year", "sem", "course_code")
     if search_term:
         filtered_queryset = filtered_queryset.filter(
@@ -61,10 +115,31 @@ def verification_program_map_management(request):
             | Q(program__branch__icontains=search_term)
         ).distinct()
 
-    course_list = list(_decorate_verification_report_courses(filtered_queryset))
+    program_queryset = Program.objects.filter(is_active=True)
+    if filters["program"] and filters["program"] != "__all__":
+        program_queryset = program_queryset.filter(id=filters["program"])
+    if filters["prog_type"] and filters["prog_type"] != "__all__":
+        program_queryset = program_queryset.filter(prog_type=filters["prog_type"])
+    if filters["prog_category"] and filters["prog_category"] != "__all__":
+        program_queryset = program_queryset.filter(prog_category=filters["prog_category"])
+    if filters["degree"] and filters["degree"] != "__all__":
+        program_queryset = program_queryset.filter(degree=filters["degree"])
+    if filters["branch"] and filters["branch"] != "__all__":
+        program_queryset = program_queryset.filter(branch__icontains=filters["branch"])
+    if search_term:
+        program_queryset = program_queryset.filter(
+            Q(prog_code__icontains=search_term)
+            | Q(degree__icontains=search_term)
+            | Q(branch__icontains=search_term)
+            | Q(verifierprogrammap__user__username__icontains=search_term)
+            | Q(verifierprogrammap__user__first_name__icontains=search_term)
+            | Q(verifierprogrammap__user__last_name__icontains=search_term)
+        ).distinct()
+
+    program_rows = _build_verification_program_rows(program_queryset.order_by("prog_code"))
 
     from django.core.paginator import Paginator
-    paginator = Paginator(course_list, int(request.GET.get("per_page", 100)))
+    paginator = Paginator(program_rows, int(request.GET.get("per_page", 100)))
     page_obj = paginator.get_page(request.GET.get("page", 1))
 
     query_params = request.GET.copy()
@@ -88,7 +163,9 @@ def verification_program_map_management(request):
         "page_obj": page_obj,
         "per_page": int(request.GET.get("per_page", 100)),
         "pagination_query": query_params.urlencode(),
-        "has_applied_filters": True,
+        "has_applied_filters": bool(
+            search_term or any(value not in {"", "__all__"} for value in filters.values())
+        ),
         "selected_year": filters["year"],
         "selected_program": filters["program"],
         "selected_prog_type": filters["prog_type"],
@@ -104,6 +181,14 @@ def verification_program_map_management(request):
         "page_subtitle": "Review verifier assignments and report status by program.",
         "compact_verification_filters": True,
         "verification_management_mode": True,
+        "mapping_users": [
+            {
+                "id": user.id,
+                "staff_id": user.username,
+                "name": user.get_full_name() or user.username,
+            }
+            for user in User.objects.all().order_by("username")
+        ],
         "verifier_users": [
             {
                 "id": verifier.id,
@@ -112,7 +197,15 @@ def verification_program_map_management(request):
             for verifier in _base_verifier_queryset()
         ],
         **filter_options,
-        **_verification_course_stats(course_list),
+        "programs": list(Program.objects.filter(is_active=True).values(
+            "id", "prog_code", "degree", "branch", "prog_type"
+        ).order_by("prog_code")),
+        **{
+            "ug_verified": sum(1 for program in program_rows if program["prog_type"] == "UG" and program["mapping_status_label"] == "Assigned"),
+            "pg_verified": sum(1 for program in program_rows if program["prog_type"] == "PG" and program["mapping_status_label"] == "Assigned"),
+            "arts_verified": sum(1 for program in program_rows if program["prog_category"] == "Arts" and program["mapping_status_label"] == "Assigned"),
+            "science_verified": sum(1 for program in program_rows if program["prog_category"] == "Science" and program["mapping_status_label"] == "Assigned"),
+        },
     }
     return render(request, "verification_page.html", context)
 
@@ -161,9 +254,6 @@ def add_mapping(request):
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return JsonResponse({'success': False, 'error': f'Selected verifier with ID {user_id} does not exist.'})
-
-        if not is_verifier_user(user):
-            return JsonResponse({'success': False, 'error': 'Selected user is not a verifier.'})
         
         # Check if program exists
         programs = list(Program.objects.filter(id__in=program_ids, is_active=True))
@@ -172,16 +262,14 @@ def add_mapping(request):
 
         created_count = 0
         with transaction.atomic():
+            set_user_role(user, get_user_role(user), [ROLE_VERIFIER])
             for program in programs:
                 _, created = VerifierProgramMap.objects.get_or_create(user=user, program=program)
                 created_count += int(created)
 
-        if created_count == 0:
-            return JsonResponse({'success': False, 'error': 'Selected verifier already has mappings for all chosen programs.'})
-
         return JsonResponse({
             'success': True,
-            'message': f'Verifier-program mapping created successfully for {created_count} program(s).',
+            'message': f'Verifier access updated successfully for {created_count} new program(s).',
             'mapping_id': None,
             'created_count': created_count,
         })
@@ -209,9 +297,6 @@ def edit_mapping(request, mapping_id):
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Selected verifier does not exist.'})
-
-        if not is_verifier_user(user):
-            return JsonResponse({'success': False, 'error': 'Selected user is not a verifier.'})
         
         # Check if program exists
         programs = list(Program.objects.filter(id__in=program_ids, is_active=True))
@@ -219,6 +304,7 @@ def edit_mapping(request, mapping_id):
             return JsonResponse({'success': False, 'error': 'Selected program does not exist or is inactive.'})
 
         with transaction.atomic():
+            set_user_role(user, get_user_role(user), [ROLE_VERIFIER])
             # Remove the current mapping row from the old combination so edits behave like a real replace.
             mapping.delete()
 
@@ -234,7 +320,7 @@ def edit_mapping(request, mapping_id):
 
         return JsonResponse({
             'success': True,
-            'message': 'Mapping updated successfully.',
+            'message': 'Verifier access updated successfully.',
             'created_count': created_count,
         })
         
@@ -272,6 +358,20 @@ def get_verifiers_list(request):
                 'email': verifier['email']
             })
         return JsonResponse({'success': True, 'verifiers': verifier_list})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+@require_http_methods(["POST"])
+def delete_program_mappings(request, program_id):
+    try:
+        deleted_count, _ = VerifierProgramMap.objects.filter(program_id=program_id).delete()
+        return JsonResponse({
+            'success': True,
+            'message': 'Program mappings deleted successfully.',
+            'deleted_count': deleted_count,
+        })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 

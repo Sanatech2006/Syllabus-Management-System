@@ -1,8 +1,10 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.test import TestCase
 from django.urls import reverse
-from modules.course_management.models import CourseStructure
+from modules.core.roles import VERIFIER_GROUP_NAME, get_user_role_labels
 from modules.program_manage.models import Program
+from modules.verification_management.models import VerifierProgramMap
 
 
 User = get_user_model()
@@ -35,35 +37,63 @@ class VerificationManagementTests(TestCase):
 
     def test_search_spans_all_pages(self):
         program = Program.objects.create(
-            prog_code="BSCCS",
+            prog_code="FIRST",
             degree="B.Sc",
             branch="Computer Science",
             prog_type="UG",
             prog_category="Science",
             is_active=True,
         )
-        CourseStructure.objects.create(
-            course_code="CS101",
-            course_title="First Course",
-            program=program,
-            year="2024",
-            sem="1",
-        )
-        CourseStructure.objects.create(
-            course_code="CS102",
-            course_title="Second Course",
-            program=program,
-            year="2024",
-            sem="1",
+        Program.objects.create(
+            prog_code="SECOND",
+            degree="M.Sc",
+            branch="Mathematics",
+            prog_type="PG",
+            prog_category="Science",
+            is_active=True,
         )
 
         self.client.force_login(self.admin_user)
 
         response = self.client.get(
             reverse("verification_management:verification_management"),
-            {"search": "Second Course", "per_page": 1},
+            {"search": "SECOND", "per_page": 1},
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Second Course")
-        self.assertNotContains(response, "First Course")
+        self.assertEqual(len(response.context["courses"]), 1)
+        self.assertEqual(response.context["courses"][0]["prog_code"], "SECOND")
+
+    def test_add_mapping_grants_verifier_role_without_replacing_hod(self):
+        verifier_group = Group.objects.create(name=VERIFIER_GROUP_NAME)
+        hod_user = User.objects.create_user(
+            username="hod_user",
+            password="password123",
+            is_staff=True,
+        )
+        program = Program.objects.create(
+            prog_code="MBA",
+            degree="MBA",
+            branch="Management",
+            prog_type="PG",
+            prog_category="Arts",
+            is_active=True,
+        )
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse("verification_management:add_mapping"),
+            {
+                "user_id": hod_user.id,
+                "program_ids": [program.id],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["success"])
+
+        hod_user.refresh_from_db()
+        self.assertTrue(hod_user.is_staff)
+        self.assertTrue(hod_user.groups.filter(name=VERIFIER_GROUP_NAME).exists())
+        self.assertEqual(get_user_role_labels(hod_user), ["Head of Department", "Verifier"])
+        self.assertTrue(VerifierProgramMap.objects.filter(user=hod_user, program=program).exists())

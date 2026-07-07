@@ -74,12 +74,27 @@
                     {{ users|length }} total
                 </span>
             </div>
-            <div class="relative w-full sm:w-96">
-                <label for="searchInput" class="sr-only">Search users</label>
-                <input type="text" id="searchInput" placeholder="Search directory..." class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-all">
-                <svg class="absolute left-3 top-2.5 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
-                </svg>
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                <form method="get" class="flex items-center gap-2">
+                    <label for="roleFilter" class="sr-only">Choose role</label>
+                    <select id="roleFilter" name="role" onchange="this.form.submit()" class="w-full sm:w-64 px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-all">
+                        <option value="__all__" {% if selected_role == "__all__" %}selected{% endif %}>Choose role</option>
+                        <option value="hod" {% if selected_role == "hod" %}selected{% endif %}>Head of the department</option>
+                        <option value="verifier" {% if selected_role == "verifier" %}selected{% endif %}>Verifier</option>
+                        <option value="admin" {% if selected_role == "admin" %}selected{% endif %}>Admin</option>
+                        <option value="user" {% if selected_role == "user" %}selected{% endif %}>User</option>
+                    </select>
+                </form>
+                <div class="relative w-full sm:w-96">
+                    <label for="searchInput" class="sr-only">Search users</label>
+                    <input type="text" id="searchInput" placeholder="Search directory..." class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-all">
+                    <svg class="absolute left-3 top-2.5 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+                    </svg>
+                </div>
+                <a href="{% url 'user_manage:user_management' %}" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+                    Clear
+                </a>
             </div>
         </div>
 
@@ -90,7 +105,7 @@
                     <tr class="text-[12px] text-center uppercase tracking-[0.14em] text-slate-700 font-black select-none">
                         <th class="sticky left-0 bg-slate-50/90 z-40 px-6 py-4 whitespace-nowrap w-12 text-center">S No</th>
                         <th class="px-6 py-4 whitespace-nowrap">User Details</th>
-                        <th class="px-6 py-4 whitespace-nowrap">User Id</th>
+                        <th class="px-6 py-4 whitespace-nowrap">STAFF Id</th>
                         <th class="px-6 py-4 whitespace-nowrap">Password</th>
                         <th class="px-6 py-4 whitespace-nowrap">Role</th>
                         <th class="px-6 py-4 whitespace-nowrap">Status</th>
@@ -256,17 +271,13 @@
                     <h3 class="font-bold text-xs tracking-wider text-indigo-900 uppercase">Personal Information</h3>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 px-5">
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2.5">First Name : <span class="text-rose-500">*</span></label>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-semibold text-slate-700 mb-2.5">Name of the staff: <span class="text-rose-500">*</span></label>
                         <input type="text" name="first_name" id="drawerFirstName" required class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
                     </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2.5">Last Name :</label>
-                        <input type="text" name="last_name" id="drawerLastName" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
-                    </div>
                     <div class="sm:col-span-2">
-                        <label class="block text-sm font-semibold text-slate-700 mb-2.5">Username : <span class="text-rose-500">*</span></label>
-                        <input type="text" name="username" id="drawerUsername" required class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
+                        <label class="block text-sm font-semibold text-slate-700 mb-2.5">STAFF ID : <span class="text-rose-500">*</span></label>
+                        <input type="text" name="staff_id" id="drawerStaffId" required class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
                     </div>
                     <div class="sm:col-span-2">
                         <label class="block text-sm font-semibold text-slate-700 mb-2.5">Email :</label>
@@ -285,17 +296,6 @@
                             <option value="verifier">Verifier</option>
                             <option value="admin">Administrator</option>
                         </select>
-                        <p class="text-xs text-slate-400 mt-2">Choose Verifier for the new user named "verifier".</p>
-                    </div>
-                    <div id="drawerVerifierAssignmentWrapper" class="sm:col-span-2">
-                        <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                            <label class="flex items-center gap-3 text-sm font-semibold text-slate-700 cursor-pointer">
-                                <input type="checkbox" name="additional_role" id="drawerVerifierAssignment" value="verifier" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                                <span>Assign as Verifier</span>
-                            </label>
-                            <p class="text-xs text-slate-400 mt-2">Available when this user should also receive verifier access.</p>
-                        </div>
-                    </div>
                 </div>
             </div>
 

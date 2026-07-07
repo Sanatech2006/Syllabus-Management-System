@@ -240,7 +240,7 @@
                 <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                 </svg>
-                Filter Courses
+                {% if verification_management_mode %}Filter Programs{% else %}Filter Courses{% endif %}
             </h2>
         </div>
         <div class="p-6 overflow-visible">
@@ -362,7 +362,7 @@
                     </span>
                 </div>
                 <div class="relative w-full sm:w-72">
-                    <input type="text" id="verificationSearchInput" value="{{ selected_search|default:'' }}" placeholder="Search courses..." class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg">
+                    <input type="text" id="verificationSearchInput" value="{{ selected_search|default:'' }}" placeholder="{% if verification_management_mode %}Search programs...{% else %}Search courses...{% endif %}" class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg">
                     <svg class="absolute left-3 top-2.5 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                     </svg>
@@ -428,38 +428,27 @@
                         {% endfor %}
                         {% elif verification_management_mode %}
                         {% for course in courses %}
-                        <tr class="verification-row hover:bg-slate-50 transition" data-program="{{ course.program.prog_code|lower }} {{ course.program.degree|lower }} {{ course.program.branch|lower }}" data-verifier="{{ course.verifiers_display|lower }}" data-status="{{ course.verification_status_label|lower }}">
+                        <tr class="verification-row hover:bg-slate-50 transition" data-program="{{ course.prog_code|lower }} {{ course.degree|lower }} {{ course.branch|lower }}" data-verifier="{{ course.verifiers_display|lower }}" data-status="{{ course.mapping_status_label|lower }}">
                             <td class="px-6 py-4 text-center text-sm text-slate-500">{{ forloop.counter }}</td>
                             <td class="px-6 py-4 text-center">
-                                <div class="text-sm font-medium text-slate-900">{{ course.program.prog_code }}</div>
-                                <div class="text-xs text-slate-500">{{ course.program.degree }} - {{ course.program.branch }}</div>
+                                <div class="text-sm font-medium text-slate-900">{{ course.prog_code }}</div>
+                                <div class="text-xs text-slate-500">{{ course.degree }} - {{ course.branch }}</div>
                             </td>
                             <td class="px-6 py-4 text-center text-slate-700">
-                                {% if course.assigned_verifier_id %}
                                 {{ course.verifiers_display }}
-                                {% else %}
-                                <button
-                                    type="button"
-                                    onclick="openVerificationAssignmentDrawer({{ course.id }}, null, '', 'Allot', '{{ course.course_code|escapejs }}', '{{ course.course_title|default_if_none:''|escapejs }}', '{{ course.program.id }}', '{{ course.program.prog_code|escapejs }}')"
-                                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white transition"
-                                >
-                                    Allot
-                                </button>
-                                {% endif %}
                             </td>
                             <td class="px-6 py-4 text-center">
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ course.verification_status_class }}">
-                                    {{ course.verification_status_label }}
+                                <span class="{{ course.mapping_status_class }}">
+                                    {{ course.mapping_status_label }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-center">
-                                {% if course.assigned_verifier_id %}
                                 <div class="flex items-center justify-center gap-1.5">
                                     <button
                                         type="button"
-                                        onclick="openVerificationAssignmentDrawer({{ course.id }}, {{ course.assigned_verifier_id|default:'null' }}, '{{ course.assigned_verifier_name|default_if_none:''|escapejs }}', 'Edit', '{{ course.course_code|escapejs }}', '{{ course.course_title|default_if_none:''|escapejs }}', '{{ course.program.id }}', '{{ course.program.prog_code|escapejs }}')"
-                                        class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
-                                        title="Edit Verifier"
+                                        onclick="openMappingDrawer([{{ course.id }}], {{ course.assigned_verifier_id|default:'null' }})"
+                                        class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all cursor-pointer"
+                                        title="{% if course.assigned_verifier_id %}Edit Mapping{% else %}Add Mapping{% endif %}"
                                     >
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"/>
@@ -467,18 +456,15 @@
                                     </button>
                                     <button
                                         type="button"
-                                        onclick="deleteVerificationAssignment({{ course.id }}, '{{ course.program.prog_code|escapejs }}')"
+                                        onclick="deleteProgramMappings({{ course.id }}, '{{ course.prog_code|escapejs }}')"
                                         class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
-                                        title="Delete Assignment"
+                                        title="Delete Mapping"
                                     >
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
                                         </svg>
                                     </button>
                                 </div>
-                                {% else %}
-                                <span class="text-slate-500">-</span>
-                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -557,8 +543,8 @@
         {% endif %}
 
         <div id="verificationSearchEmpty" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center mt-5">
-            <h3 class="text-lg font-bold text-slate-900">No matching courses</h3>
-            <p class="mt-2 text-sm text-slate-500">Your search checks all verification records, not just this page.</p>
+            <h3 class="text-lg font-bold text-slate-900">{% if verification_management_mode %}No matching programs{% else %}No matching courses{% endif %}</h3>
+            <p class="mt-2 text-sm text-slate-500">{% if verification_management_mode %}Your search checks all verification mappings, not just this page.{% else %}Your search checks all verification records, not just this page.{% endif %}</p>
         </div>
         {% if verification_management_mode %}
         <div id="mappingDrawer" class="fixed inset-0 z-50 hidden" aria-labelledby="mappingDrawerTitle" role="dialog">
@@ -589,8 +575,8 @@
                             <label class="block text-sm font-semibold text-slate-700 mb-2.5">Verifier : <span class="text-rose-500">*</span></label>
                             <select name="user_id" id="mappingVerifierId" required class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2.5 bg-white text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all">
                                 <option value="">-- Select Verifier --</option>
-                                {% for verifier in verifier_users %}
-                                <option value="{{ verifier.id }}">{{ verifier.name }}</option>
+                                {% for user in mapping_users %}
+                                <option value="{{ user.id }}">{{ user.staff_id }} - {{ user.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -769,7 +755,7 @@
     </div>
 </div>
 
-<div id="toast" class="fixed bottom-4 right-4 z-50 hidden transform transition-all duration-300">
+<div id="toast" class="fixed top-4 right-4 z-50 hidden transform transition-all duration-300">
     <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
         <span id="toastMessage">Success!</span>
     </div>
@@ -1347,7 +1333,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function openMappingDrawer() {
+    function openMappingDrawer(programIds = [], verifierId = '') {
         const drawer = document.getElementById('mappingDrawer');
         if (!drawer) return;
         drawer.classList.remove('hidden');
@@ -1356,7 +1342,19 @@ document.addEventListener('DOMContentLoaded', function () {
         if (form) form.reset();
         const mappingIdInput = document.getElementById('mappingMappingId');
         if (mappingIdInput) mappingIdInput.value = '';
-        updateMappingProgramSelectionLabel();
+        if (Array.isArray(programIds) && programIds.length > 0) {
+            setProgramSelections(programIds);
+        } else {
+            updateMappingProgramSelectionLabel();
+        }
+        const verifierSelect = document.getElementById('mappingVerifierId');
+        if (verifierSelect) {
+            verifierSelect.value = verifierId ? String(verifierId) : '';
+        }
+        const drawerTitle = document.getElementById('mappingDrawerTitle');
+        const drawerSubtitle = document.getElementById('mappingDrawerSubtitle');
+        if (drawerTitle) drawerTitle.textContent = 'New Verification Mapping';
+        if (drawerSubtitle) drawerSubtitle.textContent = 'Assign a verifier to oversee one or more programs';
     }
 
     function closeMappingDrawer() {
@@ -1385,6 +1383,72 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('#mappingDrawer input[name="program_ids"]').forEach(input => {
         input.addEventListener('change', updateMappingProgramSelectionLabel);
     });
+
+    const mappingVerifierSelect = document.getElementById('mappingVerifierId');
+    if (mappingVerifierSelect && window.TomSelect && !mappingVerifierSelect.tomselect) {
+        new TomSelect(mappingVerifierSelect, {
+            create: false,
+            maxOptions: 200,
+            sortField: [
+                { field: 'text', direction: 'asc' },
+            ],
+            dropdownParent: 'body',
+            placeholder: '-- Select User --',
+            render: {
+                option: function(data, escape) {
+                    return `<div class="py-2 px-3"><div class="text-sm font-medium text-slate-900">${escape(data.text)}</div></div>`;
+                },
+                item: function(data, escape) {
+                    return `<div>${escape(data.text)}</div>`;
+                },
+            },
+        });
+    }
+
+    const verificationMappingForm = document.getElementById('verificationMappingForm');
+    if (verificationMappingForm) {
+        verificationMappingForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(verificationMappingForm);
+            const selectedProgramIds = Array.from(
+                document.querySelectorAll('#mappingDrawer input[name="program_ids"]:checked')
+            ).map(input => input.value);
+
+            if (!formData.get('user_id') || selectedProgramIds.length === 0) {
+                showToast('Please select a user and at least one program.', 'error');
+                return;
+            }
+
+            formData.delete('program_ids');
+            selectedProgramIds.forEach(programId => formData.append('program_ids', programId));
+
+            const submitButton = verificationMappingForm.querySelector('button[type="submit"][form="verificationMappingForm"]');
+            if (submitButton) submitButton.disabled = true;
+
+            fetch(verificationMappingForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                },
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        showToast(data.error || 'Unable to save mapping.', 'error');
+                        return;
+                    }
+                    showToast(data.message || 'Program mapped to verifier successfully.');
+                    closeMappingDrawer();
+                    window.setTimeout(() => window.location.reload(), 900);
+                })
+                .catch(() => showToast('Unable to save mapping.', 'error'))
+                .finally(() => {
+                    if (submitButton) submitButton.disabled = false;
+                });
+        });
+    }
 
     initializeExcelUpload();
 
@@ -1472,6 +1536,28 @@ document.addEventListener('DOMContentLoaded', function () {
                 window.location.reload();
             })
             .catch(() => showAssignmentMessage('Unable to delete assignment.'));
+    };
+
+    window.deleteProgramMappings = function(programId, programCode) {
+        if (!programId) return;
+        if (!window.confirm(`Delete all verifier mappings for ${programCode}?`)) return;
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        fetch(`{% url 'verification_management:delete_program_mappings' 0 %}`.replace('/0/', `/${programId}/`), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    showAssignmentMessage(data.error || 'Unable to delete mapping.');
+                    return;
+                }
+                window.location.reload();
+            })
+            .catch(() => showAssignmentMessage('Unable to delete mapping.'));
     };
 
     if (!verificationManagementMode) {
