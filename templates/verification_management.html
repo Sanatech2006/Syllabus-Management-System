@@ -819,18 +819,57 @@
             {% csrf_token %}
             <input type="hidden" id="assignmentMode" name="mode" value="allot">
             <input type="hidden" id="assignmentAnchorCourseId" name="anchor_course_id" value="">
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="px-5 py-3 border-b border-slate-100 bg-slate-50">
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700">Verifier</h3>
+            <div class="bg-white rounded-xl border border-blue-100 shadow-sm overflow-visible">
+                <div class="flex items-center gap-2 bg-blue-50/60 px-5 py-3 border-b border-blue-100/50">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    <h3 class="font-bold text-xs tracking-wider text-blue-900 uppercase">Select Verifier</h3>
                 </div>
                 <div class="p-5">
-                    <label class="block text-sm font-semibold text-slate-700 mb-2.5">Verifier</label>
-                    <select id="assignmentVerifier" name="verifier_id" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
-                        <option value="">Select Verifier</option>
-                        {% for verifier in verifier_users %}
-                        <option value="{{ verifier.id }}">{{ verifier.name }}</option>
-                        {% endfor %}
-                    </select>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2.5">Verifier : <span class="text-rose-500">*</span></label>
+                    <div class="relative" id="assignmentVerifierWrapper">
+                        <input type="hidden" id="assignmentVerifier" name="verifier_id" required>
+                        <div class="relative">
+                            <input
+                                type="text"
+                                id="assignmentVerifierTrigger"
+                                placeholder="-- Select Verifier --"
+                                autocomplete="off"
+                                class="w-full text-sm rounded-lg border border-slate-200 pl-3 pr-10 py-2.5 bg-white text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                            >
+                            <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                                <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div id="assignmentVerifierMenu" class="hidden absolute left-0 right-0 top-full z-40 mt-2 rounded-xl border border-slate-200 bg-white shadow-xl overflow-hidden">
+                            <div class="max-h-60 overflow-y-auto p-2 space-y-1" id="assignmentVerifierListContainer">
+                                {% if verification_management_mode %}
+                                {% for verifier in mapping_users %}
+                                <label class="assignment-verifier-option flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-blue-50 cursor-pointer transition-colors group">
+                                    <input type="radio" name="assignment_verifier_radio" value="{{ verifier.id }}" data-name="{% if verifier.staff_id %}{{ verifier.staff_id }} - {% endif %}{{ verifier.name }}" class="hidden" onchange="selectAssignmentVerifier(this)">
+                                    <span class="w-4 h-4 rounded-full border border-slate-300 group-hover:border-blue-500 flex items-center justify-center flex-shrink-0 radio-indicator">
+                                        <span class="w-2 h-2 rounded-full bg-blue-600 hidden"></span>
+                                    </span>
+                                    <span class="block text-sm font-medium text-slate-700 group-hover:text-blue-900 truncate option-text">{% if verifier.staff_id %}{{ verifier.staff_id }} - {% endif %}{{ verifier.name }}</span>
+                                </label>
+                                {% endfor %}
+                                {% else %}
+                                {% for verifier in verifier_users %}
+                                <label class="assignment-verifier-option flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-blue-50 cursor-pointer transition-colors group">
+                                    <input type="radio" name="assignment_verifier_radio" value="{{ verifier.id }}" data-name="{% if verifier.staff_id %}{{ verifier.staff_id }} - {% endif %}{{ verifier.name }}" class="hidden" onchange="selectAssignmentVerifier(this)">
+                                    <span class="w-4 h-4 rounded-full border border-slate-300 group-hover:border-blue-500 flex items-center justify-center flex-shrink-0 radio-indicator">
+                                        <span class="w-2 h-2 rounded-full bg-blue-600 hidden"></span>
+                                    </span>
+                                    <span class="block text-sm font-medium text-slate-700 group-hover:text-blue-900 truncate option-text">{% if verifier.staff_id %}{{ verifier.staff_id }} - {% endif %}{{ verifier.name }}</span>
+                                </label>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                     <p class="text-xs text-slate-400 mt-2">Choose a verifier from user management.</p>
                 </div>
             </div>
@@ -904,6 +943,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const endpoint = "{% url 'reports:verification_filter_options' %}";
     const assignmentDetailsEndpoint = "{% url 'reports:verification_assignment_details' 0 %}".replace('/0/', '/');
     const assignmentSyncEndpoint = "{% url 'reports:verification_sync_assignments' %}";
+    const mappingAddEndpoint = "{% url 'verification_management:add_mapping' %}";
     const dropdownSequence = [
         { id: 'yearDropdown', valueId: 'yearValue', placeholder: 'Select', allText: 'All' },
         { id: 'progTypeDropdown', valueId: 'progTypeValue', placeholder: 'Select Type', allText: 'All Types' },
@@ -959,6 +999,146 @@ document.addEventListener('DOMContentLoaded', function () {
         toast.classList.remove('hidden');
         window.setTimeout(() => toast.classList.add('hidden'), 3000);
     }
+
+    function getAssignmentVerifierOptions() {
+        return Array.from(document.querySelectorAll('.assignment-verifier-option')).filter(option => option.style.display !== 'none');
+    }
+
+    function getHighlightedAssignmentVerifierOption() {
+        return document.querySelector('.assignment-verifier-option.assignment-verifier-highlighted');
+    }
+
+    function highlightAssignmentVerifierOption(option) {
+        document.querySelectorAll('.assignment-verifier-option.assignment-verifier-highlighted').forEach(el => {
+            el.classList.remove('assignment-verifier-highlighted', 'bg-blue-50');
+        });
+        if (option) {
+            option.classList.add('assignment-verifier-highlighted', 'bg-blue-50');
+            option.scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    function filterAssignmentVerifiers() {
+        const input = document.getElementById('assignmentVerifierTrigger');
+        if (!input) return;
+        const searchTerms = input.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+        document.querySelectorAll('.assignment-verifier-option').forEach(option => {
+            const text = option.querySelector('.option-text')?.textContent?.toLowerCase() || '';
+            option.style.display = searchTerms.length === 0 || searchTerms.every(term => text.includes(term)) ? '' : 'none';
+        });
+        highlightAssignmentVerifierOption(getAssignmentVerifierOptions()[0] || null);
+    }
+
+    function selectAssignmentVerifier(radioElem) {
+        const verifierId = document.getElementById('assignmentVerifier');
+        const trigger = document.getElementById('assignmentVerifierTrigger');
+        if (!radioElem || !verifierId || !trigger) return;
+
+        verifierId.value = radioElem.value;
+        trigger.value = radioElem.dataset.name || '';
+        radioElem.checked = true;
+
+        document.querySelectorAll('.assignment-verifier-option .radio-indicator span').forEach(el => el.classList.add('hidden'));
+        if (radioElem.nextElementSibling && radioElem.nextElementSibling.querySelector('span')) {
+            radioElem.nextElementSibling.querySelector('span').classList.remove('hidden');
+        }
+
+        document.getElementById('assignmentVerifierMenu')?.classList.add('hidden');
+    }
+
+    function clearAssignmentVerifier() {
+        const verifierId = document.getElementById('assignmentVerifier');
+        const trigger = document.getElementById('assignmentVerifierTrigger');
+        if (verifierId) verifierId.value = '';
+        if (trigger) trigger.value = '';
+        document.querySelectorAll('input[name="assignment_verifier_radio"]').forEach(radio => {
+            radio.checked = false;
+        });
+        document.querySelectorAll('.assignment-verifier-option .radio-indicator span').forEach(el => el.classList.add('hidden'));
+    }
+
+    function setAssignmentVerifier(verifierId) {
+        if (!verifierId) {
+            clearAssignmentVerifier();
+            return;
+        }
+        const radio = document.querySelector(`input[name="assignment_verifier_radio"][value="${verifierId}"]`);
+        if (radio) {
+            selectAssignmentVerifier(radio);
+        } else {
+            clearAssignmentVerifier();
+        }
+    }
+
+    function handleAssignmentVerifierKeydown(event) {
+        const menu = document.getElementById('assignmentVerifierMenu');
+        if (!menu) return;
+
+        if (event.key === 'Escape') {
+            menu.classList.add('hidden');
+            event.preventDefault();
+            return;
+        }
+
+        if (menu.classList.contains('hidden')) {
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                menu.classList.remove('hidden');
+                filterAssignmentVerifiers();
+            }
+            return;
+        }
+
+        if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
+
+        const visibleOptions = getAssignmentVerifierOptions();
+        if (visibleOptions.length === 0) return;
+
+        const current = getHighlightedAssignmentVerifierOption();
+        const currentIndex = current ? visibleOptions.indexOf(current) : -1;
+
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            highlightAssignmentVerifierOption(visibleOptions[(currentIndex + 1) % visibleOptions.length]);
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            highlightAssignmentVerifierOption(visibleOptions[(currentIndex - 1 + visibleOptions.length) % visibleOptions.length]);
+        } else if (event.key === 'Enter') {
+            event.preventDefault();
+            const target = current || visibleOptions[0];
+            const radio = target ? target.querySelector('input[type="radio"]') : null;
+            if (radio) selectAssignmentVerifier(radio);
+        }
+    }
+
+    function initializeAssignmentVerifierDropdown() {
+        const wrapper = document.getElementById('assignmentVerifierWrapper');
+        const trigger = document.getElementById('assignmentVerifierTrigger');
+        const menu = document.getElementById('assignmentVerifierMenu');
+        if (!wrapper || !trigger || !menu) return;
+
+        trigger.addEventListener('focus', function() {
+            menu.classList.remove('hidden');
+            this.value = '';
+            filterAssignmentVerifiers();
+        });
+        trigger.addEventListener('click', function() {
+            menu.classList.remove('hidden');
+            filterAssignmentVerifiers();
+        });
+        trigger.addEventListener('input', filterAssignmentVerifiers);
+        trigger.addEventListener('keydown', handleAssignmentVerifierKeydown);
+
+        document.addEventListener('click', function(event) {
+            if (!wrapper.contains(event.target)) {
+                menu.classList.add('hidden');
+                const selected = document.querySelector('input[name="assignment_verifier_radio"]:checked');
+                if (selected) trigger.value = selected.dataset.name || '';
+            }
+        });
+    }
+
+    window.selectAssignmentVerifier = selectAssignmentVerifier;
 
     function toggleExcelMenu() {
         const menu = document.getElementById('excelMenu');
@@ -1272,7 +1452,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const subtitle = document.getElementById('assignmentDrawerSubtitle');
         const modeInput = document.getElementById('assignmentMode');
         const anchorInput = document.getElementById('assignmentAnchorCourseId');
-        const verifierSelect = document.getElementById('assignmentVerifier');
         const programDisplay = document.getElementById('assignmentProgramDisplay');
 
         const normalizedAction = (actionLabel || '').toLowerCase();
@@ -1300,11 +1479,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 ? 'Add more courses or remove existing ones from this verifier.'
                 : 'Choose a verifier and assign one or more courses.';
         }
-        if (verifierSelect && verifierId) {
-            verifierSelect.value = String(verifierId);
-        } else if (verifierSelect) {
-            verifierSelect.value = '';
-        }
+        setAssignmentVerifier(verifierId ? String(verifierId) : '');
 
         if (verificationManagementMode) {
             return;
@@ -1327,9 +1502,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         program_id: course.program_id || '',
                         program_code: course.program_code || '',
                     }));
-                    if (verifierSelect && data.verifier) {
-                        verifierSelect.value = String(data.verifier.id);
-                    }
+                    if (data.verifier) setAssignmentVerifier(String(data.verifier.id));
                     const firstProgramId = assignmentState.selectedCourses[0]?.program_id || '';
                     if (programSelect) {
                         programSelect.value = firstProgramId;
@@ -1490,6 +1663,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     initializeExcelUpload();
+    initializeAssignmentVerifierDropdown();
 
     document.addEventListener('click', function(event) {
         const excelWrapper = event.target.closest('.relative.inline-block');
@@ -1521,14 +1695,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const formData = new FormData();
-        formData.append('verifier_id', verifierId);
         if (verificationManagementMode) {
             if (!assignmentState.anchorCourse?.id) {
                 showAssignmentMessage('Program is missing.');
                 return;
             }
-            formData.append('course_ids', assignmentState.anchorCourse.id);
+            formData.append('user_id', verifierId);
+            formData.append('program_ids', assignmentState.anchorCourse.id);
         } else {
+            formData.append('verifier_id', verifierId);
             if (!assignmentState.selectedCourses.length) {
                 showAssignmentMessage('Please add at least one course.');
                 return;
@@ -1537,7 +1712,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-        fetch(assignmentSyncEndpoint, {
+        fetch(verificationManagementMode ? mappingAddEndpoint : assignmentSyncEndpoint, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': csrfToken,

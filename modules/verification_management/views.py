@@ -192,6 +192,7 @@ def verification_program_map_management(request):
         "verifier_users": [
             {
                 "id": verifier.id,
+                "staff_id": verifier.username,
                 "name": verifier.get_full_name() or verifier.username,
             }
             for verifier in _base_verifier_queryset()

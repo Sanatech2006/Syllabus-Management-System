@@ -55,7 +55,7 @@
         </div>
     </form>
 
-    <form method="post" action="{{ post_action_url|default:request.path }}">
+    <form method="post" action="{{ post_action_url|default:request.path }}{% if pagination_query %}?{{ pagination_query }}{% endif %}">
         {% csrf_token %}
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
@@ -65,7 +65,7 @@
                 </span>
             </div>
 
-            <div class="overflow-auto">
+            <div class="overflow-auto relative h-[65vh]">
                 <table class="w-full text-sm text-left">
                     <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
                         <tr>
@@ -82,7 +82,7 @@
                     <tbody class="divide-y divide-slate-100 bg-white">
                         {% for course in courses %}
                         <tr class="hover:bg-slate-50 transition">
-                            <td class="px-6 py-4 text-center text-sm text-slate-500">{{ forloop.counter }}</td>
+                            <td class="px-6 py-4 text-center text-sm text-slate-500">{{ page_obj.start_index|add:forloop.counter0 }}</td>
                             <td class="px-6 py-4 text-center">
                                 <div class="text-sm font-medium text-slate-900">{{ course.program.prog_code }}</div>
                                 <div class="text-xs text-slate-500">{{ course.program.degree }} - {{ course.program.branch }}</div>
@@ -104,6 +104,38 @@
                     </tbody>
                 </table>
             </div>
+
+            {% if page_obj.paginator.count %}
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p class="text-sm text-slate-600">
+                        Showing <span class="font-medium">{{ page_obj.start_index }}</span> to
+                        <span class="font-medium">{{ page_obj.end_index }}</span> of
+                        <span class="font-medium">{{ page_obj.paginator.count }}</span> results
+                    </p>
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-slate-600">Rows per page:</label>
+                        <select id="perPageSelect" class="rounded-lg border border-slate-200 px-2 py-1 text-sm bg-white">
+                            <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                            <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                            <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                        </select>
+                        {% if page_obj.has_other_pages %}
+                        <div class="flex items-center gap-2 ml-2">
+                            {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}{% if pagination_query %}&{{ pagination_query }}{% endif %}" class="px-3 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition">Previous</a>
+                            {% endif %}
+                            <span class="px-3 py-1 bg-blue-600 text-white rounded-lg">{{ page_obj.number }}</span>
+                            {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}{% if pagination_query %}&{{ pagination_query }}{% endif %}" class="px-3 py-1 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition">Next</a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         <div class="mt-6 flex justify-end gap-3">
@@ -112,4 +144,17 @@
         </div>
     </form>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const perPageSelect = document.getElementById('perPageSelect');
+    if (!perPageSelect) return;
+
+    perPageSelect.addEventListener('change', function() {
+        const url = new URL(window.location.href);
+        url.searchParams.set('per_page', this.value);
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+    });
+});
+</script>
 {% endblock %}
